@@ -60,12 +60,12 @@ test.describe('Main flow', () => {
     });
     await page.waitForTimeout(500); // Give Vue time to react
 
-    await expect(page.locator('.col-md-4 .card .card-body .alert-danger').first()).toBeVisible();
+    await expect(page.locator('.validation-card table tbody tr').first()).toBeVisible();
   });
 
   test('should generate a valid SLA document from scratch via GUI', async ({ page }) => {
     // 1. Ensure initial state is valid
-    await expect(page.locator('.col-md-4 .card .card-body .alert-success')).toBeVisible();
+    await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
 
     // 2. Fill in ContextEditor data
     await page.fill('input#context-id', 'test-sla-id');
@@ -151,8 +151,9 @@ test.describe('Main flow', () => {
     await basicPlanCard.locator('.lifecycle-policy-editor-component input[placeholder="e.g. P1DT4H"]').first().fill('P60D');
 
     // 5. Verify validation success
-    await page.waitForTimeout(500); // Give Vue time to react and re-validate
-    await expect(page.locator('.col-md-4 .card .card-body .alert-success')).toBeVisible();
+    await expect(async () => {
+      await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    }).toPass({ timeout: 5000 });
 
     // 6. Switch to Source and verify generated YAML
     await page.click('a:has-text("Source")');

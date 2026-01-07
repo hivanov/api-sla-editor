@@ -16,6 +16,8 @@
         <div class="col-md-6 mb-3">
           <DurationEditor 
             :model-value="safeMaintenancePolicy.minimumNotice?.standard" 
+            :errors="errors"
+            :path="path + '/minimumNotice/standard'"
             @update:model-value="updateNotice('standard', $event)"
             label="Standard Notice"
           />
@@ -23,6 +25,8 @@
         <div class="col-md-6 mb-3">
           <DurationEditor 
             :model-value="safeMaintenancePolicy.minimumNotice?.emergency" 
+            :errors="errors"
+            :path="path + '/minimumNotice/emergency'"
             @update:model-value="updateNotice('emergency', $event)"
             label="Emergency Notice"
           />
@@ -37,17 +41,24 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Type</label>
-          <input type="text" class="form-control" placeholder="Routine" :value="window.type" @input="updateWindow(index, 'type', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/windows/' + index + '/type']}" placeholder="Routine" :value="window.type" @input="updateWindow(index, 'type', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/windows/' + index + '/type']">
+            {{ errors[path + '/windows/' + index + '/type'].join(', ') }}
+          </div>
         </div>
         <div class="mb-3">
           <RRuleEditor 
             :model-value="window.rrule" 
+            :errors="errors"
+            :path="path + '/windows/' + index + '/rrule'"
             @update:model-value="updateWindow(index, 'rrule', $event)"
             label="RRULE (RFC 5545)"
           />
         </div>
         <DurationEditor 
           :model-value="window.duration" 
+          :errors="errors"
+          :path="path + '/windows/' + index + '/duration'"
           @update:model-value="updateWindow(index, 'duration', $event)"
           label="Duration"
         />
@@ -62,11 +73,17 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Calendar URL</label>
-          <input type="text" class="form-control" placeholder="https://example.com/maintenance.ics" :value="source.calendarUrl" @input="updateSource(index, 'calendarUrl', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/maintenance.ics" :value="source.calendarUrl" @input="updateSource(index, 'calendarUrl', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/sources/' + index + '/calendarUrl']">
+            {{ errors[path + '/sources/' + index + '/calendarUrl'].join(', ') }}
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Description</label>
-          <input type="text" class="form-control" placeholder="Description of the source" :value="source.description" @input="updateSource(index, 'description', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/sources/' + index + '/description']}" placeholder="Description of the source" :value="source.description" @input="updateSource(index, 'description', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/sources/' + index + '/description']">
+            {{ errors[path + '/sources/' + index + '/description'].join(', ') }}
+          </div>
         </div>
       </div>
       <button class="btn btn-secondary btn-sm mt-2" @click="addSource">Add Source</button>
@@ -89,6 +106,14 @@ export default {
     maintenancePolicy: {
       type: Object,
       default: () => ({}),
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:maintenancePolicy'],

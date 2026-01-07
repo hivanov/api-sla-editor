@@ -6,6 +6,8 @@
     <div class="card-body">
       <DurationEditor 
         :model-value="safeLifecyclePolicy.minimumTerm" 
+        :errors="errors"
+        :path="path + '/minimumTerm'"
         @update:model-value="updateField('minimumTerm', $event)"
         label="Minimum Term"
       />
@@ -17,12 +19,16 @@
       </div>
       <DurationEditor 
         :model-value="safeLifecyclePolicy.noticePeriod" 
+        :errors="errors"
+        :path="path + '/noticePeriod'"
         @update:model-value="updateField('noticePeriod', $event)"
         label="Notice Period"
       />
       <h6>Data Retention</h6>
       <DurationEditor 
         :model-value="safeLifecyclePolicy.dataRetention?.afterTermination" 
+        :errors="errors"
+        :path="path + '/dataRetention/afterTermination'"
         @update:model-value="updateDataRetention('afterTermination', $event)"
         label="After Termination"
       />
@@ -43,6 +49,14 @@ export default {
     lifecyclePolicy: {
       type: Object,
       default: () => ({}),
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:lifecyclePolicy'],

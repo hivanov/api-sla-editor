@@ -4,9 +4,14 @@
       SLA Exclusions
     </div>
     <div class="card-body">
-      <div v-for="(exclusion, index) in safeExclusions" :key="index" class="input-group mb-2">
-        <input type="text" class="form-control" :value="exclusion" @input="updateExclusion(index, $event.target.value)" placeholder="Exclusion description">
-        <button class="btn btn-danger" @click="removeExclusion(index)">Remove</button>
+      <div v-for="(exclusion, index) in safeExclusions" :key="index" class="mb-2">
+        <div class="input-group">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + index]}" :value="exclusion" @input="updateExclusion(index, $event.target.value)" placeholder="Exclusion description">
+          <button class="btn btn-danger" @click="removeExclusion(index)">Remove</button>
+          <div class="invalid-feedback" v-if="errors[path + '/' + index]">
+            {{ errors[path + '/' + index].join(', ') }}
+          </div>
+        </div>
       </div>
       <button class="btn btn-secondary btn-sm mt-2" @click="addExclusion">Add Exclusion</button>
     </div>
@@ -22,6 +27,14 @@ export default {
     exclusions: {
       type: Array,
       default: () => [],
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:exclusions'],

@@ -13,26 +13,38 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Contact Type</label>
-          <input type="text" class="form-control" placeholder="e.g., Technical Support" :value="cp.contactType" @input="updateContactPoint(index, 'contactType', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/contactType']}" placeholder="e.g., Technical Support" :value="cp.contactType" @input="updateContactPoint(index, 'contactType', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/contactPoints/' + index + '/contactType']">
+            {{ errors[path + '/contactPoints/' + index + '/contactType'].join(', ') }}
+          </div>
         </div>
         <h6>Channels</h6>
-        <div v-for="(channel, cIndex) in cp.channels" :key="cIndex" class="card mb-2 p-2">
+        <div v-for="(channel, cIndex) in cp.channels" :key="cIndex" class="card mb-2 p-2 channel-item">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span>Channel #{{ cIndex + 1 }}</span>
             <button class="btn btn-danger btn-sm" @click="removeChannel(index, cIndex)">Remove</button>
           </div>
+          <div v-if="errors[path + '/contactPoints/' + index + '/channels/' + cIndex]" class="alert alert-danger py-1 small mb-2">
+            {{ errors[path + '/contactPoints/' + index + '/channels/' + cIndex].join(', ') }}
+          </div>
           <div class="mb-3">
             <label class="form-label">Type</label>
-            <select class="form-select" :value="channel.type" @change="updateChannel(index, cIndex, 'type', $event.target.value)">
+            <select class="form-select" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/type']}" :value="channel.type" @change="updateChannel(index, cIndex, 'type', $event.target.value)">
               <option value="web">Web</option>
               <option value="email">Email</option>
               <option value="phone">Phone</option>
               <option value="chat">Chat</option>
             </select>
+            <div class="invalid-feedback" v-if="errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/type']">
+              {{ errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/type'].join(', ') }}
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">URL / Address</label>
-            <input type="text" class="form-control" placeholder="https://... or mailto:..." :value="channel.url" @input="updateChannel(index, cIndex, 'url', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/url']}" placeholder="https://... or mailto:..." :value="channel.url" @input="updateChannel(index, cIndex, 'url', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/url']">
+              {{ errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/url'].join(', ') }}
+            </div>
           </div>
         </div>
         <button class="btn btn-secondary btn-sm mt-2" @click="addChannel(index)">Add Channel</button>
@@ -62,14 +74,23 @@
             >
             <label class="form-check-label" :for="'day-' + index + '-' + day">{{ day }}</label>
           </div>
+          <div class="text-danger small" v-if="errors[path + '/hoursAvailable/' + index + '/dayOfWeek']">
+            {{ errors[path + '/hoursAvailable/' + index + '/dayOfWeek'].join(', ') }}
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Opens (HH:mm)</label>
-          <input type="text" class="form-control" placeholder="HH:mm" :value="hours.opens" @input="updateHours(index, 'opens', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/hoursAvailable/' + index + '/opens']}" placeholder="HH:mm" :value="hours.opens" @input="updateHours(index, 'opens', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/hoursAvailable/' + index + '/opens']">
+            {{ errors[path + '/hoursAvailable/' + index + '/opens'].join(', ') }}
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Closes (HH:mm)</label>
-          <input type="text" class="form-control" placeholder="HH:mm" :value="hours.closes" @input="updateHours(index, 'closes', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/hoursAvailable/' + index + '/closes']}" placeholder="HH:mm" :value="hours.closes" @input="updateHours(index, 'closes', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/hoursAvailable/' + index + '/closes']">
+            {{ errors[path + '/hoursAvailable/' + index + '/closes'].join(', ') }}
+          </div>
         </div>
       </div>
       <button class="btn btn-secondary btn-sm mt-2" @click="addHours">Add Hours</button>
@@ -83,23 +104,35 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Type</label>
-          <select class="form-select" :value="source.type" @change="updateHolidaySource(index, 'type', $event.target.value)">
+          <select class="form-select" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/type']}" :value="source.type" @change="updateHolidaySource(index, 'type', $event.target.value)">
             <option value="region">Region</option>
             <option value="ical">iCal</option>
             <option value="manual">Manual</option>
           </select>
+          <div class="invalid-feedback" v-if="errors[path + '/holidaySchedule/sources/' + index + '/type']">
+            {{ errors[path + '/holidaySchedule/sources/' + index + '/type'].join(', ') }}
+          </div>
         </div>
         <div v-if="source.type === 'region'" class="mb-3">
           <label class="form-label">Region Code</label>
-          <input type="text" class="form-control" placeholder="e.g., DE-BY" :value="source.regionCode" @input="updateHolidaySource(index, 'regionCode', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/regionCode']}" placeholder="e.g., DE-BY" :value="source.regionCode" @input="updateHolidaySource(index, 'regionCode', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/holidaySchedule/sources/' + index + '/regionCode']">
+            {{ errors[path + '/holidaySchedule/sources/' + index + '/regionCode'].join(', ') }}
+          </div>
         </div>
         <div v-if="source.type === 'ical'" class="mb-3">
           <label class="form-label">Calendar URL</label>
-          <input type="text" class="form-control" placeholder="https://example.com/holidays.ics" :value="source.calendarUrl" @input="updateHolidaySource(index, 'calendarUrl', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/holidays.ics" :value="source.calendarUrl" @input="updateHolidaySource(index, 'calendarUrl', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']">
+            {{ errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl'].join(', ') }}
+          </div>
         </div>
         <div v-if="source.type === 'manual'" class="mb-3">
           <label class="form-label">Dates (comma-separated YYYY-MM-DD)</label>
-          <input type="text" class="form-control" placeholder="e.g., 2024-01-01,2024-12-25" :value="source.dates ? source.dates.join(',') : ''" @input="updateHolidaySource(index, 'dates', $event.target.value.split(','))">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/dates']}" placeholder="e.g., 2024-01-01,2024-12-25" :value="source.dates ? source.dates.join(',') : ''" @input="updateHolidaySource(index, 'dates', $event.target.value.split(',').map(s => s.trim()))">
+          <div class="invalid-feedback" v-if="errors[path + '/holidaySchedule/sources/' + index + '/dates']">
+            {{ errors[path + '/holidaySchedule/sources/' + index + '/dates'].join(', ') }}
+          </div>
         </div>
       </div>
       <button class="btn btn-secondary btn-sm mt-2" @click="addHolidaySource">Add Holiday Source</button>
@@ -113,11 +146,17 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Priority</label>
-          <input type="text" class="form-control" placeholder="e.g., High" :value="slo.priority" @input="updateSlo(index, 'priority', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/priority']}" placeholder="e.g., High" :value="slo.priority" @input="updateSlo(index, 'priority', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/serviceLevelObjectives/' + index + '/priority']">
+            {{ errors[path + '/serviceLevelObjectives/' + index + '/priority'].join(', ') }}
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Name</label>
-          <input type="text" class="form-control" placeholder="e.g., Incident Resolution" :value="slo.name" @input="updateSlo(index, 'name', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/name']}" placeholder="e.g., Incident Resolution" :value="slo.name" @input="updateSlo(index, 'name', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/serviceLevelObjectives/' + index + '/name']">
+            {{ errors[path + '/serviceLevelObjectives/' + index + '/name'].join(', ') }}
+          </div>
         </div>
         <h6>Guarantees for SLO</h6>
         <div v-for="(guarantee, gIndex) in slo.guarantees" :key="gIndex" class="card mb-2 p-2">
@@ -127,10 +166,15 @@
           </div>
           <div class="mb-3">
             <label class="form-label">Metric</label>
-            <input type="text" class="form-control" placeholder="e.g., Uptime" :value="guarantee.metric" @input="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric']}" placeholder="e.g., Uptime" :value="guarantee.metric" @input="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric']">
+              {{ errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric'].join(', ') }}
+            </div>
           </div>
           <DurationEditor 
             :model-value="guarantee.duration" 
+            :errors="errors"
+            :path="path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/duration'"
             @update:model-value="updateSloGuarantee(index, gIndex, 'duration', $event)"
             label="Duration"
           />
@@ -155,6 +199,14 @@ export default {
     supportPolicy: {
       type: Object,
       default: () => ({}),
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:supportPolicy'],

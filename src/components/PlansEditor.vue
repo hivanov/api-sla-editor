@@ -12,39 +12,45 @@
         <div class="card-body">
           <div class="mb-3">
             <label class="form-label">Title</label>
-            <input type="text" class="form-control" placeholder="Plan Title" :value="plan.title" @input="updatePlan(name, 'title', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors['/plans/' + name + '/title']}" placeholder="Plan Title" :value="plan.title" @input="updatePlan(name, 'title', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors['/plans/' + name + '/title']">
+              {{ errors['/plans/' + name + '/title'].join(', ') }}
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Description</label>
-            <textarea class="form-control" placeholder="Plan Description" :value="plan.description" @input="updatePlan(name, 'description', $event.target.value)"></textarea>
+            <textarea class="form-control" :class="{'is-invalid': errors['/plans/' + name + '/description']}" placeholder="Plan Description" :value="plan.description" @input="updatePlan(name, 'description', $event.target.value)"></textarea>
+            <div class="invalid-feedback" v-if="errors['/plans/' + name + '/description']">
+              {{ errors['/plans/' + name + '/description'].join(', ') }}
+            </div>
           </div>
           
           <!-- Availability Editor -->
-          <AvailabilityEditor :availability="plan.availability" @update:availability="updatePlan(name, 'availability', $event)" />
+          <AvailabilityEditor :availability="plan.availability" :errors="errors" :path="'/plans/' + name + '/availability'" @update:availability="updatePlan(name, 'availability', $event)" />
 
           <!-- Pricing Editor -->
-          <PricingEditor :pricing="plan.pricing" @update:pricing="updatePlanSubObject(name, 'pricing', $event)" />
+          <PricingEditor :pricing="plan.pricing" :errors="errors" :path="'/plans/' + name + '/pricing'" @update:pricing="updatePlanSubObject(name, 'pricing', $event)" />
 
           <!-- Quotas Editor -->
-          <QuotasEditor :quotas="plan.quotas" @update:quotas="updatePlanSubObject(name, 'quotas', $event)" />
+          <QuotasEditor :quotas="plan.quotas" :errors="errors" :path="'/plans/' + name + '/quotas'" @update:quotas="updatePlanSubObject(name, 'quotas', $event)" />
 
           <!-- Guarantees Editor -->
-          <GuaranteesEditor :guarantees="plan.guarantees" @update:guarantees="updatePlanSubObject(name, 'guarantees', $event)" />
+          <GuaranteesEditor :guarantees="plan.guarantees" :errors="errors" :path="'/plans/' + name + '/guarantees'" @update:guarantees="updatePlanSubObject(name, 'guarantees', $event)" />
 
           <!-- Support Policy Editor -->
-          <SupportPolicyEditor :support-policy="plan['x-support-policy']" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
+          <SupportPolicyEditor :support-policy="plan['x-support-policy']" :errors="errors" :path="'/plans/' + name + '/x-support-policy'" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
 
           <!-- Service Credits Editor -->
-          <ServiceCreditsEditor :service-credits="plan['x-service-credits']" @update:service-credits="updatePlanSubObject(name, 'x-service-credits', $event)" />
+          <ServiceCreditsEditor :service-credits="plan['x-service-credits']" :errors="errors" :path="'/plans/' + name + '/x-service-credits'" @update:service-credits="updatePlanSubObject(name, 'x-service-credits', $event)" />
 
           <!-- Maintenance Policy Editor -->
-          <MaintenancePolicyEditor :maintenance-policy="plan['x-maintenance-policy']" @update:maintenance-policy="updatePlanSubObject(name, 'x-maintenance-policy', $event)" />
+          <MaintenancePolicyEditor :maintenance-policy="plan['x-maintenance-policy']" :errors="errors" :path="'/plans/' + name + '/x-maintenance-policy'" @update:maintenance-policy="updatePlanSubObject(name, 'x-maintenance-policy', $event)" />
 
           <!-- Exclusions Editor -->
-          <ExclusionsEditor :exclusions="plan['x-sla-exclusions']" @update:exclusions="updatePlanSubObject(name, 'x-sla-exclusions', $event)" />
+          <ExclusionsEditor :exclusions="plan['x-sla-exclusions']" :errors="errors" :path="'/plans/' + name + '/x-sla-exclusions'" @update:exclusions="updatePlanSubObject(name, 'x-sla-exclusions', $event)" />
 
           <!-- Lifecycle Policy Editor -->
-          <LifecyclePolicyEditor :lifecycle-policy="plan['x-lifecycle-policy']" @update:lifecycle-policy="updatePlanSubObject(name, 'x-lifecycle-policy', $event)" />
+          <LifecyclePolicyEditor :lifecycle-policy="plan['x-lifecycle-policy']" :errors="errors" :path="'/plans/' + name + '/x-lifecycle-policy'" @update:lifecycle-policy="updatePlanSubObject(name, 'x-lifecycle-policy', $event)" />
         </div>
       </div>
       <div class="mt-3">
@@ -86,6 +92,10 @@ export default {
     plans: {
       type: Object,
       required: true,
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
     },
   },
   emits: ['update:plans'],

@@ -12,15 +12,24 @@
         <div class="card-body">
           <div class="mb-3">
             <label class="form-label">Type</label>
-            <input type="text" class="form-control" placeholder="Type" :value="metric.type" @input="updateMetric(name, 'type', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors['/metrics/' + name + '/type']}" placeholder="Type" :value="metric.type" @input="updateMetric(name, 'type', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors['/metrics/' + name + '/type']">
+              {{ errors['/metrics/' + name + '/type'].join(', ') }}
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Unit</label>
-            <input type="text" class="form-control" placeholder="Unit" :value="metric.unit" @input="updateMetric(name, 'unit', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors['/metrics/' + name + '/unit']}" placeholder="Unit" :value="metric.unit" @input="updateMetric(name, 'unit', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors['/metrics/' + name + '/unit']">
+              {{ errors['/metrics/' + name + '/unit'].join(', ') }}
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Description</label>
-            <textarea class="form-control" placeholder="Description" :value="metric.description" @input="updateMetric(name, 'description', $event.target.value)"></textarea>
+            <textarea class="form-control" :class="{'is-invalid': errors['/metrics/' + name + '/description']}" placeholder="Description" :value="metric.description" @input="updateMetric(name, 'description', $event.target.value)"></textarea>
+            <div class="invalid-feedback" v-if="errors['/metrics/' + name + '/description']">
+              {{ errors['/metrics/' + name + '/description'].join(', ') }}
+            </div>
           </div>
         </div>
       </div>
@@ -41,6 +50,10 @@ export default {
   name: 'MetricsEditor',
   props: {
     metrics: {
+      type: Object,
+      default: () => ({}),
+    },
+    errors: {
       type: Object,
       default: () => ({}),
     },

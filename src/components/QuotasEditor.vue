@@ -4,10 +4,15 @@
       Quotas
     </div>
     <div class="card-body">
-      <div v-for="(value, key) in safeQuotas" :key="key" class="input-group mb-2">
-        <span class="input-group-text">{{ key }}</span>
-        <input type="text" class="form-control" :value="value" @input="updateQuota(key, $event.target.value)" placeholder="Quota Value">
-        <button class="btn btn-danger" @click="removeQuota(key)">Remove</button>
+      <div v-for="(value, key) in safeQuotas" :key="key" class="mb-2">
+        <div class="input-group">
+          <span class="input-group-text">{{ key }}</span>
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + key]}" :value="value" @input="updateQuota(key, $event.target.value)" placeholder="Quota Value">
+          <button class="btn btn-danger" @click="removeQuota(key)">Remove</button>
+          <div class="invalid-feedback" v-if="errors[path + '/' + key]">
+            {{ errors[path + '/' + key].join(', ') }}
+          </div>
+        </div>
       </div>
       <div class="input-group mt-3">
         <input type="text" class="form-control" placeholder="New quota key" v-model="newQuotaKey">
@@ -27,6 +32,14 @@ export default {
     quotas: {
       type: Object,
       default: () => ({}),
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:quotas'],

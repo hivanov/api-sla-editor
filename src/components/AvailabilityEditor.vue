@@ -19,6 +19,7 @@
           <input 
             type="number" 
             class="form-control" 
+            :class="{'is-invalid': errors[path]}"
             step="0.000000001" 
             min="0" 
             max="100" 
@@ -27,6 +28,9 @@
             placeholder="e.g. 99.9"
           >
           <span class="input-group-text">%</span>
+          <div class="invalid-feedback" v-if="errors[path]">
+            {{ errors[path].join(', ') }}
+          </div>
         </div>
         <div v-if="error" class="text-danger small mt-1">{{ error }}</div>
       </div>
@@ -90,6 +94,14 @@ export default {
     availability: {
       type: String,
       default: '100%',
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:availability'],

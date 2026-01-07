@@ -11,10 +11,15 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Metric Name</label>
-          <input type="text" class="form-control" placeholder="Metric Name" :value="guarantee.metric" @input="updateGuarantee(index, 'metric', $event.target.value)">
+          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + index + '/metric']}" placeholder="Metric Name" :value="guarantee.metric" @input="updateGuarantee(index, 'metric', $event.target.value)">
+          <div class="invalid-feedback" v-if="errors[path + '/' + index + '/metric']">
+            {{ errors[path + '/' + index + '/metric'].join(', ') }}
+          </div>
         </div>
         <DurationEditor 
           :model-value="guarantee.limit" 
+          :errors="errors"
+          :path="path + '/' + index + '/limit'"
           @update:model-value="updateGuarantee(index, 'limit', $event)"
           label="Limit"
         />
@@ -37,6 +42,14 @@ export default {
     guarantees: {
       type: Array,
       default: () => [],
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:guarantees'],

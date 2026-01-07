@@ -19,7 +19,8 @@
     "bootstrap": "^5.3.8",
     "bootstrap-vue-3": "^0.5.1",
     "js-yaml": "^4.1.1",
-    "vue": "^3.5.26"
+    "vue": "^3.5.26",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@playwright/experimental-ct-vue": "^1.57.0",

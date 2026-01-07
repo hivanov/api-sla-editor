@@ -48,4 +48,26 @@ describe('ContextEditor', () => {
     expect(wrapper.find('input#context-id').element.value).toBe('')
     expect(wrapper.find('input#context-type').element.value).toBe('')
   })
+
+  it('displays validation errors correctly', () => {
+    const wrapper = mount(ContextEditor, {
+      props: {
+        context: { id: '', type: '' },
+        errors: {
+          '/context/id': ['ID is required'],
+          '/context/type': ['Type must be one of plans, agreements']
+        }
+      },
+    })
+
+    const idInput = wrapper.find('input#context-id')
+    expect(idInput.classes()).toContain('is-invalid')
+    expect(wrapper.find('.invalid-feedback').text()).toContain('ID is required')
+
+    const typeInput = wrapper.find('input#context-type')
+    expect(typeInput.classes()).toContain('is-invalid')
+    // Find all invalid-feedbacks and check if one contains the type error
+    const feedbacks = wrapper.findAll('.invalid-feedback')
+    expect(feedbacks.some(f => f.text().includes('Type must be one of plans, agreements'))).toBe(true)
+  })
 })

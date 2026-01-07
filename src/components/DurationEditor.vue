@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, watch } from 'vue';
+import { reactive, watch, computed } from 'vue';
 
 const props = defineProps({
   modelValue: {
@@ -9,10 +9,35 @@ const props = defineProps({
   label: {
     type: String,
     default: 'Duration'
+  },
+  errors: {
+    type: Object,
+    default: () => ({})
+  },
+  path: {
+    type: String,
+    default: ''
   }
 });
 
 const emit = defineEmits(['update:modelValue']);
+
+const hasError = computed(() => {
+  if (!props.errors || !props.path) return false;
+  const p = props.path;
+  const variations = [p, '/' + p, p.startsWith('/') ? p.substring(1) : p];
+  return variations.some(v => props.errors[v] && props.errors[v].length > 0);
+});
+
+const getErrors = computed(() => {
+  if (!hasError.value) return [];
+  const p = props.path;
+  const variations = [p, '/' + p, p.startsWith('/') ? p.substring(1) : p];
+  for (const v of variations) {
+    if (props.errors[v] && props.errors[v].length > 0) return props.errors[v];
+  }
+  return [];
+});
 
 const parseDuration = (val) => {
   const parts = { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -91,10 +116,14 @@ const onManualInput = (value) => {
       <input 
         type="text" 
         class="form-control form-control-sm" 
+        :class="{'is-invalid': hasError}"
         :value="modelValue" 
         @input="onManualInput($event.target.value)" 
         placeholder="e.g. P1DT4H"
       >
+      <div class="invalid-feedback" v-if="hasError">
+        {{ getErrors.join(', ') }}
+      </div>
     </div>
     <div class="row g-2">
       <div class="col-3">
