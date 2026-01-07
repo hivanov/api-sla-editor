@@ -90,8 +90,8 @@ test.describe('Error Handling', () => {
     await page.waitForTimeout(500);
     await page.click('a:has-text("GUI")');
 
-    const typeInput = page.locator('.metrics-editor-component input[placeholder="Type"]');
-    await expect(typeInput).toHaveClass(/is-invalid/);
+    const typeSelect = page.locator('.metrics-editor-component select').first();
+    await expect(typeSelect).toHaveClass(/is-invalid/);
   });
 
   test('should show error in GUI for PlansEditor (Pricing Cost)', async ({ page }) => {

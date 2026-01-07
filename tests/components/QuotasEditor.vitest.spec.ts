@@ -21,10 +21,11 @@ describe('QuotasEditor', () => {
     const wrapper = mount(QuotasEditor, {
       props: {
         quotas: { 'existing-quota': '50' },
+        metrics: { 'new-quota': { type: 'integer' } }
       },
     })
 
-    await wrapper.find('input[placeholder="New quota key"]').setValue('new-quota')
+    await wrapper.find('select.form-select').setValue('new-quota')
     await wrapper.find('input[placeholder="New quota value"]').setValue('200')
     await wrapper.find('button.btn-primary').trigger('click')
 

@@ -12,14 +12,35 @@
         <div class="card-body">
           <div class="mb-3">
             <label class="form-label">Type</label>
-            <input type="text" class="form-control" :class="{'is-invalid': errors['/metrics/' + name + '/type']}" placeholder="Type" :value="metric.type" @input="updateMetric(name, 'type', $event.target.value)">
+            <select class="form-select" :class="{'is-invalid': errors['/metrics/' + name + '/type']}" :value="metric.type" @change="updateMetric(name, 'type', $event.target.value)">
+              <option value="">Select Type</option>
+              <option value="boolean">boolean</option>
+              <option value="integer">integer</option>
+              <option value="number">number</option>
+              <option value="string">string</option>
+            </select>
             <div class="invalid-feedback" v-if="errors['/metrics/' + name + '/type']">
               {{ errors['/metrics/' + name + '/type'].join(', ') }}
             </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Unit</label>
-            <input type="text" class="form-control" :class="{'is-invalid': errors['/metrics/' + name + '/unit']}" placeholder="Unit" :value="metric.unit" @input="updateMetric(name, 'unit', $event.target.value)">
+            <select class="form-select" :class="{'is-invalid': errors['/metrics/' + name + '/unit']}" :value="metric.unit" @change="updateMetric(name, 'unit', $event.target.value)">
+              <option value="">None / Custom</option>
+              <option value="requests">requests</option>
+              <option value="ms">ms</option>
+              <option value="s">s</option>
+              <option value="m">m</option>
+              <option value="h">h</option>
+              <option value="d">d</option>
+              <option value="percent">percent</option>
+              <option value="bytes">bytes</option>
+              <option value="KB">KB</option>
+              <option value="MB">MB</option>
+              <option value="GB">GB</option>
+              <option value="items">items</option>
+              <option value="calls">calls</option>
+            </select>
             <div class="invalid-feedback" v-if="errors['/metrics/' + name + '/unit']">
               {{ errors['/metrics/' + name + '/unit'].join(', ') }}
             </div>

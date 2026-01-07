@@ -19,8 +19,9 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
+        "required": ["type"],
         "properties": {
-          "type": { "type": "string" },
+          "type": { "type": "string", "enum": ["boolean", "integer", "number", "string"] },
           "unit": { "type": "string" },
           "description": { "type": "string" }
         }

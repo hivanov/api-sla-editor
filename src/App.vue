@@ -20,7 +20,7 @@
             <div v-show="activeTab === 'gui'" class="p-3">
               <ContextEditor :context="sla.context" :errors="validationErrorsMap" @update:context="Object.assign(sla.context, $event)" />
               <MetricsEditor :metrics="sla.metrics" :errors="validationErrorsMap" @update:metrics="(m) => { Object.keys(sla.metrics).forEach(k => delete sla.metrics[k]); Object.assign(sla.metrics, m); }" />
-              <PlansEditor :plans="sla.plans" :errors="validationErrorsMap" @update:plans="(p) => { Object.keys(sla.plans).forEach(k => delete sla.plans[k]); Object.assign(sla.plans, p); }" />
+              <PlansEditor :plans="sla.plans" :metrics="sla.metrics" :errors="validationErrorsMap" @update:plans="(p) => { Object.keys(sla.plans).forEach(k => delete sla.plans[k]); Object.assign(sla.plans, p); }" />
             </div>
             <div v-show="activeTab === 'source'" class="h-100">
               <div ref="aceEditor" class="ace-editor-container"></div>

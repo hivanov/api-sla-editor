@@ -28,7 +28,10 @@
         <div class="row">
           <div class="col-md-6 mb-2">
             <label class="form-label">Metric</label>
-            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/metric']}" placeholder="uptime" :value="tier.condition?.metric" @input="updateTierCondition(index, 'metric', $event.target.value)">
+            <select class="form-select" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/metric']}" :value="tier.condition?.metric" @change="updateTierCondition(index, 'metric', $event.target.value)">
+              <option value="" disabled>Select metric</option>
+              <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
+            </select>
             <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/condition/metric']">
               {{ errors[path + '/tiers/' + index + '/condition/metric'].join(', ') }}
             </div>
@@ -49,7 +52,7 @@
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Compensation</label>
-            <input type="number" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/compensation']}" placeholder="5" :value="tier.compensation" @input="updateTier(index, 'compensation', Math.max(0, Number($event.target.value)))" min="0">
+            <input type="number" class="form-control compensation-input" :class="{'is-invalid': errors[path + '/tiers/' + index + '/compensation']}" placeholder="5" :value="tier.compensation" @input="handleCompensationInput(index, $event)" min="0">
             <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/compensation']">
               {{ errors[path + '/tiers/' + index + '/compensation'].join(', ') }}
             </div>
@@ -72,6 +75,10 @@ export default {
   },
   props: {
     serviceCredits: {
+      type: Object,
+      default: () => ({}),
+    },
+    metrics: {
       type: Object,
       default: () => ({}),
     },
@@ -113,25 +120,36 @@ export default {
 
     const updateTier = (index, key, value) => {
       const newCredits = { ...safeServiceCredits.value };
-      newCredits.tiers[index] = { ...newCredits.tiers[index], [key]: value };
+      const newTiers = [...(newCredits.tiers || [])];
+      newTiers[index] = { ...newTiers[index], [key]: value };
+      newCredits.tiers = newTiers;
       updateServiceCredits(newCredits);
+    };
+
+    const handleCompensationInput = (index, event) => {
+      const val = Number(event.target.value);
+      updateTier(index, 'compensation', Math.max(0, val));
     };
 
     const updateTierCondition = (index, key, value) => {
       const newCredits = { ...safeServiceCredits.value };
-      const tier = { ...newCredits.tiers[index] };
+      const newTiers = [...(newCredits.tiers || [])];
+      const tier = { ...newTiers[index] };
       const condition = { ...tier.condition, [key]: value };
       if (value === '' || value === null || value === undefined) {
         delete condition[key];
       }
       tier.condition = condition;
-      newCredits.tiers[index] = tier;
+      newTiers[index] = tier;
+      newCredits.tiers = newTiers;
       updateServiceCredits(newCredits);
     };
 
     const removeTier = (index) => {
       const newCredits = { ...safeServiceCredits.value };
-      newCredits.tiers.splice(index, 1);
+      const newTiers = [...(newCredits.tiers || [])];
+      newTiers.splice(index, 1);
+      newCredits.tiers = newTiers;
       if (newCredits.tiers.length === 0) delete newCredits.tiers;
       updateServiceCredits(newCredits);
     };
@@ -141,6 +159,7 @@ export default {
       updateField,
       addTier,
       updateTier,
+      handleCompensationInput,
       updateTierCondition,
       removeTier,
     };
