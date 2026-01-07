@@ -8,10 +8,11 @@
         <label class="form-label">Currency</label>
         <input type="text" class="form-control" placeholder="Currency" :value="safeServiceCredits.currency" @input="updateField('currency', $event.target.value)">
       </div>
-      <div class="mb-3">
-        <label class="form-label">Claim Window (ISO 8601)</label>
-        <input type="text" class="form-control" placeholder="P1D" :value="safeServiceCredits.claimWindow" @input="updateField('claimWindow', $event.target.value)">
-      </div>
+      <DurationEditor 
+        :model-value="safeServiceCredits.claimWindow" 
+        @update:model-value="updateField('claimWindow', $event)"
+        label="Claim Window"
+      />
 
       <h6>Tiers</h6>
       <div v-for="(tier, index) in safeServiceCredits.tiers" :key="index" class="card mb-2 p-2">
@@ -45,9 +46,13 @@
 
 <script>
 import { computed } from 'vue';
+import DurationEditor from './DurationEditor.vue';
 
 export default {
   name: 'ServiceCreditsEditor',
+  components: {
+    DurationEditor
+  },
   props: {
     serviceCredits: {
       type: Object,

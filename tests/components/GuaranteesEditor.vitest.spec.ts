@@ -11,7 +11,7 @@ describe('GuaranteesEditor', () => {
     })
     expect(wrapper.text()).toContain('Guarantees')
     expect(wrapper.find('input[placeholder="Metric Name"]').element.value).toBe('uptime')
-    expect(wrapper.find('input[placeholder="Limit"]').element.value).toBe('99.9%')
+    expect(wrapper.find('input[placeholder="e.g. P1DT4H"]').element.value).toBe('99.9%')
   })
 
   it('adds a guarantee', async () => {

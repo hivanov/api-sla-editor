@@ -13,10 +13,11 @@
           <label class="form-label">Metric Name</label>
           <input type="text" class="form-control" placeholder="Metric Name" :value="guarantee.metric" @input="updateGuarantee(index, 'metric', $event.target.value)">
         </div>
-        <div class="mb-3">
-          <label class="form-label">Limit (ISO 8601 Duration)</label>
-          <input type="text" class="form-control" placeholder="Limit" :value="guarantee.limit" @input="updateGuarantee(index, 'limit', $event.target.value)">
-        </div>
+        <DurationEditor 
+          :model-value="guarantee.limit" 
+          @update:model-value="updateGuarantee(index, 'limit', $event)"
+          label="Limit"
+        />
       </div>
       <button class="btn btn-secondary btn-sm mt-2" @click="addGuarantee">Add Guarantee</button>
     </div>
@@ -25,9 +26,13 @@
 
 <script>
 import { computed } from 'vue';
+import DurationEditor from './DurationEditor.vue';
 
 export default {
   name: 'GuaranteesEditor',
+  components: {
+    DurationEditor
+  },
   props: {
     guarantees: {
       type: Array,

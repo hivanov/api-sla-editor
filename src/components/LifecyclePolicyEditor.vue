@@ -4,34 +4,41 @@
       Lifecycle Policy
     </div>
     <div class="card-body">
-      <div class="mb-3">
-        <label class="form-label">Minimum Term (ISO 8601)</label>
-        <input type="text" class="form-control" placeholder="P1Y" :value="safeLifecyclePolicy.minimumTerm" @input="updateField('minimumTerm', $event.target.value)">
-      </div>
+      <DurationEditor 
+        :model-value="safeLifecyclePolicy.minimumTerm" 
+        @update:model-value="updateField('minimumTerm', $event)"
+        label="Minimum Term"
+      />
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" :checked="safeLifecyclePolicy.autoRenewal" @change="updateField('autoRenewal', $event.target.checked)" id="autoRenewal">
         <label class="form-check-label" for="autoRenewal">
           Auto Renewal
         </label>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Notice Period (ISO 8601)</label>
-        <input type="text" class="form-control" placeholder="P30D" :value="safeLifecyclePolicy.noticePeriod" @input="updateField('noticePeriod', $event.target.value)">
-      </div>
+      <DurationEditor 
+        :model-value="safeLifecyclePolicy.noticePeriod" 
+        @update:model-value="updateField('noticePeriod', $event)"
+        label="Notice Period"
+      />
       <h6>Data Retention</h6>
-      <div class="mb-3">
-        <label class="form-label">After Termination (ISO 8601)</label>
-        <input type="text" class="form-control" placeholder="P90D" :value="safeLifecyclePolicy.dataRetention?.afterTermination" @input="updateDataRetention('afterTermination', $event.target.value)">
-      </div>
+      <DurationEditor 
+        :model-value="safeLifecyclePolicy.dataRetention?.afterTermination" 
+        @update:model-value="updateDataRetention('afterTermination', $event)"
+        label="After Termination"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import { computed } from 'vue';
+import DurationEditor from './DurationEditor.vue';
 
 export default {
   name: 'LifecyclePolicyEditor',
+  components: {
+    DurationEditor
+  },
   props: {
     lifecyclePolicy: {
       type: Object,

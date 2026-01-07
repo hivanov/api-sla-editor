@@ -100,7 +100,7 @@ test.describe('Main flow', () => {
     // Interact with PricingEditor
     await basicPlanCard.locator('.pricing-editor-component input[placeholder="Cost"]').fill('120');
     await basicPlanCard.locator('.pricing-editor-component input[placeholder="Currency"]').fill('EUR');
-    await basicPlanCard.locator('.pricing-editor-component input[placeholder="Period (ISO 8601 Duration)"]').fill('P30D');
+    await basicPlanCard.locator('.pricing-editor-component input[placeholder="e.g. P1DT4H"]').fill('P30D');
     await page.waitForLoadState('networkidle');
 
     // Interact with QuotasEditor
@@ -114,7 +114,7 @@ test.describe('Main flow', () => {
     await page.waitForLoadState('networkidle');
     
     await basicPlanCard.locator('input[placeholder="Metric Name"]').fill('response-time');
-    await basicPlanCard.locator('input[placeholder="Limit"]').fill('P0DT0H5M0S'); // 5 minutes
+    await basicPlanCard.locator('.guarantees-editor-component input[placeholder="e.g. P1DT4H"]').fill('P0DT0H5M0S'); // 5 minutes
     await page.waitForLoadState('networkidle');
 
     // Interact with SupportPolicyEditor - Contact Points
@@ -140,7 +140,7 @@ test.describe('Main flow', () => {
 
     // Interact with MaintenancePolicyEditor
     await basicPlanCard.locator('.maintenance-policy-editor-component input#countsAsDowntime').check();
-    await basicPlanCard.locator('.maintenance-policy-editor-component input[placeholder="P7D"]').fill('P14D');
+    await basicPlanCard.locator('.maintenance-policy-editor-component input[placeholder="e.g. P1DT4H"]').first().fill('P14D');
 
     // Interact with ExclusionsEditor
     await basicPlanCard.locator('.exclusions-editor-component button:has-text("Add Exclusion")').click();
@@ -148,7 +148,7 @@ test.describe('Main flow', () => {
 
     // Interact with LifecyclePolicyEditor
     await basicPlanCard.locator('.lifecycle-policy-editor-component input#autoRenewal').check();
-    await basicPlanCard.locator('.lifecycle-policy-editor-component input[placeholder="P1Y"]').fill('P60D');
+    await basicPlanCard.locator('.lifecycle-policy-editor-component input[placeholder="e.g. P1DT4H"]').first().fill('P60D');
 
     // 5. Verify validation success
     await page.waitForTimeout(500); // Give Vue time to react and re-validate

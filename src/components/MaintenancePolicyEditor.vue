@@ -14,12 +14,18 @@
       <h6>Minimum Notice</h6>
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Standard (ISO 8601)</label>
-          <input type="text" class="form-control" placeholder="P7D" :value="safeMaintenancePolicy.minimumNotice?.standard" @input="updateNotice('standard', $event.target.value)">
+          <DurationEditor 
+            :model-value="safeMaintenancePolicy.minimumNotice?.standard" 
+            @update:model-value="updateNotice('standard', $event)"
+            label="Standard Notice"
+          />
         </div>
         <div class="col-md-6 mb-3">
-          <label class="form-label">Emergency (ISO 8601)</label>
-          <input type="text" class="form-control" placeholder="PT1H" :value="safeMaintenancePolicy.minimumNotice?.emergency" @input="updateNotice('emergency', $event.target.value)">
+          <DurationEditor 
+            :model-value="safeMaintenancePolicy.minimumNotice?.emergency" 
+            @update:model-value="updateNotice('emergency', $event)"
+            label="Emergency Notice"
+          />
         </div>
       </div>
 
@@ -37,10 +43,11 @@
           <label class="form-label">RRULE (RFC 5545)</label>
           <input type="text" class="form-control" placeholder="FREQ=WEEKLY;BYDAY=SU" :value="window.rrule" @input="updateWindow(index, 'rrule', $event.target.value)">
         </div>
-        <div class="mb-3">
-          <label class="form-label">Duration (ISO 8601)</label>
-          <input type="text" class="form-control" placeholder="PT4H" :value="window.duration" @input="updateWindow(index, 'duration', $event.target.value)">
-        </div>
+        <DurationEditor 
+          :model-value="window.duration" 
+          @update:model-value="updateWindow(index, 'duration', $event)"
+          label="Duration"
+        />
       </div>
       <button class="btn btn-secondary btn-sm mt-2 mb-4" @click="addWindow">Add Window</button>
 
@@ -66,9 +73,13 @@
 
 <script>
 import { computed } from 'vue';
+import DurationEditor from './DurationEditor.vue';
 
 export default {
   name: 'MaintenancePolicyEditor',
+  components: {
+    DurationEditor
+  },
   props: {
     maintenancePolicy: {
       type: Object,

@@ -12,19 +12,24 @@
         <label class="form-label">Currency</label>
         <input type="text" class="form-control" placeholder="Currency" :value="safePricing.currency" @input="update('currency', $event.target.value)">
       </div>
-      <div class="mb-3">
-        <label class="form-label">Period</label>
-        <input type="text" class="form-control" placeholder="Period (ISO 8601 Duration)" :value="safePricing.period" @input="update('period', $event.target.value)">
-      </div>
+      <DurationEditor 
+        :model-value="safePricing.period" 
+        @update:model-value="update('period', $event)"
+        label="Period"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import { computed } from 'vue';
+import DurationEditor from './DurationEditor.vue';
 
 export default {
   name: 'PricingEditor',
+  components: {
+    DurationEditor
+  },
   props: {
     pricing: {
       type: Object,

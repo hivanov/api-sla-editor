@@ -129,10 +129,11 @@
             <label class="form-label">Metric</label>
             <input type="text" class="form-control" placeholder="e.g., Uptime" :value="guarantee.metric" @input="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
           </div>
-          <div class="mb-3">
-            <label class="form-label">Duration (ISO 8601)</label>
-            <input type="text" class="form-control" placeholder="e.g., PT1H" :value="guarantee.duration" @input="updateSloGuarantee(index, gIndex, 'duration', $event.target.value)">
-          </div>
+          <DurationEditor 
+            :model-value="guarantee.duration" 
+            @update:model-value="updateSloGuarantee(index, gIndex, 'duration', $event)"
+            label="Duration"
+          />
         </div>
         <button class="btn btn-secondary btn-sm mt-2" @click="addSloGuarantee(index)">Add SLO Guarantee</button>
       </div>
@@ -143,9 +144,13 @@
 
 <script>
 import { computed } from 'vue';
+import DurationEditor from './DurationEditor.vue';
 
 export default {
   name: 'SupportPolicyEditor',
+  components: {
+    DurationEditor
+  },
   props: {
     supportPolicy: {
       type: Object,

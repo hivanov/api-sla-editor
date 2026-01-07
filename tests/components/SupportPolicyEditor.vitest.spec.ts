@@ -184,7 +184,7 @@ describe('SupportPolicyEditor', () => {
     await wrapper.find('input[placeholder="e.g., Uptime"]').setValue('Performance')
     expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees[0].metric).toBe('Performance')
 
-    await wrapper.find('input[placeholder="e.g., PT1H"]').setValue('PT2H')
+    await wrapper.find('input[placeholder="e.g. P1DT4H"]').setValue('PT2H')
     expect(wrapper.emitted('update:supportPolicy')[1][0].serviceLevelObjectives[0].guarantees[0].duration).toBe('PT2H')
   })
 
