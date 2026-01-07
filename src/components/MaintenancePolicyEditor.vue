@@ -42,7 +42,24 @@
           <input type="text" class="form-control" placeholder="PT4H" :value="window.duration" @input="updateWindow(index, 'duration', $event.target.value)">
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addWindow">Add Window</button>
+      <button class="btn btn-secondary btn-sm mt-2 mb-4" @click="addWindow">Add Window</button>
+
+      <h6>Maintenance Sources (iCal)</h6>
+      <div v-for="(source, index) in safeMaintenancePolicy.sources" :key="index" class="card mb-2 p-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span>Source #{{ index + 1 }}</span>
+          <button class="btn btn-danger btn-sm" @click="removeSource(index)">Remove</button>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Calendar URL</label>
+          <input type="text" class="form-control" placeholder="https://example.com/maintenance.ics" :value="source.calendarUrl" @input="updateSource(index, 'calendarUrl', $event.target.value)">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <input type="text" class="form-control" placeholder="Description of the source" :value="source.description" @input="updateSource(index, 'description', $event.target.value)">
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm mt-2" @click="addSource">Add Source</button>
     </div>
   </div>
 </template>
@@ -113,6 +130,28 @@ export default {
       updateMaintenancePolicy(newPolicy);
     };
 
+    const addSource = () => {
+      const newPolicy = { ...safeMaintenancePolicy.value };
+      if (!newPolicy.sources) {
+        newPolicy.sources = [];
+      }
+      newPolicy.sources.push({ type: 'ical', calendarUrl: '', description: '' });
+      updateMaintenancePolicy(newPolicy);
+    };
+
+    const updateSource = (index, key, value) => {
+      const newPolicy = { ...safeMaintenancePolicy.value };
+      newPolicy.sources[index] = { ...newPolicy.sources[index], [key]: value };
+      updateMaintenancePolicy(newPolicy);
+    };
+
+    const removeSource = (index) => {
+      const newPolicy = { ...safeMaintenancePolicy.value };
+      newPolicy.sources.splice(index, 1);
+      if (newPolicy.sources.length === 0) delete newPolicy.sources;
+      updateMaintenancePolicy(newPolicy);
+    };
+
     return {
       safeMaintenancePolicy,
       updateField,
@@ -120,6 +159,9 @@ export default {
       addWindow,
       updateWindow,
       removeWindow,
+      addSource,
+      updateSource,
+      removeSource,
     };
   },
 };
