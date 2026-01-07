@@ -30,6 +30,7 @@ describe('PlansEditor', () => {
             'x-lifecycle-policy': {},
           },
         },
+        metrics: { 'max-users': { type: 'integer' } }
       },
     })
 

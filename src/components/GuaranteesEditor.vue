@@ -11,7 +11,10 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Metric Name</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + index + '/metric']}" placeholder="Metric Name" :value="guarantee.metric" @input="updateGuarantee(index, 'metric', $event.target.value)">
+          <select class="form-select" :class="{'is-invalid': errors[path + '/' + index + '/metric']}" :value="guarantee.metric" @change="updateGuarantee(index, 'metric', $event.target.value)">
+            <option value="" disabled>Select metric</option>
+            <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
+          </select>
           <div class="invalid-feedback" v-if="errors[path + '/' + index + '/metric']">
             {{ errors[path + '/' + index + '/metric'].join(', ') }}
           </div>
@@ -42,6 +45,10 @@ export default {
     guarantees: {
       type: Array,
       default: () => [],
+    },
+    metrics: {
+      type: Object,
+      default: () => ({}),
     },
     errors: {
       type: Object,

@@ -7,16 +7,17 @@ describe('GuaranteesEditor', () => {
     const wrapper = mount(GuaranteesEditor, {
       props: {
         guarantees: [{ metric: 'uptime', limit: '99.9%' }],
+        metrics: { uptime: { type: 'number' } }
       },
     })
     expect(wrapper.text()).toContain('Guarantees')
-    expect(wrapper.find('input[placeholder="Metric Name"]').element.value).toBe('uptime')
+    expect(wrapper.find('select.form-select').element.value).toBe('uptime')
     expect(wrapper.find('input[placeholder="e.g. P1DT4H"]').element.value).toBe('99.9%')
   })
 
   it('adds a guarantee', async () => {
     const wrapper = mount(GuaranteesEditor, {
-      props: { guarantees: [] },
+      props: { guarantees: [], metrics: { uptime: { type: 'number' } } },
     })
     await wrapper.find('button.btn-secondary').trigger('click')
     expect(wrapper.emitted('update:guarantees')[0][0]).toEqual([{ metric: '', limit: '' }])
@@ -24,15 +25,21 @@ describe('GuaranteesEditor', () => {
 
   it('updates a guarantee', async () => {
     const wrapper = mount(GuaranteesEditor, {
-      props: { guarantees: [{ metric: '', limit: '' }] },
+      props: { 
+        guarantees: [{ metric: '', limit: '' }],
+        metrics: { latency: { type: 'integer' } }
+      },
     })
-    await wrapper.find('input[placeholder="Metric Name"]').setValue('latency')
+    await wrapper.find('select.form-select').setValue('latency')
     expect(wrapper.emitted('update:guarantees')[0][0]).toEqual([{ metric: 'latency', limit: '' }])
   })
 
   it('removes a guarantee', async () => {
     const wrapper = mount(GuaranteesEditor, {
-      props: { guarantees: [{ metric: 'uptime', limit: '99.9' }] },
+      props: { 
+        guarantees: [{ metric: 'uptime', limit: '99.9' }],
+        metrics: { uptime: { type: 'number' } }
+      },
     })
     await wrapper.find('button.btn-danger').trigger('click')
     expect(wrapper.emitted('update:guarantees')[0][0]).toEqual([])
@@ -40,7 +47,7 @@ describe('GuaranteesEditor', () => {
 
   it('handles null guarantees prop', () => {
     const wrapper = mount(GuaranteesEditor, {
-      props: { guarantees: null },
+      props: { guarantees: null, metrics: {} },
     })
     expect(wrapper.findAll('.card.mb-2').length).toBe(0)
   })
@@ -49,6 +56,7 @@ describe('GuaranteesEditor', () => {
     const wrapper = mount(GuaranteesEditor, {
       props: {
         guarantees: [{ metric: '', limit: 'invalid' }],
+        metrics: { uptime: { type: 'number' } },
         path: '/plans/gold/guarantees',
         errors: {
           '/plans/gold/guarantees/0/metric': ['Metric is required'],
@@ -57,8 +65,8 @@ describe('GuaranteesEditor', () => {
       },
     })
 
-    const metricInput = wrapper.find('input[placeholder="Metric Name"]')
-    expect(metricInput.classes()).toContain('is-invalid')
+    const metricSelect = wrapper.find('select.form-select')
+    expect(metricSelect.classes()).toContain('is-invalid')
     
     const durationInput = wrapper.find('input[placeholder="e.g. P1DT4H"]')
     expect(durationInput.classes()).toContain('is-invalid')

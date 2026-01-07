@@ -15,7 +15,10 @@
         </div>
       </div>
       <div class="input-group mt-3">
-        <input type="text" class="form-control" placeholder="New quota key" v-model="newQuotaKey">
+        <select class="form-select" v-model="newQuotaKey">
+          <option value="" disabled>Select metric</option>
+          <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
+        </select>
         <input type="text" class="form-control" placeholder="New quota value" v-model="newQuotaValue">
         <button class="btn btn-primary" @click="addQuota">Add Quota</button>
       </div>
@@ -30,6 +33,10 @@ export default {
   name: 'QuotasEditor',
   props: {
     quotas: {
+      type: Object,
+      default: () => ({}),
+    },
+    metrics: {
       type: Object,
       default: () => ({}),
     },

@@ -8,8 +8,8 @@ describe('MetricsEditor', () => {
       props: {
         metrics: {
           uptime: {
-            type: 'availability',
-            unit: 'percentage',
+            type: 'number',
+            unit: 'percent',
             description: 'Uptime',
           },
         },
@@ -18,8 +18,10 @@ describe('MetricsEditor', () => {
 
     expect(wrapper.text()).toContain('Metrics')
     expect(wrapper.text()).toContain('uptime')
-    expect(wrapper.find('input[value="availability"]').exists()).toBe(true)
-    expect(wrapper.find('input[value="percentage"]').exists()).toBe(true)
+    expect(wrapper.find('select.form-select').element.value).toBe('number')
+    // Find all selects and check the second one for unit
+    const selects = wrapper.findAll('select.form-select')
+    expect(selects[1].element.value).toBe('percent')
     expect(wrapper.find('textarea').element.value).toBe('Uptime')
   })
 
@@ -71,8 +73,8 @@ describe('MetricsEditor', () => {
       },
     })
 
-    const typeInput = wrapper.find('input[placeholder="Type"]')
-    expect(typeInput.classes()).toContain('is-invalid')
+    const typeSelect = wrapper.find('select.form-select')
+    expect(typeSelect.classes()).toContain('is-invalid')
     expect(wrapper.find('.invalid-feedback').text()).toContain('Type is required')
   })
 })

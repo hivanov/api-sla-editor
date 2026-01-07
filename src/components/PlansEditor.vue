@@ -32,16 +32,16 @@
           <PricingEditor :pricing="plan.pricing" :errors="errors" :path="'/plans/' + name + '/pricing'" @update:pricing="updatePlanSubObject(name, 'pricing', $event)" />
 
           <!-- Quotas Editor -->
-          <QuotasEditor :quotas="plan.quotas" :errors="errors" :path="'/plans/' + name + '/quotas'" @update:quotas="updatePlanSubObject(name, 'quotas', $event)" />
+          <QuotasEditor :quotas="plan.quotas" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/quotas'" @update:quotas="updatePlanSubObject(name, 'quotas', $event)" />
 
           <!-- Guarantees Editor -->
-          <GuaranteesEditor :guarantees="plan.guarantees" :errors="errors" :path="'/plans/' + name + '/guarantees'" @update:guarantees="updatePlanSubObject(name, 'guarantees', $event)" />
+          <GuaranteesEditor :guarantees="plan.guarantees" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/guarantees'" @update:guarantees="updatePlanSubObject(name, 'guarantees', $event)" />
 
           <!-- Support Policy Editor -->
           <SupportPolicyEditor :support-policy="plan['x-support-policy']" :errors="errors" :path="'/plans/' + name + '/x-support-policy'" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
 
           <!-- Service Credits Editor -->
-          <ServiceCreditsEditor :service-credits="plan['x-service-credits']" :errors="errors" :path="'/plans/' + name + '/x-service-credits'" @update:service-credits="updatePlanSubObject(name, 'x-service-credits', $event)" />
+          <ServiceCreditsEditor :service-credits="plan['x-service-credits']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-service-credits'" @update:service-credits="updatePlanSubObject(name, 'x-service-credits', $event)" />
 
           <!-- Maintenance Policy Editor -->
           <MaintenancePolicyEditor :maintenance-policy="plan['x-maintenance-policy']" :errors="errors" :path="'/plans/' + name + '/x-maintenance-policy'" @update:maintenance-policy="updatePlanSubObject(name, 'x-maintenance-policy', $event)" />
@@ -92,6 +92,10 @@ export default {
     plans: {
       type: Object,
       required: true,
+    },
+    metrics: {
+      type: Object,
+      default: () => ({}),
     },
     errors: {
       type: Object,

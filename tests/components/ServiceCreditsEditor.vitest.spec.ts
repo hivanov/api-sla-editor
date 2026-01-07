@@ -25,9 +25,10 @@ describe('ServiceCreditsEditor', () => {
     const wrapper = mount(ServiceCreditsEditor, {
       props: {
         serviceCredits: { tiers: [{ condition: { metric: '' }, compensation: 0 }] },
+        metrics: { availability: { type: 'number' } }
       },
     })
-    await wrapper.find('input[placeholder="uptime"]').setValue('availability')
+    await wrapper.find('select.form-select').setValue('availability')
     expect(wrapper.emitted('update:serviceCredits')[0][0].tiers[0].condition.metric).toBe('availability')
   })
 
@@ -35,15 +36,18 @@ describe('ServiceCreditsEditor', () => {
     const wrapper = mount(ServiceCreditsEditor, {
       props: {
         serviceCredits: { tiers: [{ condition: { metric: 'uptime' }, compensation: 10 }] },
+        metrics: { uptime: { type: 'number' } }
       },
     })
-    await wrapper.find('input[placeholder="5"]').setValue('-10')
+    const input = wrapper.find('input.compensation-input')
+    await input.setValue('-10')
+    expect(wrapper.emitted('update:serviceCredits')).toBeTruthy()
     expect(wrapper.emitted('update:serviceCredits')[0][0].tiers[0].compensation).toBe(0)
   })
 
   it('handles null serviceCredits prop', () => {
     const wrapper = mount(ServiceCreditsEditor, {
-      props: { serviceCredits: null },
+      props: { serviceCredits: null, metrics: {} },
     })
     expect(wrapper.find('input[placeholder="Currency"]').exists()).toBe(true)
   })

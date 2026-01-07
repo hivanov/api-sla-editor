@@ -75,11 +75,22 @@ test.describe('Main flow', () => {
     await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'response-time');
     await page.click('.metrics-editor-component button:has-text("Add Metric")');
     await page.waitForLoadState('networkidle');
+
+    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'max-users');
+    await page.click('.metrics-editor-component button:has-text("Add Metric")');
+    await page.waitForLoadState('networkidle');
     
-    // Locate and fill the properties of the newly added metric
-    await page.locator('.metrics-editor-component .card:has-text("response-time") input[placeholder="Type"]').fill('gauge');
-    await page.locator('.metrics-editor-component .card:has-text("response-time") input[placeholder="Unit"]').fill('ms');
-    await page.locator('.metrics-editor-component .card:has-text("response-time") textarea[placeholder="Description"]').fill('Average response time');
+    // Locate and fill the properties of the newly added metrics
+    const rtCard = page.locator('.metrics-editor-component .card:has-text("response-time")');
+    await rtCard.locator('select').first().selectOption('number');
+    await rtCard.locator('select').last().selectOption('ms');
+    await rtCard.locator('textarea[placeholder="Description"]').fill('Average response time');
+
+    const muCard = page.locator('.metrics-editor-component .card:has-text("max-users")');
+    await muCard.locator('select').first().selectOption('integer');
+    await muCard.locator('select').last().selectOption('items');
+    await muCard.locator('textarea[placeholder="Description"]').fill('Maximum concurrent users');
+    
     await page.waitForLoadState('networkidle');
 
     // 4. Fill in PlansEditor data
@@ -104,7 +115,7 @@ test.describe('Main flow', () => {
     await page.waitForLoadState('networkidle');
 
     // Interact with QuotasEditor
-    await basicPlanCard.locator('.quotas-editor-component input[placeholder="New quota key"]').fill('max-users');
+    await basicPlanCard.locator('.quotas-editor-component select').selectOption('max-users');
     await basicPlanCard.locator('.quotas-editor-component input[placeholder="New quota value"]').fill('100');
     await basicPlanCard.locator('.quotas-editor-component button:has-text("Add Quota")').click();
     await page.waitForLoadState('networkidle');
@@ -113,7 +124,7 @@ test.describe('Main flow', () => {
     await basicPlanCard.locator('button:has-text("Add Guarantee")').click();
     await page.waitForLoadState('networkidle');
     
-    await basicPlanCard.locator('input[placeholder="Metric Name"]').fill('response-time');
+    await basicPlanCard.locator('.guarantees-editor-component select').selectOption('response-time');
     await basicPlanCard.locator('.guarantees-editor-component input[placeholder="e.g. P1DT4H"]').fill('P0DT0H5M0S'); // 5 minutes
     await page.waitForLoadState('networkidle');
 
@@ -135,8 +146,10 @@ test.describe('Main flow', () => {
     // Interact with ServiceCreditsEditor
     await basicPlanCard.locator('.service-credits-editor-component input[placeholder="Currency"]').fill('EUR');
     await basicPlanCard.locator('.service-credits-editor-component button:has-text("Add Tier")').click();
+    await basicPlanCard.locator('.service-credits-editor-component select').selectOption('response-time');
+    await basicPlanCard.locator('.service-credits-editor-component input[placeholder="<"]').fill('>');
     await basicPlanCard.locator('.service-credits-editor-component input[placeholder="99.9"]').fill('99.5');
-    await basicPlanCard.locator('.service-credits-editor-component input[placeholder="5"]').fill('10');
+    await basicPlanCard.locator('.service-credits-editor-component input.compensation-input').fill('10');
 
     // Interact with MaintenancePolicyEditor
     await basicPlanCard.locator('.maintenance-policy-editor-component input#countsAsDowntime').check();
