@@ -1,0 +1,14 @@
+sla: 1.0.0
+context:
+  id: "metrics-100-concurrent-connections"
+  type: "plans"
+metrics:
+  concurrent_connections:
+    type: "capacity"
+    unit: "integer"
+    description: "Number of concurrent connections for all APIs."
+plans:
+  enterprise:
+    quotas:
+      concurrent_connections:
+        max: 100

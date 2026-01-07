@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/sla4oai-extended.json",
+  "title": "Extended SLA4OAI Schema",
+  "description": "Validation for SLA4OAI files with strict extensions for Support, Legal, Holidays, and Maintenance.",
+  "type": "object",
+  "required": ["sla", "plans"],
+  "properties": {
+    "sla": { "type": "string", "const": "1.0.0" },
+    "context": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["plans", "agreements"] }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "unit": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "plans": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/plan" }
+    }
+  },
+  "definitions": {
+    "iso8601Duration": {
+      "type": "string",
+      "pattern": "^P(?!$)(T(?=\\d)(\\d+H)?(\\d+M)?(\\d+S)?|(\\d+D)?(T(?=\\d)(\\d+H)?(\\d+M)?(\\d+S)?)?)$",
+      "description": "Duration in ISO 8601 format (e.g., P1D, PT1H). Standard: ISO 8601."
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "availability": { "type": "string" },
+        "pricing": {
+          "type": "object",
+          "properties": {
+            "cost": { "type": "number" },
+            "currency": { "type": "string" },
+            "period": { "type": "string" }
+          }
+        },
+        "quotas": { "type": "object" },
+        "guarantees": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["metric", "limit"],
+            "properties": {
+              "metric": { "type": "string" },
+              "limit": { "type": "string" }
+            }
+          }
+        },
+        "x-support-policy": { "$ref": "#/definitions/supportPolicy" },
+        "x-service-credits": { "$ref": "#/definitions/serviceCredits" },
+        "x-maintenance-policy": { "$ref": "#/definitions/maintenancePolicy" },
+        "x-sla-exclusions": { "$ref": "#/definitions/exclusions" },
+        "x-lifecycle-policy": { "$ref": "#/definitions/lifecyclePolicy" }
+      }
+    },
+    "supportPolicy": {
+      "type": "object",
+      "description": "Structure based on Schema.org ContactPoint and OpeningHoursSpecification.",
+      "properties": {
+        "contactPoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "contactType": { "type": "string" },
+              "availableLanguage": { "type": "array", "items": { "type": "string" } },
+              "channels": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["type", "url"],
+                  "properties": {
+                    "type": { "type": "string", "enum": ["web", "email", "phone", "chat"] },
+                    "url": { 
+                      "type": "string",
+                      "description": "Mandatory URI. Must start with http://, https://, mailto://, or tel://",
+                      "pattern": "^(https?|mailto|tel):\\/\\/.+"
+                    },
+                    "description": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "hoursAvailable": {
+          "type": "array",
+          "description": "Attributed to: Schema.org/OpeningHoursSpecification",
+          "items": {
+            "type": "object",
+            "required": ["opens", "closes"],
+            "properties": {
+              "dayOfWeek": { "type": "array", "items": { "type": "string" } },
+              "opens": { "type": "string", "pattern": "^\\d{2}:\\d{2}$" },
+              "closes": { "type": "string", "pattern": "^\\d{2}:\\d{2}$" },
+              "validFrom": { "type": "string", "format": "date" },
+              "validThrough": { "type": "string", "format": "date" },
+              "timezone": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "holidaySchedule": {
+          "type": "object",
+          "description": "Defines support unavailability via ISO 3166 regions, iCal feeds, or manual dates.",
+          "properties": {
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string", "enum": ["region", "ical", "manual"] },
+                  "regionCode": { "type": "string", "pattern": "^[A-Z]{2}(-[A-Z0-9]{1,3})?$" },
+                  "calendarUrl": { "type": "string", "format": "uri" },
+                  "dates": { "type": "array", "items": { "type": "string", "format": "date" } },
+                  "description": { "type": "string" }
+                },
+                "allOf": [
+                  { "if": { "properties": { "type": { "const": "region" } } }, "then": { "required": ["regionCode"] } },
+                  { "if": { "properties": { "type": { "const": "ical" } } }, "then": { "required": ["calendarUrl"] } },
+                  { "if": { "properties": { "type": { "const": "manual" } } }, "then": { "required": ["dates"] } }
+                ]
+              }
+            }
+          }
+        },
+        "serviceLevelObjectives": {
+          "type": "array",
+          "description": "Attributed to: ITIL Service Design.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "priority": { "type": "string" },
+              "name": { "type": "string" },
+              "guarantees": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "metric": { "type": "string" },
+                    "duration": { "$ref": "#/definitions/iso8601Duration" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "maintenancePolicy": {
+      "type": "object",
+      "description": "Structure based on iCalendar (RFC 5545).",
+      "properties": {
+        "countsAsDowntime": { "type": "boolean" },
+        "minimumNotice": {
+          "type": "object",
+          "properties": {
+            "standard": { "$ref": "#/definitions/iso8601Duration" },
+            "emergency": { "$ref": "#/definitions/iso8601Duration" }
+          }
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "rrule": { "type": "string" },
+              "duration": { "$ref": "#/definitions/iso8601Duration" },
+              "timezone": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "serviceCredits": {
+      "type": "object",
+      "description": "Attributed to: WS-Agreement.",
+      "properties": {
+        "currency": { "type": "string" },
+        "claimWindow": { "$ref": "#/definitions/iso8601Duration" },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": {
+                "type": "object",
+                "properties": {
+                  "metric": { "type": "string" },
+                  "operator": { "type": "string" },
+                  "value": { "type": "string" },
+                  "floor": { "type": "string" }
+                }
+              },
+              "compensation": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "exclusions": { "type": "array", "items": { "type": "string" } },
+    "lifecyclePolicy": {
+      "type": "object",
+      "description": "Attributed to: TMF623 SLA Management.",
+      "properties": {
+        "minimumTerm": { "$ref": "#/definitions/iso8601Duration" },
+        "autoRenewal": { "type": "boolean" },
+        "noticePeriod": { "$ref": "#/definitions/iso8601Duration" },
+        "dataRetention": {
+          "type": "object",
+          "properties": { "afterTermination": { "$ref": "#/definitions/iso8601Duration" } }
+        }
+      }
+    }
+  }
+}

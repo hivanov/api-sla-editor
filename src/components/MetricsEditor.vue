@@ -1,0 +1,85 @@
+<template>
+  <div class="card mt-3">
+    <div class="card-header">
+      Metrics
+    </div>
+    <div class="card-body">
+      <div v-for="(metric, name) in metrics" :key="name" class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5>{{ name }}</h5>
+          <button class="btn btn-danger btn-sm" @click="removeMetric(name)">Remove</button>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <input type="text" class="form-control" :value="metric.type" @input="updateMetric(name, 'type', $event.target.value)">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Unit</label>
+            <input type="text" class="form-control" :value="metric.unit" @input="updateMetric(name, 'unit', $event.target.value)">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" :value="metric.description" @input="updateMetric(name, 'description', $event.target.value)"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="New metric name" v-model="newMetricName">
+          <button class="btn btn-primary" @click="addMetric">Add Metric</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref } from 'vue';
+
+export default {
+  name: 'MetricsEditor',
+  props: {
+    metrics: {
+      type: Object,
+      required: true,
+    },
+  },
+  emits: ['update:metrics'],
+  setup(props, { emit }) {
+    const newMetricName = ref('');
+
+    const updateMetric = (name, key, value) => {
+      const newMetrics = { ...props.metrics };
+      newMetrics[name] = { ...newMetrics[name], [key]: value };
+      emit('update:metrics', newMetrics);
+    };
+
+    const addMetric = () => {
+      if (newMetricName.value && !props.metrics[newMetricName.value]) {
+        const newMetrics = { ...props.metrics };
+        newMetrics[newMetricName.value] = {
+          type: '',
+          unit: '',
+          description: '',
+        };
+        emit('update:metrics', newMetrics);
+        newMetricName.value = '';
+      }
+    };
+
+    const removeMetric = (name) => {
+      const newMetrics = { ...props.metrics };
+      delete newMetrics[name];
+      emit('update:metrics', newMetrics);
+    };
+
+    return {
+      newMetricName,
+      updateMetric,
+      addMetric,
+      removeMetric,
+    };
+  },
+};
+</script>

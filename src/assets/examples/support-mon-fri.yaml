@@ -1,0 +1,12 @@
+sla: 1.0.0
+context:
+  id: "support-mon-fri"
+  type: "plans"
+plans:
+  enterprise:
+    x-support-policy:
+      hoursAvailable:
+        - dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          opens: "09:00"
+          closes: "17:00"
+          timezone: "Europe/Berlin"

@@ -1,0 +1,7 @@
+sla: 1.0.0
+context:
+  id: "availability-1-week-downtime"
+  type: "plans"
+plans:
+  enterprise:
+    availability: "98.08%"
