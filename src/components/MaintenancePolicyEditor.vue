@@ -40,8 +40,11 @@
           <input type="text" class="form-control" placeholder="Routine" :value="window.type" @input="updateWindow(index, 'type', $event.target.value)">
         </div>
         <div class="mb-3">
-          <label class="form-label">RRULE (RFC 5545)</label>
-          <input type="text" class="form-control" placeholder="FREQ=WEEKLY;BYDAY=SU" :value="window.rrule" @input="updateWindow(index, 'rrule', $event.target.value)">
+          <RRuleEditor 
+            :model-value="window.rrule" 
+            @update:model-value="updateWindow(index, 'rrule', $event)"
+            label="RRULE (RFC 5545)"
+          />
         </div>
         <DurationEditor 
           :model-value="window.duration" 
@@ -74,11 +77,13 @@
 <script>
 import { computed } from 'vue';
 import DurationEditor from './DurationEditor.vue';
+import RRuleEditor from './RRuleEditor.vue';
 
 export default {
   name: 'MaintenancePolicyEditor',
   components: {
-    DurationEditor
+    DurationEditor,
+    RRuleEditor
   },
   props: {
     maintenancePolicy: {
