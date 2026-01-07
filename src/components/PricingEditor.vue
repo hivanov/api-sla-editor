@@ -6,7 +6,7 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Cost</label>
-        <input type="number" class="form-control" placeholder="Cost" :value="safePricing.cost" @input="update('cost', $event.target.value)">
+        <input type="number" class="form-control" placeholder="Cost" :value="safePricing.cost" @input="update('cost', $event.target.value)" min="0">
       </div>
       <div class="mb-3">
         <label class="form-label">Currency</label>
@@ -42,7 +42,7 @@ export default {
 
     const update = (key, value) => {
       // Convert cost to number as per schema
-      let newValue = key === 'cost' ? Number(value) : value;
+      let newValue = key === 'cost' ? Math.max(0, Number(value)) : value;
       const newPricing = { ...safePricing.value, [key]: newValue };
       
       if (value === '' || value === null || value === undefined) {

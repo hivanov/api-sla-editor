@@ -35,7 +35,7 @@
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Compensation</label>
-            <input type="number" class="form-control" placeholder="5" :value="tier.compensation" @input="updateTier(index, 'compensation', Number($event.target.value))">
+            <input type="number" class="form-control" placeholder="5" :value="tier.compensation" @input="updateTier(index, 'compensation', Math.max(0, Number($event.target.value)))" min="0">
           </div>
         </div>
       </div>

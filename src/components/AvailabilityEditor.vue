@@ -20,7 +20,7 @@
             type="number" 
             class="form-control" 
             step="0.000000001" 
-            min="0.000000001" 
+            min="0" 
             max="100" 
             :value="percentageValue" 
             @input="onPercentageInput($event.target.value)"
@@ -48,23 +48,23 @@
       <div class="row g-2">
         <div class="col">
           <label class="form-label small">Days</label>
-          <input type="number" class="form-control form-control-sm" v-model.number="downtime.days" @input="onDowntimeInput">
+          <input type="number" class="form-control form-control-sm" v-model.number="downtime.days" @input="onDowntimeInput" min="0">
         </div>
         <div class="col">
           <label class="form-label small">Hours</label>
-          <input type="number" class="form-control form-control-sm" v-model.number="downtime.hours" @input="onDowntimeInput">
+          <input type="number" class="form-control form-control-sm" v-model.number="downtime.hours" @input="onDowntimeInput" min="0">
         </div>
         <div class="col">
           <label class="form-label small">Mins</label>
-          <input type="number" class="form-control form-control-sm" v-model.number="downtime.mins" @input="onDowntimeInput">
+          <input type="number" class="form-control form-control-sm" v-model.number="downtime.mins" @input="onDowntimeInput" min="0">
         </div>
         <div class="col">
           <label class="form-label small">Secs</label>
-          <input type="number" class="form-control form-control-sm" v-model.number="downtime.secs" @input="onDowntimeInput">
+          <input type="number" class="form-control form-control-sm" v-model.number="downtime.secs" @input="onDowntimeInput" min="0">
         </div>
         <div class="col">
           <label class="form-label small">Ms</label>
-          <input type="number" class="form-control form-control-sm" v-model.number="downtime.ms" @input="onDowntimeInput">
+          <input type="number" class="form-control form-control-sm" v-model.number="downtime.ms" @input="onDowntimeInput" min="0">
         </div>
       </div>
       <div class="form-text small mt-2">
@@ -180,11 +180,11 @@ export default {
 
     const onDowntimeInput = () => {
       const totalPeriodMs = PERIODS[selectedPeriod.value];
-      const downtimeMs = (downtime.days || 0) * 24 * 60 * 60 * 1000 +
-                         (downtime.hours || 0) * 60 * 60 * 1000 +
-                         (downtime.mins || 0) * 60 * 1000 +
-                         (downtime.secs || 0) * 1000 +
-                         (downtime.ms || 0);
+      const downtimeMs = Math.max(0, downtime.days || 0) * 24 * 60 * 60 * 1000 +
+                         Math.max(0, downtime.hours || 0) * 60 * 60 * 1000 +
+                         Math.max(0, downtime.mins || 0) * 60 * 1000 +
+                         Math.max(0, downtime.secs || 0) * 1000 +
+                         Math.max(0, downtime.ms || 0);
       
       let newPercentage = (1 - downtimeMs / totalPeriodMs) * 100;
       
