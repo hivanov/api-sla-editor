@@ -54,6 +54,28 @@ describe('SupportPolicyEditor', () => {
     expect(wrapper.emitted('update:supportPolicy')[2][0].hoursAvailable[0].opens).toBe('10:00')
   })
 
+  it('applies Workdays preset', async () => {
+    const policy = { hoursAvailable: [{ dayOfWeek: [], opens: '', closes: '' }] };
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    
+    await wrapper.findAll('button.btn-outline-primary').filter(w => w.text().includes("Workdays"))[0].trigger('click')
+    const updated = wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable[0]
+    expect(updated.dayOfWeek).toEqual(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
+    expect(updated.opens).toBe('09:00')
+    expect(updated.closes).toBe('17:00')
+  })
+
+  it('applies 24x7 preset', async () => {
+    const policy = { hoursAvailable: [{ dayOfWeek: [], opens: '', closes: '' }] };
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    
+    await wrapper.findAll('button.btn-outline-primary').filter(w => w.text().includes("24x7"))[0].trigger('click')
+    const updated = wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable[0]
+    expect(updated.dayOfWeek).toEqual(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    expect(updated.opens).toBe('00:00')
+    expect(updated.closes).toBe('23:59')
+  })
+
   it('removes hours available', async () => {
     const policy = {
       hoursAvailable: [{ dayOfWeek: ['Monday'], opens: '09:00', closes: '17:00' }],
@@ -62,8 +84,8 @@ describe('SupportPolicyEditor', () => {
     };
     const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
 
-    // Find the remove button for hours available, it's the first danger button inside a hoursAvailable card
-    await wrapper.findAll('.card.mb-2.p-2 > .d-flex > .btn-danger.btn-sm')[0].trigger('click') 
+    // Find the remove button for hours available, it's the danger button inside the first card's header div
+    await wrapper.findAll('.card-body .card.mb-2 .btn-danger.btn-sm').filter(w => w.text() === "Remove")[0].trigger('click') 
     expect(wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable.length).toBe(0)
   })
 

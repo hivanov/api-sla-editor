@@ -129,10 +129,7 @@ test.describe('Main flow', () => {
 
     // Interact with SupportPolicyEditor - Hours Available
     await supportEditor.locator('button:has-text("Add Hours")').click();
-    await supportEditor.locator('input#day-0-Monday').check();
-    await supportEditor.locator('input#day-0-Friday').check();
-    await supportEditor.locator('input[placeholder="HH:mm"]').first().fill('09:00');
-    await supportEditor.locator('input[placeholder="HH:mm"]').last().fill('17:00');
+    await supportEditor.locator('button:has-text("Workdays")').click();
     await page.waitForLoadState('networkidle');
 
     // Interact with ServiceCreditsEditor
@@ -178,6 +175,9 @@ test.describe('Main flow', () => {
     expect(editorValue).toContain('mailto://support@example.com');
     expect(editorValue).toContain('dayOfWeek:');
     expect(editorValue).toContain('- Monday');
+    expect(editorValue).toContain('- Tuesday');
+    expect(editorValue).toContain('- Wednesday');
+    expect(editorValue).toContain('- Thursday');
     expect(editorValue).toContain('- Friday');
     expect(editorValue).toContain('opens: \'09:00\'');
     expect(editorValue).toContain('closes: \'17:00\'');

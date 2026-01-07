@@ -44,7 +44,11 @@
       <div v-for="(hours, index) in safeSupportPolicy.hoursAvailable" :key="index" class="card mb-2 p-2">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Hours #{{ index + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeHours(index)">Remove</button>
+          <div>
+            <button class="btn btn-outline-primary btn-sm me-2" @click="setWorkdays(index)">Workdays (Mon-Fri, 9-17)</button>
+            <button class="btn btn-outline-primary btn-sm me-2" @click="set24x7(index)">24x7 (Mon-Sun, 00-24)</button>
+            <button class="btn btn-danger btn-sm" @click="removeHours(index)">Remove</button>
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label d-block">Day of Week</label>
@@ -195,6 +199,28 @@ export default {
       updateSupportPolicy(newPolicy);
     };
 
+    const setWorkdays = (index) => {
+      const newPolicy = { ...safeSupportPolicy.value };
+      newPolicy.hoursAvailable[index] = {
+        ...newPolicy.hoursAvailable[index],
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        opens: '09:00',
+        closes: '17:00'
+      };
+      updateSupportPolicy(newPolicy);
+    };
+
+    const set24x7 = (index) => {
+      const newPolicy = { ...safeSupportPolicy.value };
+      newPolicy.hoursAvailable[index] = {
+        ...newPolicy.hoursAvailable[index],
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        opens: '00:00',
+        closes: '23:59'
+      };
+      updateSupportPolicy(newPolicy);
+    };
+
     // Holiday Schedule methods
     const addHolidaySource = () => {
       const newPolicy = { ...safeSupportPolicy.value };
@@ -328,6 +354,8 @@ export default {
       updateHours,
       removeHours,
       toggleDay,
+      setWorkdays,
+      set24x7,
       addHolidaySource,
       updateHolidaySource,
       removeHolidaySource,
