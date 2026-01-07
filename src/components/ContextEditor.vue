@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="card context-editor-component">
     <div class="card-header">
       Context
     </div>

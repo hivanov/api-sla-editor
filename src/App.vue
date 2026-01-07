@@ -93,7 +93,12 @@ export default {
     const aceEditor = ref(null);
     let editor = null;
     const validationErrors = ref([]);
-    const sla = reactive({ context: {}, metrics: {}, plans: {} });
+    const sla = reactive({
+      sla: "1.0.0", // Required by schema
+      context: { id: '', type: 'plans' }, // Default structure for context editor
+      metrics: {},
+      plans: {}
+    });
 
     const examples = {
       'support-mon-fri': supportMonFri,
