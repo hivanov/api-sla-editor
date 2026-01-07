@@ -44,4 +44,26 @@ describe('GuaranteesEditor', () => {
     })
     expect(wrapper.findAll('.card.mb-2').length).toBe(0)
   })
+
+  it('displays validation errors for specific guarantees', () => {
+    const wrapper = mount(GuaranteesEditor, {
+      props: {
+        guarantees: [{ metric: '', limit: 'invalid' }],
+        path: '/plans/gold/guarantees',
+        errors: {
+          '/plans/gold/guarantees/0/metric': ['Metric is required'],
+          '/plans/gold/guarantees/0/limit': ['Invalid duration format']
+        }
+      },
+    })
+
+    const metricInput = wrapper.find('input[placeholder="Metric Name"]')
+    expect(metricInput.classes()).toContain('is-invalid')
+    
+    const durationInput = wrapper.find('input[placeholder="e.g. P1DT4H"]')
+    expect(durationInput.classes()).toContain('is-invalid')
+    
+    expect(wrapper.text()).toContain('Metric is required')
+    expect(wrapper.text()).toContain('Invalid duration format')
+  })
 })

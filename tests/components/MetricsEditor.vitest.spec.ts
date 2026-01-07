@@ -58,4 +58,21 @@ describe('MetricsEditor', () => {
     await wrapper.find('button.btn-danger').trigger('click')
     expect(wrapper.emitted('update:metrics')[0]).toEqual([{}])
   })
+
+  it('displays validation errors correctly', () => {
+    const wrapper = mount(MetricsEditor, {
+      props: {
+        metrics: {
+          uptime: { type: '', unit: '', description: '' }
+        },
+        errors: {
+          '/metrics/uptime/type': ['Type is required']
+        }
+      },
+    })
+
+    const typeInput = wrapper.find('input[placeholder="Type"]')
+    expect(typeInput.classes()).toContain('is-invalid')
+    expect(wrapper.find('.invalid-feedback').text()).toContain('Type is required')
+  })
 })

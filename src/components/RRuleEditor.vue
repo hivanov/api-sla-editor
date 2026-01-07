@@ -9,6 +9,14 @@ const props = defineProps({
   label: {
     type: String,
     default: 'Recurrence Rule (RRULE)'
+  },
+  errors: {
+    type: Object,
+    default: () => ({})
+  },
+  path: {
+    type: String,
+    default: ''
   }
 });
 
@@ -112,10 +120,14 @@ const onManualInput = (value) => {
       <input 
         type="text" 
         class="form-control form-control-sm" 
+        :class="{'is-invalid': errors[path]}"
         :value="modelValue" 
         @input="onManualInput($event.target.value)" 
         placeholder="e.g. FREQ=WEEKLY;BYDAY=MO,WE"
       >
+      <div class="invalid-feedback" v-if="errors[path]">
+        {{ errors[path].join(', ') }}
+      </div>
     </div>
 
     <div class="row g-2 mb-2">
@@ -129,7 +141,7 @@ const onManualInput = (value) => {
       </div>
       <div class="col-md-6">
         <label class="form-label x-small mb-0">Interval</label>
-        <input type="number" class="form-control form-control-sm" v-model.number="state.INTERVAL" @input="updateState" min="1">
+        <input type="number" class="form-control form-select-sm" v-model.number="state.INTERVAL" @input="updateState" min="1">
       </div>
     </div>
 

@@ -6,10 +6,15 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Currency</label>
-        <input type="text" class="form-control" placeholder="Currency" :value="safeServiceCredits.currency" @input="updateField('currency', $event.target.value)">
+        <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/currency']}" placeholder="Currency" :value="safeServiceCredits.currency" @input="updateField('currency', $event.target.value)">
+        <div class="invalid-feedback" v-if="errors[path + '/currency']">
+          {{ errors[path + '/currency'].join(', ') }}
+        </div>
       </div>
       <DurationEditor 
         :model-value="safeServiceCredits.claimWindow" 
+        :errors="errors"
+        :path="path + '/claimWindow'"
         @update:model-value="updateField('claimWindow', $event)"
         label="Claim Window"
       />
@@ -23,19 +28,31 @@
         <div class="row">
           <div class="col-md-6 mb-2">
             <label class="form-label">Metric</label>
-            <input type="text" class="form-control" placeholder="uptime" :value="tier.condition?.metric" @input="updateTierCondition(index, 'metric', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/metric']}" placeholder="uptime" :value="tier.condition?.metric" @input="updateTierCondition(index, 'metric', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/condition/metric']">
+              {{ errors[path + '/tiers/' + index + '/condition/metric'].join(', ') }}
+            </div>
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Operator</label>
-            <input type="text" class="form-control" placeholder="<" :value="tier.condition?.operator" @input="updateTierCondition(index, 'operator', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/operator']}" placeholder="<" :value="tier.condition?.operator" @input="updateTierCondition(index, 'operator', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/condition/operator']">
+              {{ errors[path + '/tiers/' + index + '/condition/operator'].join(', ') }}
+            </div>
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Value</label>
-            <input type="text" class="form-control" placeholder="99.9" :value="tier.condition?.value" @input="updateTierCondition(index, 'value', $event.target.value)">
+            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/value']}" placeholder="99.9" :value="tier.condition?.value" @input="updateTierCondition(index, 'value', $event.target.value)">
+            <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/condition/value']">
+              {{ errors[path + '/tiers/' + index + '/condition/value'].join(', ') }}
+            </div>
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Compensation</label>
-            <input type="number" class="form-control" placeholder="5" :value="tier.compensation" @input="updateTier(index, 'compensation', Math.max(0, Number($event.target.value)))" min="0">
+            <input type="number" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/compensation']}" placeholder="5" :value="tier.compensation" @input="updateTier(index, 'compensation', Math.max(0, Number($event.target.value)))" min="0">
+            <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/compensation']">
+              {{ errors[path + '/tiers/' + index + '/compensation'].join(', ') }}
+            </div>
           </div>
         </div>
       </div>
@@ -57,6 +74,14 @@ export default {
     serviceCredits: {
       type: Object,
       default: () => ({}),
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:serviceCredits'],

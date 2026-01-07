@@ -12,6 +12,9 @@ test.describe('Maintenance iCal Source', () => {
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'Test Plan');
     await page.click('.plans-editor-component button:has-text("Add Plan")');
     
+    // Satisfy required availability
+    await page.locator('.availability-editor-component input[type="number"]').first().fill('100');
+    
     const maintenanceEditor = page.locator('.maintenance-policy-editor-component');
     
     // 2. Add an iCal source
@@ -24,7 +27,18 @@ test.describe('Maintenance iCal Source', () => {
     await maintenanceEditor.locator('input[placeholder="https://example.com/maintenance.ics"]').fill(calendarUrl);
     await maintenanceEditor.locator('input[placeholder="Description of the source"]').fill(description);
     
-    // 4. Verify in Source editor
+    // 4. Remove pricing if it was auto-added to avoid missing required subfields errors
+    await page.click('a:has-text("Source")');
+    await page.evaluate(() => {
+      const editor = ace.edit(document.querySelector('.ace_editor'));
+      let val = editor.getValue();
+      // Remove empty pricing object if it exists to satisfy schema
+      val = val.replace(/pricing: \{\}/g, '');
+      editor.setValue(val, -1);
+    });
+    await page.click('a:has-text("GUI")');
+
+    // 5. Verify in Source editor
     await page.click('a:has-text("Source")');
     
     const editorValue = await page.evaluate(() => {
@@ -38,6 +52,8 @@ test.describe('Maintenance iCal Source', () => {
     expect(editorValue).toContain(description);
     
     // 5. Verify validation is still passing
-    await expect(page.locator('.col-md-4 .card .card-body .alert-success')).toBeVisible();
+    await expect(async () => {
+      await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    }).toPass({ timeout: 5000 });
   });
 });

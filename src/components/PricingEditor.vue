@@ -6,15 +6,23 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Cost</label>
-        <input type="number" class="form-control" placeholder="Cost" :value="safePricing.cost" @input="update('cost', $event.target.value)" min="0">
+        <input type="number" class="form-control" :class="{'is-invalid': errors[path + '/cost']}" placeholder="Cost" :value="safePricing.cost" @input="update('cost', $event.target.value)" min="0">
+        <div class="invalid-feedback" v-if="errors[path + '/cost']">
+          {{ errors[path + '/cost'].join(', ') }}
+        </div>
       </div>
       <div class="mb-3">
         <label class="form-label">Currency</label>
-        <input type="text" class="form-control" placeholder="Currency" :value="safePricing.currency" @input="update('currency', $event.target.value)">
+        <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/currency']}" placeholder="Currency" :value="safePricing.currency" @input="update('currency', $event.target.value)">
+        <div class="invalid-feedback" v-if="errors[path + '/currency']">
+          {{ errors[path + '/currency'].join(', ') }}
+        </div>
       </div>
       <DurationEditor 
-        :model-value="safePricing.period" 
-        @update:model-value="update('period', $event)"
+        :modelValue="safePricing.period" 
+        :errors="errors"
+        :path="path + '/period'"
+        @update:modelValue="update('period', $event)"
         label="Period"
       />
     </div>
@@ -34,6 +42,14 @@ export default {
     pricing: {
       type: Object,
       default: () => ({}),
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    path: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:pricing'],

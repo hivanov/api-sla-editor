@@ -4,8 +4,8 @@
       <h1>SLA Editor</h1>
     </header>
     <main class="d-flex flex-grow-1">
-      <div class="col-12 col-md-8 p-3">
-        <div class="card">
+      <div class="col-12 col-md-8 p-3 d-flex flex-column">
+        <div class="card flex-grow-1 mb-3">
           <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs">
               <li class="nav-item">
@@ -16,35 +16,52 @@
               </li>
             </ul>
           </div>
-          <div class="card-body">
-            <div v-show="activeTab === 'gui'">
-              <ContextEditor :context="sla.context" @update:context="sla.context = $event" />
-              <MetricsEditor :metrics="sla.metrics" @update:metrics="sla.metrics = $event" />
-              <PlansEditor :plans="sla.plans" @update:plans="sla.plans = $event" />
+          <div class="card-body p-0">
+            <div v-show="activeTab === 'gui'" class="p-3">
+              <ContextEditor :context="sla.context" :errors="validationErrorsMap" @update:context="Object.assign(sla.context, $event)" />
+              <MetricsEditor :metrics="sla.metrics" :errors="validationErrorsMap" @update:metrics="(m) => { Object.keys(sla.metrics).forEach(k => delete sla.metrics[k]); Object.assign(sla.metrics, m); }" />
+              <PlansEditor :plans="sla.plans" :errors="validationErrorsMap" @update:plans="(p) => { Object.keys(sla.plans).forEach(k => delete sla.plans[k]); Object.assign(sla.plans, p); }" />
             </div>
-            <div v-show="activeTab === 'source'">
+            <div v-show="activeTab === 'source'" class="h-100">
               <div ref="aceEditor" class="ace-editor-container"></div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="col-12 col-md-4 p-3 bg-light">
-        <div class="card">
-          <div class="card-header">
-            Validation
+        
+        <!-- Error List below editor -->
+        <div class="card validation-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Validation Errors</span>
+            <span v-if="validationErrors.length === 0" class="badge bg-success">Valid</span>
+            <span v-else class="badge bg-danger">{{ validationErrors.length }} Errors</span>
           </div>
-          <div class="card-body">
-            <div v-if="validationErrors.length === 0" class="alert alert-success">
-              Validation successful!
+          <div class="card-body p-0">
+            <div v-if="validationErrors.length === 0" class="p-3 text-success">
+              <i class="bi bi-check-circle-fill me-2"></i>Validation successful!
             </div>
-            <div v-else>
-              <div v-for="(error, index) in validationErrors" :key="index" class="alert alert-danger">
-                <pre>{{ error }}</pre>
-              </div>
+            <div v-else class="error-list-container">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 80px">Line</th>
+                    <th style="width: 200px">Path</th>
+                    <th>Message</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(error, index) in validationErrors" :key="index" @click="jumpToError(error.line)" style="cursor: pointer;">
+                    <td><span class="badge bg-danger">L{{ (error.line || 0) + 1 }}</span></td>
+                    <td class="text-muted small">{{ error.instancePath || 'root' }}</td>
+                    <td class="text-danger">{{ error.message }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-        <div class="card mt-3">
+      </div>
+      <div class="col-12 col-md-4 p-3 bg-light d-flex flex-column" style="overflow-y: auto;">
+        <div class="card">
           <div class="card-header">
             Examples
           </div>
@@ -63,7 +80,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch, reactive } from 'vue';
+import { ref, onMounted, watch, reactive, computed } from 'vue';
 import 'bootstrap/dist/css/bootstrap.css';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -71,7 +88,8 @@ import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import yaml from 'js-yaml';
+import jsYaml from 'js-yaml';
+import YAML from 'yaml';
 import schema from './spec/spec.json';
 import example from './assets/example.yaml?raw';
 import supportMonFri from './assets/examples/support-mon-fri.yaml?raw';
@@ -80,6 +98,8 @@ import metrics100ConcurrentConnections from './assets/examples/metrics-100-concu
 import ContextEditor from './components/ContextEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
 import PlansEditor from './components/PlansEditor.vue';
+
+const Range = ace.require('ace/range').Range;
 
 export default {
   name: 'App',
@@ -93,6 +113,31 @@ export default {
     const aceEditor = ref(null);
     let editor = null;
     const validationErrors = ref([]);
+    const markers = ref([]);
+
+    const validationErrorsMap = computed(() => {
+      const map = {};
+      validationErrors.value.forEach(error => {
+        let path = error.instancePath || '';
+        
+        const addError = (p, msg) => {
+          if (!map[p]) map[p] = [];
+          if (map[p].indexOf(msg) === -1) map[p].push(msg);
+        };
+
+        addError(path, error.message);
+        addError(path.startsWith('/') ? path : '/' + path, error.message);
+        addError(path.startsWith('/') ? path.substring(1) : path, error.message);
+        
+        if (error.keyword === 'required') {
+          const propPath = (path === '' ? '' : path) + '/' + error.params.missingProperty;
+          addError(propPath, error.message);
+          addError(propPath.startsWith('/') ? propPath : '/' + propPath, error.message);
+        }
+      });
+      return map;
+    });
+
     const sla = reactive({
       sla: "1.0.0", // Required by schema
       context: { id: '', type: 'plans' }, // Default structure for context editor
@@ -112,26 +157,155 @@ export default {
 
     const yamlContent = ref(example);
 
+    const clearMarkers = () => {
+      if (editor) {
+        markers.value.forEach(id => editor.session.removeMarker(id));
+        markers.value = [];
+        editor.session.setAnnotations([]);
+      }
+    };
+
+    const getFriendlyErrorMessage = (err) => {
+      const params = err.params;
+      switch (err.keyword) {
+        case 'required':
+          return `Field '${params.missingProperty}' is required`;
+        case 'pattern':
+          if (err.instancePath.includes('availability')) {
+            return 'Availability must be a percentage (e.g., 99.9%)';
+          }
+          if (err.instancePath.includes('rrule')) {
+            return 'Invalid RRULE format (e.g., FREQ=DAILY)';
+          }
+          if (err.instancePath.includes('duration') || err.instancePath.includes('Period') || err.instancePath.includes('period') || err.instancePath.includes('claimWindow') || err.instancePath.includes('afterTermination') || err.instancePath.includes('minimumTerm')) {
+            return 'Invalid duration format (e.g., P1D or PT1H)';
+          }
+          if (err.instancePath.includes('url')) {
+            return 'URL must start with http://, https://, mailto://, or tel://';
+          }
+          if (err.instancePath.includes('opens') || err.instancePath.includes('closes')) {
+            return 'Time must be in HH:mm format (e.g., 09:00)';
+          }
+          if (err.instancePath.includes('regionCode')) {
+            return 'Invalid region code (e.g., DE or US-NY)';
+          }
+          if (err.instancePath.includes('date')) {
+            return 'Invalid date format (YYYY-MM-DD)';
+          }
+          return err.message;
+        case 'enum':
+          return `Must be one of: ${params.allowedValues.join(', ')}`;
+        case 'type':
+          return `Value must be a ${params.type}`;
+        case 'minimum':
+          return `Value must be at least ${params.limit}`;
+        case 'maximum':
+          return `Value must be at most ${params.limit}`;
+        case 'minItems':
+          return `Must have at least ${params.limit} item(s)`;
+        default:
+          return err.message;
+      }
+    };
+
     const validateYaml = (content) => {
       try {
-        const doc = yaml.load(content);
+        const doc = jsYaml.load(content);
         if (doc && typeof doc === 'object') {
-          if (doc.context) sla.context = doc.context;
-          if (doc.metrics) sla.metrics = doc.metrics;
-          if (doc.plans) sla.plans = doc.plans;
+          if (doc.context) Object.assign(sla.context, doc.context);
+          if (doc.metrics) {
+            Object.keys(sla.metrics).forEach(key => delete sla.metrics[key]);
+            Object.assign(sla.metrics, doc.metrics);
+          } else {
+            Object.keys(sla.metrics).forEach(key => delete sla.metrics[key]);
+          }
+          if (doc.plans) {
+             Object.keys(sla.plans).forEach(key => delete sla.plans[key]);
+             // Deeply assign to ensure nested objects like pricing are reactive
+             for (const [planName, planData] of Object.entries(doc.plans)) {
+               sla.plans[planName] = planData;
+             }
+          } else {
+             Object.keys(sla.plans).forEach(key => delete sla.plans[key]);
+          }
           if (doc.sla) sla.sla = doc.sla;
         }
 
         const valid = validate(doc);
+        clearMarkers();
+
         if (valid) {
           validationErrors.value = [];
         } else {
-          validationErrors.value = validate.errors;
-          console.error("Validation errors:", JSON.stringify(validationErrors.value, null, 2));
+          // Map errors to line numbers
+          const parsedYaml = YAML.parseDocument(content);
+          const errorsWithLines = validate.errors.map(err => {
+            const path = err.instancePath.split('/').filter(p => p !== '');
+            let node = parsedYaml.getIn(path, true);
+            
+            // If node not found, try parents
+            let currentPath = [...path];
+            while (!node && currentPath.length > 0) {
+              currentPath.pop();
+              node = parsedYaml.getIn(currentPath, true);
+            }
+
+            let line = 0;
+            let range = null;
+            if (node) {
+              const rangeArray = node.range || (node.value && node.value.range);
+              
+              if (rangeArray) {
+                const before = content.substring(0, rangeArray[0]);
+                line = before.split('\n').length - 1;
+                
+                const nodeText = content.substring(rangeArray[0], rangeArray[1]);
+                const nodeLines = nodeText.split('\n');
+                const endLine = line + nodeLines.length - 1;
+                const endColumn = nodeLines[nodeLines.length - 1].length;
+                range = { startLine: line, startColumn: 0, endLine, endColumn };
+              }
+            }
+            return { ...err, line, range, message: getFriendlyErrorMessage(err) };
+          });
+
+          validationErrors.value = errorsWithLines;
+          
+          if (editor) {
+            const annotations = [];
+            errorsWithLines.forEach(err => {
+              annotations.push({
+                row: err.line,
+                column: 0,
+                text: err.message,
+                type: "error"
+              });
+
+              if (err.range) {
+                const markerRange = new Range(err.range.startLine, 0, err.range.endLine, err.range.endColumn || 100);
+                const markerId = editor.session.addMarker(markerRange, "error-squiggly", "text", true);
+                markers.value.push(markerId);
+              }
+            });
+            editor.session.setAnnotations(annotations);
+          }
         }
       } catch (e) {
-        validationErrors.value = [e];
-        console.error("YAML parsing error:", e);
+        let line = 0;
+        if (e.mark) line = e.mark.line;
+        validationErrors.value = [{ message: e.message, line }];
+        clearMarkers();
+        if (editor) {
+          editor.session.setAnnotations([{ 
+            row: line,
+            column: 0,
+            text: e.message,
+            type: "error"
+          }]);
+          const markerRange = new Range(line, 0, line, 100);
+          const markerId = editor.session.addMarker(markerRange, "error-squiggly", "text", true);
+          markers.value.push(markerId);
+        }
       }
     };
 
@@ -160,19 +334,32 @@ export default {
       validateYaml(yamlContent.value);
     });
 
+    watch(activeTab, (newTab) => {
+      if (newTab === 'source' && editor) {
+        isProgrammaticChange = true;
+        editor.setValue(yamlContent.value, -1);
+        // Delay resize slightly to ensure DOM is updated if v-show/v-if was used
+        setTimeout(() => {
+          editor.resize();
+          editor.renderer.updateFull();
+        }, 0);
+        isProgrammaticChange = false;
+      }
+    });
+
     watch(yamlContent, (newContent) => {
       validateYaml(newContent);
     });
 
     watch(sla, (newSla) => {
-      if (activeTab.value === 'gui') {
-        const newYaml = yaml.dump(newSla);
-        if (yamlContent.value !== newYaml) {
-          isProgrammaticChange = true;
-          yamlContent.value = newYaml;
+      const newYaml = jsYaml.dump(newSla);
+      if (yamlContent.value !== newYaml) {
+        isProgrammaticChange = true;
+        yamlContent.value = newYaml;
+        if (editor) {
           editor.setValue(newYaml, -1);
-          isProgrammaticChange = false;
         }
+        isProgrammaticChange = false;
       }
     }, { deep: true });
 
@@ -185,7 +372,6 @@ export default {
 
     const setYamlContent = (content) => {
       yamlContent.value = content;
-      // Ensure Ace editor also gets updated if it's currently visible
       if (editor) {
         isProgrammaticChange = true;
         editor.setValue(content, -1);
@@ -193,14 +379,24 @@ export default {
       }
     };
 
+    const jumpToError = (line) => {
+      activeTab.value = 'source';
+      if (editor) {
+        editor.gotoLine((line || 0) + 1, 0, true);
+        editor.focus();
+      }
+    };
+
     return {
       activeTab,
       aceEditor,
       validationErrors,
+      validationErrorsMap,
       sla,
       examples,
       loadExample,
-      setYamlContent, // Expose the new method
+      setYamlContent,
+      jumpToError,
     };
   },
 };
@@ -212,23 +408,38 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  height: 100vh; /* Ensure app takes full viewport height */
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
 main {
-  min-height: 0; /* Allow main to shrink */
+  min-height: 0;
 }
 
 .ace-editor-container {
   min-height: 200px;
-  height: calc(100vh - 250px); /* Adjust based on header/footer/card-header heights */
+  height: 100%;
+}
+
+.error-list-container {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.validation-card {
+  min-height: 150px;
+}
+
+.error-squiggly {
+  position: absolute;
+  border-bottom: 2px dotted red;
+  z-index: 4;
 }
 
 @media (max-width: 768px) {
   .ace-editor-container {
-    height: 200px; /* Fixed height for smaller screens */
+    height: 300px;
   }
 }
 </style>
