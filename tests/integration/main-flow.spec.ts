@@ -117,6 +117,16 @@ test.describe('Main flow', () => {
     await basicPlanCard.locator('input[placeholder="Limit"]').fill('P0DT0H5M0S'); // 5 minutes
     await page.waitForLoadState('networkidle');
 
+    // Interact with SupportPolicyEditor - Contact Points
+    const supportEditor = basicPlanCard.locator('.support-policy-editor-component');
+    await supportEditor.locator('button:has-text("Add Contact Point")').click();
+    await supportEditor.locator('button:has-text("Add Channel")').click();
+    await supportEditor.locator('select').first().selectOption('email');
+    // After selecting email, value should be 'mailto://'
+    const urlInput = supportEditor.locator('input[placeholder="https://... or mailto:..."]');
+    await urlInput.fill('mailto://support@example.com');
+    await page.waitForLoadState('networkidle');
+
     // Interact with ServiceCreditsEditor
     await basicPlanCard.locator('.service-credits-editor-component input[placeholder="Currency"]').fill('EUR');
     await basicPlanCard.locator('.service-credits-editor-component button:has-text("Add Tier")').click();
@@ -157,6 +167,7 @@ test.describe('Main flow', () => {
     expect(editorValue).toContain('currency: EUR');
     expect(editorValue).toContain('period: P30D');
     expect(editorValue).toContain('max-users: \'100\'');
+    expect(editorValue).toContain('mailto://support@example.com');
     expect(editorValue).toContain('x-service-credits');
     expect(editorValue).toContain('x-maintenance-policy');
     expect(editorValue).toContain('x-sla-exclusions');

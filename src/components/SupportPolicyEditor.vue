@@ -269,7 +269,24 @@ export default {
 
     const updateChannel = (cpIndex, cIndex, key, value) => {
       const newPolicy = { ...safeSupportPolicy.value };
-      newPolicy.contactPoints[cpIndex].channels[cIndex] = { ...newPolicy.contactPoints[cpIndex].channels[cIndex], [key]: value };
+      const channel = { ...newPolicy.contactPoints[cpIndex].channels[cIndex], [key]: value };
+      
+      // Auto-update protocol if type changes
+      if (key === 'type') {
+        let currentUrl = channel.url || '';
+        // Remove existing protocol if it matches one of the known ones
+        currentUrl = currentUrl.replace(/^(https?|mailto|tel):\/\//, '');
+        
+        if (value === 'email') {
+          channel.url = 'mailto://' + currentUrl;
+        } else if (value === 'phone') {
+          channel.url = 'tel://' + currentUrl;
+        } else {
+          channel.url = 'https://' + currentUrl;
+        }
+      }
+      
+      newPolicy.contactPoints[cpIndex].channels[cIndex] = channel;
       updateSupportPolicy(newPolicy);
     };
 

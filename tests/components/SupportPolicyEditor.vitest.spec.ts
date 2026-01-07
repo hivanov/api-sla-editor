@@ -173,4 +173,41 @@ describe('SupportPolicyEditor', () => {
 
     expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees.length).toBe(0)
   })
+
+  // Contact Points and Channels Tests
+  it('adds a new contact point and channel', async () => {
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() } })
+    await wrapper.findAll('button.btn-secondary').filter(w => w.text().includes("Add Contact Point"))[0].trigger('click')
+    expect(wrapper.emitted('update:supportPolicy')[0][0].contactPoints.length).toBe(1)
+    
+    const updatedPolicy = wrapper.emitted('update:supportPolicy')[0][0];
+    await wrapper.setProps({ supportPolicy: updatedPolicy });
+
+    await wrapper.findAll('button.btn-secondary').filter(w => w.text().includes("Add Channel"))[0].trigger('click')
+    expect(wrapper.emitted('update:supportPolicy')[1][0].contactPoints[0].channels.length).toBe(1)
+  })
+
+  it('updates channel type and auto-updates protocol', async () => {
+    const policy = {
+      contactPoints: [{
+        contactType: 'Support',
+        channels: [{ type: 'web', url: 'https://example.com' }]
+      }]
+    };
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+
+    const select = wrapper.find('select');
+    
+    // Switch to email
+    await select.setValue('email');
+    expect(wrapper.emitted('update:supportPolicy')[0][0].contactPoints[0].channels[0].url).toBe('mailto://example.com')
+
+    // Switch to phone
+    await select.setValue('phone');
+    expect(wrapper.emitted('update:supportPolicy')[1][0].contactPoints[0].channels[0].url).toBe('tel://example.com')
+
+    // Switch back to web
+    await select.setValue('web');
+    expect(wrapper.emitted('update:supportPolicy')[2][0].contactPoints[0].channels[0].url).toBe('https://example.com')
+  })
 })
