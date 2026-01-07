@@ -115,12 +115,16 @@ export default {
     const validateYaml = (content) => {
       try {
         const doc = yaml.load(content);
+        if (doc && typeof doc === 'object') {
+          if (doc.context) sla.context = doc.context;
+          if (doc.metrics) sla.metrics = doc.metrics;
+          if (doc.plans) sla.plans = doc.plans;
+          if (doc.sla) sla.sla = doc.sla;
+        }
+
         const valid = validate(doc);
         if (valid) {
           validationErrors.value = [];
-          Object.assign(sla.context, doc.context || {});
-          Object.assign(sla.metrics, doc.metrics || {});
-          Object.assign(sla.plans, doc.plans || {});
         } else {
           validationErrors.value = validate.errors;
           console.error("Validation errors:", JSON.stringify(validationErrors.value, null, 2));

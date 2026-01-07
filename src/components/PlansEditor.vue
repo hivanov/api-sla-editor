@@ -23,22 +23,29 @@
             <input type="text" class="form-control" placeholder="Plan Availability" :value="plan.availability" @input="updatePlan(name, 'availability', $event.target.value)">
           </div>
 
-          <h6>Guarantees</h6>
-          <div v-for="(guarantee, index) in plan.guarantees" :key="index" class="card mb-2 p-2">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span>Guarantee #{{ index + 1 }}</span>
-              <button class="btn btn-danger btn-sm" @click="removeGuarantee(name, index)">Remove</button>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Metric Name</label>
-              <input type="text" class="form-control" placeholder="Metric Name" :value="guarantee.metric" @input="updateGuarantee(name, index, 'metric', $event.target.value)">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Limit (ISO 8601 Duration)</label>
-              <input type="text" class="form-control" placeholder="Limit" :value="guarantee.limit" @input="updateGuarantee(name, index, 'limit', $event.target.value)">
-            </div>
-          </div>
-          <button class="btn btn-secondary btn-sm mt-2" @click="addGuarantee(name)">Add Guarantee</button>
+          <!-- Pricing Editor -->
+          <PricingEditor :pricing="plan.pricing" @update:pricing="updatePlanSubObject(name, 'pricing', $event)" />
+
+          <!-- Quotas Editor -->
+          <QuotasEditor :quotas="plan.quotas" @update:quotas="updatePlanSubObject(name, 'quotas', $event)" />
+
+          <!-- Guarantees Editor -->
+          <GuaranteesEditor :guarantees="plan.guarantees" @update:guarantees="updatePlanSubObject(name, 'guarantees', $event)" />
+
+          <!-- Support Policy Editor -->
+          <SupportPolicyEditor :support-policy="plan['x-support-policy']" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
+
+          <!-- Service Credits Editor -->
+          <ServiceCreditsEditor :service-credits="plan['x-service-credits']" @update:service-credits="updatePlanSubObject(name, 'x-service-credits', $event)" />
+
+          <!-- Maintenance Policy Editor -->
+          <MaintenancePolicyEditor :maintenance-policy="plan['x-maintenance-policy']" @update:maintenance-policy="updatePlanSubObject(name, 'x-maintenance-policy', $event)" />
+
+          <!-- Exclusions Editor -->
+          <ExclusionsEditor :exclusions="plan['x-sla-exclusions']" @update:exclusions="updatePlanSubObject(name, 'x-sla-exclusions', $event)" />
+
+          <!-- Lifecycle Policy Editor -->
+          <LifecyclePolicyEditor :lifecycle-policy="plan['x-lifecycle-policy']" @update:lifecycle-policy="updatePlanSubObject(name, 'x-lifecycle-policy', $event)" />
         </div>
       </div>
       <div class="mt-3">
@@ -53,9 +60,27 @@
 
 <script>
 import { ref } from 'vue';
+import PricingEditor from './PricingEditor.vue';
+import QuotasEditor from './QuotasEditor.vue';
+import SupportPolicyEditor from './SupportPolicyEditor.vue';
+import GuaranteesEditor from './GuaranteesEditor.vue';
+import ServiceCreditsEditor from './ServiceCreditsEditor.vue';
+import MaintenancePolicyEditor from './MaintenancePolicyEditor.vue';
+import ExclusionsEditor from './ExclusionsEditor.vue';
+import LifecyclePolicyEditor from './LifecyclePolicyEditor.vue';
 
 export default {
   name: 'PlansEditor',
+  components: {
+    PricingEditor,
+    QuotasEditor,
+    SupportPolicyEditor,
+    GuaranteesEditor,
+    ServiceCreditsEditor,
+    MaintenancePolicyEditor,
+    ExclusionsEditor,
+    LifecyclePolicyEditor,
+  },
   props: {
     plans: {
       type: Object,
@@ -72,6 +97,12 @@ export default {
       emit('update:plans', newPlans);
     };
 
+    const updatePlanSubObject = (name, subObjectKey, value) => {
+      const newPlans = { ...props.plans };
+      newPlans[name] = { ...newPlans[name], [subObjectKey]: value };
+      emit('update:plans', newPlans);
+    };
+
     const addPlan = () => {
       if (newPlanName.value && !props.plans[newPlanName.value]) {
         const newPlans = { ...props.plans };
@@ -79,7 +110,14 @@ export default {
           title: '',
           description: '',
           availability: '',
-          guarantees: [], // Initialize guarantees as an empty array
+          guarantees: [],
+          pricing: {},
+          quotas: {},
+          'x-support-policy': {},
+          'x-service-credits': {},
+          'x-maintenance-policy': {},
+          'x-sla-exclusions': [],
+          'x-lifecycle-policy': {},
         };
         emit('update:plans', newPlans);
         newPlanName.value = '';
@@ -92,38 +130,12 @@ export default {
       emit('update:plans', newPlans);
     };
 
-    const addGuarantee = (planName) => {
-      const newPlans = { ...props.plans };
-      if (!newPlans[planName].guarantees) {
-        newPlans[planName].guarantees = [];
-      }
-      newPlans[planName].guarantees.push({ metric: '', limit: '' });
-      emit('update:plans', newPlans);
-    };
-
-    const updateGuarantee = (planName, guaranteeIndex, key, value) => {
-      const newPlans = { ...props.plans };
-      newPlans[planName].guarantees[guaranteeIndex] = {
-        ...newPlans[planName].guarantees[guaranteeIndex],
-        [key]: value,
-      };
-      emit('update:plans', newPlans);
-    };
-
-    const removeGuarantee = (planName, guaranteeIndex) => {
-      const newPlans = { ...props.plans };
-      newPlans[planName].guarantees.splice(guaranteeIndex, 1);
-      emit('update:plans', newPlans);
-    };
-
     return {
       newPlanName,
       updatePlan,
+      updatePlanSubObject,
       addPlan,
       removePlan,
-      addGuarantee,
-      updateGuarantee,
-      removeGuarantee,
     };
   },
 };

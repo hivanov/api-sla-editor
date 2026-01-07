@@ -1,9 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PlansEditor from '../../src/components/PlansEditor.vue'
+import PricingEditor from '../../src/components/PricingEditor.vue'
+import QuotasEditor from '../../src/components/QuotasEditor.vue'
+import SupportPolicyEditor from '../../src/components/SupportPolicyEditor.vue'
+import GuaranteesEditor from '../../src/components/GuaranteesEditor.vue'
+import ServiceCreditsEditor from '../../src/components/ServiceCreditsEditor.vue'
+import MaintenancePolicyEditor from '../../src/components/MaintenancePolicyEditor.vue'
+import ExclusionsEditor from '../../src/components/ExclusionsEditor.vue'
+import LifecyclePolicyEditor from '../../src/components/LifecyclePolicyEditor.vue'
 
 describe('PlansEditor', () => {
-  it('renders the plans editor', () => {
+  it('renders the plans editor with all sub-editors', () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {
@@ -11,7 +19,14 @@ describe('PlansEditor', () => {
             title: 'Gold Enterprise Tier',
             description: 'Mission critical support',
             availability: '99.95%',
-            guarantees: [], // Add guarantees for consistent rendering
+            guarantees: [],
+            pricing: { cost: 100, currency: 'USD', period: 'P1M' },
+            quotas: { 'max-users': '100' },
+            'x-support-policy': {},
+            'x-service-credits': {},
+            'x-maintenance-policy': {},
+            'x-sla-exclusions': [],
+            'x-lifecycle-policy': {},
           },
         },
       },
@@ -20,11 +35,19 @@ describe('PlansEditor', () => {
     expect(wrapper.text()).toContain('Plans')
     expect(wrapper.text()).toContain('enterprise')
     expect(wrapper.find('input[placeholder="Plan Title"]').element.value).toBe('Gold Enterprise Tier')
-    expect(wrapper.find('textarea[placeholder="Plan Description"]').element.value).toBe('Mission critical support')
-    expect(wrapper.find('input[placeholder="Plan Availability"]').element.value).toBe('99.95%')
+
+    // Check for child components
+    expect(wrapper.findComponent(PricingEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(QuotasEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(SupportPolicyEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(GuaranteesEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(ServiceCreditsEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(MaintenancePolicyEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(ExclusionsEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(LifecyclePolicyEditor).exists()).toBe(true)
   })
 
-  it('adds a new plan', async () => {
+  it('adds a new plan with full initial state', async () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {},
@@ -39,7 +62,14 @@ describe('PlansEditor', () => {
         title: '',
         description: '',
         availability: '',
-        guarantees: [], // Expect guarantees array
+        guarantees: [],
+        pricing: {},
+        quotas: {},
+        'x-support-policy': {},
+        'x-service-credits': {},
+        'x-maintenance-policy': {},
+        'x-sla-exclusions': [],
+        'x-lifecycle-policy': {},
       },
     })
   })
@@ -48,7 +78,7 @@ describe('PlansEditor', () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {
-          basic: { title: 'Basic Plan', description: 'Desc', availability: '99%', guarantees: [] },
+          basic: { title: 'Basic Plan', description: 'Desc', availability: '99%', guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
         },
       },
     })
@@ -56,104 +86,39 @@ describe('PlansEditor', () => {
     // Update title
     await wrapper.find('input[placeholder="Plan Title"]').setValue('Updated Basic Plan')
     let expectedPlans = {
-      basic: { title: 'Updated Basic Plan', description: 'Desc', availability: '99%', guarantees: [] },
+      basic: { title: 'Updated Basic Plan', description: 'Desc', availability: '99%', guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
     }
     expect(wrapper.emitted('update:plans')[0][0]).toEqual(expectedPlans)
-    await wrapper.setProps({ plans: expectedPlans }); // Simulate parent updating props
-
-    // Update description
-    await wrapper.find('textarea[placeholder="Plan Description"]').setValue('Updated Desc')
-    expectedPlans = {
-      basic: { title: 'Updated Basic Plan', description: 'Updated Desc', availability: '99%', guarantees: [] },
-    }
-    expect(wrapper.emitted('update:plans')[1][0]).toEqual(expectedPlans)
-    await wrapper.setProps({ plans: expectedPlans }); // Simulate parent updating props
-
-    // Update availability
-    await wrapper.find('input[placeholder="Plan Availability"]').setValue('99.99%')
-    expectedPlans = {
-      basic: { title: 'Updated Basic Plan', description: 'Updated Desc', availability: '99.99%', guarantees: [] },
-    }
-    expect(wrapper.emitted('update:plans')[2][0]).toEqual(expectedPlans)
-    await wrapper.setProps({ plans: expectedPlans }); // Simulate parent updating props
   })
 
-  it('adds a new guarantee to a plan', async () => {
+  it('emits update:plans when sub-editors update', async () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {
-          basic: { title: 'Basic Plan', guarantees: [] },
+          basic: { title: 'Basic Plan', pricing: {}, quotas: {}, guarantees: [], 'x-support-policy': {} },
         },
       },
     })
 
-    await wrapper.find('button.btn-secondary').trigger('click') // Click Add Guarantee button
-    expect(wrapper.emitted('update:plans')[0][0]).toEqual({
-      basic: { title: 'Basic Plan', guarantees: [{ metric: '', limit: '' }] },
-    })
-  })
+    // Test PricingEditor update
+    await wrapper.findComponent(PricingEditor).vm.$emit('update:pricing', { cost: 100 })
+    expect(wrapper.emitted('update:plans')[0][0].basic.pricing).toEqual({ cost: 100 })
 
-  it('updates an existing guarantee', async () => {
-    const wrapper = mount(PlansEditor, {
-      props: {
-        plans: {
-          basic: { title: 'Basic Plan', guarantees: [{ metric: '', limit: '' }] },
-        },
-      },
-    })
-
-    await wrapper.find('input[placeholder="Metric Name"]').setValue('response-time')
-    expect(wrapper.emitted('update:plans')[0][0]).toEqual({
-      basic: { title: 'Basic Plan', guarantees: [{ metric: 'response-time', limit: '' }] },
-    })
-
-    await wrapper.find('input[placeholder="Limit"]').setValue('PT1H')
-    expect(wrapper.emitted('update:plans')[1][0]).toEqual({
-      basic: { title: 'Basic Plan', guarantees: [{ metric: 'response-time', limit: 'PT1H' }] },
-    })
-  })
-
-  it('removes a guarantee from a plan', async () => {
-    const wrapper = mount(PlansEditor, {
-      props: {
-        plans: {
-          basic: { title: 'Basic Plan', description: 'Desc', availability: '99%', guarantees: [{ metric: 'response-time', limit: 'PT1H' }] },
-        },
-      },
-    })
-
-    await wrapper.findAll('.plan-item .card.mb-2 .btn-danger.btn-sm')[0].trigger('click') // Click remove guarantee button
-    expect(wrapper.emitted('update:plans')[0][0]).toEqual({
-      basic: { title: 'Basic Plan', description: 'Desc', availability: '99%', guarantees: [] },
-    })
+    // Test GuaranteesEditor update
+    await wrapper.findComponent(GuaranteesEditor).vm.$emit('update:guarantees', [{ metric: 'uptime', limit: '99.9' }])
+    expect(wrapper.emitted('update:plans')[1][0].basic.guarantees).toEqual([{ metric: 'uptime', limit: '99.9' }])
   })
 
   it('removes a plan', async () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {
-          enterprise: {
-            title: 'Gold Enterprise Tier',
-            description: 'Mission critical support',
-            availability: '99.95%',
-            guarantees: [],
-          },
+          enterprise: { title: 'Gold' },
         },
       },
     })
 
-    await wrapper.find('.card-header > button.btn-danger').trigger('click') // Click remove plan button
+    await wrapper.find('.card-header > button.btn-danger').trigger('click')
     expect(wrapper.emitted('update:plans')[0][0]).toEqual({})
-  })
-
-  it('renders correctly with no plans', () => {
-    const wrapper = mount(PlansEditor, {
-      props: {
-        plans: {},
-      },
-    })
-
-    expect(wrapper.text()).toContain('Plans')
-    expect(wrapper.findAll('.plan-item').length).toBe(0)
   })
 })

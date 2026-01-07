@@ -1,0 +1,64 @@
+import { describe, it, expect } from 'vitest'
+import { mount } from '@vue/test-utils'
+import PricingEditor from '../../src/components/PricingEditor.vue'
+
+describe('PricingEditor', () => {
+  it('renders the pricing editor', () => {
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: { cost: 100, currency: 'USD', period: 'P1M' },
+      },
+    })
+
+    expect(wrapper.text()).toContain('Pricing')
+    expect(wrapper.find('input[placeholder="Cost"]').element.value).toBe('100')
+    expect(wrapper.find('input[placeholder="Currency"]').element.value).toBe('USD')
+    expect(wrapper.find('input[placeholder="Period (ISO 8601 Duration)"]').element.value).toBe('P1M')
+  })
+
+  it('emits update event on cost input and converts to number', async () => {
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: { cost: 100, currency: 'USD', period: 'P1M' },
+      },
+    })
+
+    await wrapper.find('input[placeholder="Cost"]').setValue('200')
+    expect(wrapper.emitted('update:pricing')[0][0]).toEqual({ cost: 200, currency: 'USD', period: 'P1M' })
+  })
+
+  it('emits update event on currency input', async () => {
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: { cost: 100, currency: 'USD', period: 'P1M' },
+      },
+    })
+
+    await wrapper.find('input[placeholder="Currency"]').setValue('EUR')
+    expect(wrapper.emitted('update:pricing')[0][0]).toEqual({ cost: 100, currency: 'EUR', period: 'P1M' })
+  })
+
+  it('emits update event on period input', async () => {
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: { cost: 100, currency: 'USD', period: 'P1M' },
+      },
+    })
+
+    await wrapper.find('input[placeholder="Period (ISO 8601 Duration)"]').setValue('P3M')
+    expect(wrapper.emitted('update:pricing')[0][0]).toEqual({ cost: 100, currency: 'USD', period: 'P3M' })
+  })
+
+  it('renders correctly with empty pricing object', () => {
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: {},
+      },
+    })
+
+    expect(wrapper.text()).toContain('Pricing')
+    expect(wrapper.find('input[placeholder="Cost"]').element.value).toBe('')
+    expect(wrapper.find('input[placeholder="Currency"]').element.value).toBe('')
+    expect(wrapper.find('input[placeholder="Period (ISO 8601 Duration)"]').element.value).toBe('')
+  })
+})

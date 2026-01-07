@@ -2,13 +2,19 @@
 
 ## Description
 
-This project provides a Vue.js application designed for creating, updating, and modifying YAML-based Service Level Agreement (SLA) documents. It ensures that all SLA documents adhere to a strict schema (`schema/schema.json`), preventing inconsistencies and ensuring data integrity. The application bridges the gap between engineering specifications, support policies, and legal requirements by providing a structured and validated approach to SLA management.
+This project provides a Vue.js application designed for creating, updating, and modifying YAML-based Service Level Agreement (SLA) documents. It ensures that all SLA documents adhere to a strict schema (`src/spec/spec.json`), preventing inconsistencies and ensuring data integrity. The application bridges the gap between engineering specifications, support policies, and legal requirements by providing a structured and validated approach to SLA management.
 
 ## Features
 
-*   **GUI-based Editing:** Easily add, remove, and modify SLA document parts through an intuitive graphical user interface.
+*   **GUI-based Editing:** Comprehensive interface for managing all parts of an SLA document, including:
+    *   **Context & Metrics:** Define SLA identity and technical metrics.
+    *   **Service Plans:** Create and manage multiple tiers (e.g., Basic, Enterprise).
+    *   **Quotas & Pricing:** Set usage limits and associated costs.
+    *   **Support & Maintenance:** Define support hours, holiday schedules, and maintenance windows.
+    *   **Legal & Compliance:** Manage service credits, exclusions, and lifecycle policies.
 *   **Source Code Editing:** Edit SLA documents directly in YAML format using a powerful Ace Editor with syntax highlighting and auto-completion.
-*   **Real-time Validation:** Validates SLA documents against a defined JSON schema (`schema/schema.json`) in real-time, providing immediate feedback on errors.
+*   **Real-time Validation:** Validates SLA documents against a defined JSON schema (`src/spec/spec.json`) in real-time, providing immediate feedback on errors and ensuring compliance with SLA4OAI extensions.
+*   **Responsive Design:** Fully responsive layout that adapts to different screen sizes, ensuring a consistent experience across desktop and mobile devices.
 *   **Pre-defined Examples:** Includes example SLA documents for common scenarios, such as:
     *   Support hours (e.g., Mon-Fri, 9-17h German time)
     *   Availability metrics (e.g., equivalent to 1 week of downtime)
