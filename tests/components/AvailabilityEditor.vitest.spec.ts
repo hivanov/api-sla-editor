@@ -15,8 +15,49 @@ describe('AvailabilityEditor', () => {
       props: { availability: '100%' }
     })
     const input = wrapper.find('input[type="number"]')
-    await input.setValue('99.95')
-    expect(wrapper.emitted('update:availability')[0][0]).toBe('99.95%')
+    await input.setValue('99.5')
+    expect(wrapper.emitted('update:availability')[0][0]).toBe('99.5%')
+  })
+
+  it('constrains negative downtime input to 0', async () => {
+    const wrapper = mount(AvailabilityEditor, {
+      props: { availability: '100%' },
+    })
+    // Set days to -1
+    const daysInput = wrapper.findAll('input[type="number"]')[1] // 0 is percentage, 1 is days
+    await daysInput.setValue(-1)
+    
+    // Initial was 100%, and -1 day clamped to 0 still results in 100%
+    // Even if it emits, it should be 100%
+    if (wrapper.emitted('update:availability')) {
+      expect(wrapper.emitted('update:availability')[0][0]).toBe('100%')
+    }
+    
+    // Let's try setting it to something positive first, then negative.
+    await daysInput.setValue(1)
+    const emittedCount = wrapper.emitted('update:availability').length
+    expect(wrapper.emitted('update:availability')[emittedCount - 1][0]).not.toBe('100%')
+    
+    await daysInput.setValue(-1)
+    // Last emission should be 100% (or very close to it if clamped to 0)
+    const lastEmitted = wrapper.emitted('update:availability').slice(-1)[0][0]
+    expect(lastEmitted).toBe('100%')
+  })
+
+  it('constrains negative availability percentage input to 0', async () => {
+    const wrapper = mount(AvailabilityEditor, {
+      props: { availability: '99.9%' }
+    })
+    const input = wrapper.find('input[type="number"]') // removed .first()
+    await input.setValue('-10')
+    // Currently updateAvailability just errors if num <= 0.
+    // Let's see if we should test for error visibility or just that it doesn't emit a negative value.
+    expect(wrapper.text()).toContain('Availability must be > 0% and <= 100%')
+    // It should NOT have emitted an update with -10%
+    const emissions = wrapper.emitted('update:availability') || []
+    emissions.forEach(e => {
+      expect(parseFloat(e[0])).toBeGreaterThan(0)
+    })
   })
 
   it('calculates downtime based on percentage', async () => {

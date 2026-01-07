@@ -31,6 +31,16 @@ describe('ServiceCreditsEditor', () => {
     expect(wrapper.emitted('update:serviceCredits')[0][0].tiers[0].condition.metric).toBe('availability')
   })
 
+  it('constrains negative compensation input to 0', async () => {
+    const wrapper = mount(ServiceCreditsEditor, {
+      props: {
+        serviceCredits: { tiers: [{ condition: { metric: 'uptime' }, compensation: 10 }] },
+      },
+    })
+    await wrapper.find('input[placeholder="5"]').setValue('-10')
+    expect(wrapper.emitted('update:serviceCredits')[0][0].tiers[0].compensation).toBe(0)
+  })
+
   it('handles null serviceCredits prop', () => {
     const wrapper = mount(ServiceCreditsEditor, {
       props: { serviceCredits: null },

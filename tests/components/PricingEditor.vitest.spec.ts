@@ -27,6 +27,17 @@ describe('PricingEditor', () => {
     expect(wrapper.emitted('update:pricing')[0][0]).toEqual({ cost: 200, currency: 'USD', period: 'P1M' })
   })
 
+  it('constrains negative cost input to 0', async () => {
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: { cost: 100, currency: 'USD', period: 'P1M' },
+      },
+    })
+
+    await wrapper.find('input[placeholder="Cost"]').setValue('-50')
+    expect(wrapper.emitted('update:pricing')[0][0]).toEqual({ cost: 0, currency: 'USD', period: 'P1M' })
+  })
+
   it('emits update event on currency input', async () => {
     const wrapper = mount(PricingEditor, {
       props: {
