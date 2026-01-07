@@ -15,9 +15,22 @@
         </div>
       </div>
       <div class="mb-3">
-        <label for="context-type" class="form-label">Type</label>
-        <input type="text" class="form-control" :class="{'is-invalid': errors['/context/type']}" id="context-type" :value="safeContext.type" @input="update('type', $event.target.value)">
-        <div class="invalid-feedback" v-if="errors['/context/type']">
+        <label class="form-label">Type</label>
+        <div class="form-check">
+          <input class="form-check-input" :class="{'is-invalid': errors['/context/type']}" type="radio" name="context-type" id="type-plans" value="plans" :checked="safeContext.type === 'plans'" @change="update('type', 'plans')">
+          <label class="form-check-label" for="type-plans">
+            <strong>plans</strong>
+            <div class="form-text mt-0">Used for a template of a Service Level Agreement. It defines the common characteristics for a set of agreements.</div>
+          </label>
+        </div>
+        <div class="form-check mt-2">
+          <input class="form-check-input" :class="{'is-invalid': errors['/context/type']}" type="radio" name="context-type" id="type-agreements" value="agreements" :checked="safeContext.type === 'agreements'" @change="update('type', 'agreements')">
+          <label class="form-check-label" for="type-agreements">
+            <strong>agreements</strong>
+            <div class="form-text mt-0">Used for a specific instance of a Service Level Agreement between a provider and a consumer.</div>
+          </label>
+        </div>
+        <div class="invalid-feedback d-block" v-if="errors['/context/type']">
           {{ errors['/context/type'].join(', ') }}
         </div>
       </div>
