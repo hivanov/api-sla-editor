@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PlansEditor from '../../src/components/PlansEditor.vue'
+import AvailabilityEditor from '../../src/components/AvailabilityEditor.vue'
 import PricingEditor from '../../src/components/PricingEditor.vue'
 import QuotasEditor from '../../src/components/QuotasEditor.vue'
 import SupportPolicyEditor from '../../src/components/SupportPolicyEditor.vue'
@@ -37,6 +38,7 @@ describe('PlansEditor', () => {
     expect(wrapper.find('input[placeholder="Plan Title"]').element.value).toBe('Gold Enterprise Tier')
 
     // Check for child components
+    expect(wrapper.findComponent(AvailabilityEditor).exists()).toBe(true)
     expect(wrapper.findComponent(PricingEditor).exists()).toBe(true)
     expect(wrapper.findComponent(QuotasEditor).exists()).toBe(true)
     expect(wrapper.findComponent(SupportPolicyEditor).exists()).toBe(true)
@@ -89,6 +91,10 @@ describe('PlansEditor', () => {
       basic: { title: 'Updated Basic Plan', description: 'Desc', availability: '99%', guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
     }
     expect(wrapper.emitted('update:plans')[0][0]).toEqual(expectedPlans)
+
+    // Update availability
+    await wrapper.findComponent(AvailabilityEditor).vm.$emit('update:availability', '99.99%')
+    expect(wrapper.emitted('update:plans')[1][0].basic.availability).toBe('99.99%')
   })
 
   it('emits update:plans when sub-editors update', async () => {

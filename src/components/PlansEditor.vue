@@ -18,10 +18,9 @@
             <label class="form-label">Description</label>
             <textarea class="form-control" placeholder="Plan Description" :value="plan.description" @input="updatePlan(name, 'description', $event.target.value)"></textarea>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Availability</label>
-            <input type="text" class="form-control" placeholder="Plan Availability" :value="plan.availability" @input="updatePlan(name, 'availability', $event.target.value)">
-          </div>
+          
+          <!-- Availability Editor -->
+          <AvailabilityEditor :availability="plan.availability" @update:availability="updatePlan(name, 'availability', $event)" />
 
           <!-- Pricing Editor -->
           <PricingEditor :pricing="plan.pricing" @update:pricing="updatePlanSubObject(name, 'pricing', $event)" />
@@ -60,6 +59,7 @@
 
 <script>
 import { ref } from 'vue';
+import AvailabilityEditor from './AvailabilityEditor.vue';
 import PricingEditor from './PricingEditor.vue';
 import QuotasEditor from './QuotasEditor.vue';
 import SupportPolicyEditor from './SupportPolicyEditor.vue';
@@ -72,6 +72,7 @@ import LifecyclePolicyEditor from './LifecyclePolicyEditor.vue';
 export default {
   name: 'PlansEditor',
   components: {
+    AvailabilityEditor,
     PricingEditor,
     QuotasEditor,
     SupportPolicyEditor,

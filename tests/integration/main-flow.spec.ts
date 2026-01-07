@@ -91,7 +91,10 @@ test.describe('Main flow', () => {
     const basicPlanCard = page.locator('.plans-editor-component .plan-item:has-text("Basic Plan")');
     await basicPlanCard.locator('input[placeholder="Plan Title"]').fill('Basic Plan');
     await basicPlanCard.locator('textarea[placeholder="Plan Description"]').fill('A basic service plan.');
-    await basicPlanCard.locator('input[placeholder="Plan Availability"]').fill('99.9%'); // Adding an availability
+    
+    // Interact with AvailabilityEditor
+    const availEditor = basicPlanCard.locator('.availability-editor-component');
+    await availEditor.locator('input[type="number"]').first().fill('99.9');
     await page.waitForLoadState('networkidle');
 
     // Interact with PricingEditor
@@ -148,6 +151,7 @@ test.describe('Main flow', () => {
     expect(editorValue).toContain('id: test-sla-id');
     expect(editorValue).toContain('response-time');
     expect(editorValue).toContain('title: Basic Plan');
+    expect(editorValue).toContain('availability: 99.9%');
     expect(editorValue).toContain('limit: P0DT0H5M0S');
     expect(editorValue).toContain('cost: 120');
     expect(editorValue).toContain('currency: EUR');
