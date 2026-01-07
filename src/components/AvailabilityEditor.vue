@@ -7,6 +7,14 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Availability Percentage (%)</label>
+        <div class="input-group mb-2">
+          <select class="form-select border-primary tier-select" :value="currentTier" @change="onTierSelect($event.target.value)">
+            <option value="" disabled>Select common tier...</option>
+            <option v-for="tier in commonTiers" :key="tier.value" :value="tier.value">
+              {{ tier.label }} ({{ tier.value }}%)
+            </option>
+          </select>
+        </div>
         <div class="input-group">
           <input 
             type="number" 
@@ -28,7 +36,7 @@
       <div class="row g-2 mb-3">
         <div class="col-md-4">
           <label class="form-label small">Period</label>
-          <select class="form-select form-select-sm" v-model="selectedPeriod" @change="recalculateDowntime">
+          <select class="form-select form-select-sm period-select" v-model="selectedPeriod" @change="recalculateDowntime">
             <option value="day">Daily</option>
             <option value="week">Weekly</option>
             <option value="month">Monthly (30.44d)</option>
@@ -104,9 +112,26 @@ export default {
 
     const percentageValue = ref(parsePercentage(props.availability));
 
+    const commonTiers = [
+      { label: '90%', value: 90 },
+      { label: '95%', value: 95 },
+      { label: '98%', value: 98 },
+      { label: '99% (Two Nines)', value: 99 },
+      { label: '99.5%', value: 99.5 },
+      { label: '99.9% (Three Nines)', value: 99.9 },
+      { label: '99.95%', value: 99.95 },
+      { label: '99.99% (Four Nines)', value: 99.99 },
+      { label: '99.999% (Five Nines)', value: 99.999 },
+    ];
+
     const percentageDisplay = computed(() => {
       // Show up to 9 decimal places if needed for 1ms precision
       return Number(percentageValue.value.toFixed(9)).toString();
+    });
+
+    const currentTier = computed(() => {
+      const match = commonTiers.find(t => Math.abs(t.value - percentageValue.value) < 1e-9);
+      return match ? match.value : '';
     });
 
     const updateAvailability = (val) => {
@@ -127,6 +152,13 @@ export default {
     const onPercentageInput = (val) => {
       updateAvailability(val);
       recalculateDowntime();
+    };
+
+    const onTierSelect = (val) => {
+      if (val) {
+        updateAvailability(val);
+        recalculateDowntime();
+      }
     };
 
     const recalculateDowntime = () => {
@@ -180,7 +212,10 @@ export default {
       downtime,
       percentageValue,
       percentageDisplay,
+      commonTiers,
+      currentTier,
       onPercentageInput,
+      onTierSelect,
       onDowntimeInput,
       recalculateDowntime
     };

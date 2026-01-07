@@ -27,7 +27,7 @@ describe('AvailabilityEditor', () => {
     })
     
     // Select daily
-    await wrapper.find('select').setValue('day')
+    await wrapper.find('.period-select').setValue('day')
     
     // Check downtime inputs
     const inputs = wrapper.findAll('input[type="number"]')
@@ -42,7 +42,7 @@ describe('AvailabilityEditor', () => {
       props: { availability: '100%' }
     })
     
-    await wrapper.find('select').setValue('day')
+    await wrapper.find('.period-select').setValue('day')
     const inputs = wrapper.findAll('input[type="number"]')
     
     // Set downtime to 1 hour (out of 24) -> 1/24 = 0.041666... -> 95.8333...%
@@ -83,7 +83,7 @@ describe('AvailabilityEditor', () => {
       props: { availability: '100%' }
     })
     
-    await wrapper.find('select').setValue('year')
+    await wrapper.find('.period-select').setValue('year')
     const inputs = wrapper.findAll('input[type="number"]')
     
     await inputs.at(5).setValue('1') // 1ms
@@ -93,5 +93,17 @@ describe('AvailabilityEditor', () => {
     // 99.999999997% (approx depending on float precision but should be close)
     expect(parseFloat(lastEmitted)).toBeLessThan(100)
     expect(parseFloat(lastEmitted)).toBeGreaterThan(99.99999999)
+  })
+
+  it('updates availability when a common tier is selected', async () => {
+    const wrapper = mount(AvailabilityEditor, {
+      props: { availability: '100%' }
+    })
+    
+    await wrapper.find('.tier-select').setValue('99.9')
+    expect(wrapper.emitted('update:availability')[0][0]).toBe('99.9%')
+    
+    // Check if percentage input is updated
+    expect(wrapper.find('input[type="number"]').element.value).toBe('99.9')
   })
 })
