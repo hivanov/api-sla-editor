@@ -4,7 +4,7 @@
       Metrics
     </div>
     <div class="card-body">
-      <div v-for="(metric, name) in metrics" :key="name" class="card mb-3">
+      <div v-for="(metric, name) in safeMetrics" :key="name" class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5>{{ name }}</h5>
           <button class="btn btn-danger btn-sm" @click="removeMetric(name)">Remove</button>
@@ -35,29 +35,31 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 export default {
   name: 'MetricsEditor',
   props: {
     metrics: {
       type: Object,
-      required: true,
+      default: () => ({}),
     },
   },
   emits: ['update:metrics'],
   setup(props, { emit }) {
     const newMetricName = ref('');
 
+    const safeMetrics = computed(() => props.metrics || {});
+
     const updateMetric = (name, key, value) => {
-      const newMetrics = { ...props.metrics };
+      const newMetrics = { ...safeMetrics.value };
       newMetrics[name] = { ...newMetrics[name], [key]: value };
       emit('update:metrics', newMetrics);
     };
 
     const addMetric = () => {
-      if (newMetricName.value && !props.metrics[newMetricName.value]) {
-        const newMetrics = { ...props.metrics };
+      if (newMetricName.value && !safeMetrics.value[newMetricName.value]) {
+        const newMetrics = { ...safeMetrics.value };
         newMetrics[newMetricName.value] = {
           type: '',
           unit: '',
@@ -69,13 +71,14 @@ export default {
     };
 
     const removeMetric = (name) => {
-      const newMetrics = { ...props.metrics };
+      const newMetrics = { ...safeMetrics.value };
       delete newMetrics[name];
       emit('update:metrics', newMetrics);
     };
 
     return {
       newMetricName,
+      safeMetrics,
       updateMetric,
       addMetric,
       removeMetric,
