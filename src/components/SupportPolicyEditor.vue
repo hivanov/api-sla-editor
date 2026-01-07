@@ -47,8 +47,17 @@
           <button class="btn btn-danger btn-sm" @click="removeHours(index)">Remove</button>
         </div>
         <div class="mb-3">
-          <label class="form-label">Day of Week (comma-separated)</label>
-          <input type="text" class="form-control" placeholder="e.g., Monday,Tuesday" :value="hours.dayOfWeek ? hours.dayOfWeek.join(',') : ''" @input="updateHours(index, 'dayOfWeek', $event.target.value.split(','))">
+          <label class="form-label d-block">Day of Week</label>
+          <div v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" :key="day" class="form-check form-check-inline">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              :id="'day-' + index + '-' + day" 
+              :checked="hours.dayOfWeek && hours.dayOfWeek.includes(day)"
+              @change="toggleDay(index, day, $event.target.checked)"
+            >
+            <label class="form-check-label" :for="'day-' + index + '-' + day">{{ day }}</label>
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Opens (HH:mm)</label>
@@ -166,6 +175,23 @@ export default {
     const removeHours = (index) => {
       const newPolicy = { ...safeSupportPolicy.value };
       newPolicy.hoursAvailable.splice(index, 1);
+      updateSupportPolicy(newPolicy);
+    };
+
+    const toggleDay = (hoursIndex, day, checked) => {
+      const newPolicy = { ...safeSupportPolicy.value };
+      const hours = { ...newPolicy.hoursAvailable[hoursIndex] };
+      const days = hours.dayOfWeek ? [...hours.dayOfWeek] : [];
+      
+      if (checked) {
+        if (!days.includes(day)) days.push(day);
+      } else {
+        const idx = days.indexOf(day);
+        if (idx > -1) days.splice(idx, 1);
+      }
+      
+      hours.dayOfWeek = days;
+      newPolicy.hoursAvailable[hoursIndex] = hours;
       updateSupportPolicy(newPolicy);
     };
 
@@ -301,6 +327,7 @@ export default {
       addHours,
       updateHours,
       removeHours,
+      toggleDay,
       addHolidaySource,
       updateHolidaySource,
       removeHolidaySource,

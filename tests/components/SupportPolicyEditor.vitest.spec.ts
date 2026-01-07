@@ -32,7 +32,7 @@ describe('SupportPolicyEditor', () => {
     expect(wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable[0]).toEqual({ dayOfWeek: [], opens: '', closes: '' })
   })
 
-  it('updates existing hours available', async () => {
+  it('updates existing hours available via checkboxes', async () => {
     const policy = {
       hoursAvailable: [{ dayOfWeek: ['Monday'], opens: '09:00', closes: '17:00' }],
       holidaySchedule: { sources: [] },
@@ -40,11 +40,18 @@ describe('SupportPolicyEditor', () => {
     };
     const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
 
-    await wrapper.find('input[placeholder="e.g., Monday,Tuesday"]').setValue('Monday,Tuesday,Wednesday')
-    expect(wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable[0].dayOfWeek).toEqual(['Monday', 'Tuesday', 'Wednesday'])
+    // Select Tuesday
+    const tuesdayCheckbox = wrapper.find('input#day-0-Tuesday')
+    await tuesdayCheckbox.setValue(true)
+    expect(wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable[0].dayOfWeek).toEqual(['Monday', 'Tuesday'])
+
+    // Deselect Monday
+    const mondayCheckbox = wrapper.find('input#day-0-Monday')
+    await mondayCheckbox.setValue(false)
+    expect(wrapper.emitted('update:supportPolicy')[1][0].hoursAvailable[0].dayOfWeek).toEqual(['Tuesday'])
 
     await wrapper.find('input[placeholder="HH:mm"]').setValue('10:00')
-    expect(wrapper.emitted('update:supportPolicy')[1][0].hoursAvailable[0].opens).toBe('10:00')
+    expect(wrapper.emitted('update:supportPolicy')[2][0].hoursAvailable[0].opens).toBe('10:00')
   })
 
   it('removes hours available', async () => {
