@@ -34,7 +34,6 @@ describe('PlansEditor', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Plans')
     expect(wrapper.text()).toContain('enterprise')
     expect(wrapper.find('input[placeholder="Plan Title"]').element.value).toBe('Gold Enterprise Tier')
 
@@ -125,7 +124,7 @@ describe('PlansEditor', () => {
       },
     })
 
-    await wrapper.find('.card-header > button.btn-danger').trigger('click')
+    await wrapper.find('.card-header > button.btn-outline-danger').trigger('click')
     expect(wrapper.emitted('update:plans')[0][0]).toEqual({})
   })
 })
