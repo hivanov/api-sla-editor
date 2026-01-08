@@ -21,6 +21,9 @@
                     <a href="#" class="nav-link" :class="{ active: activeTab === 'gui' }" @click.prevent="activeTab = 'gui'">GUI</a>
                   </li>
                   <li class="nav-item">
+                    <a href="#" class="nav-link" :class="{ active: activeTab === 'description' }" @click.prevent="activeTab = 'description'">Description</a>
+                  </li>
+                  <li class="nav-item">
                     <a href="#" class="nav-link" :class="{ active: activeTab === 'source' }" @click.prevent="activeTab = 'source'">Source</a>
                   </li>
                 </ul>
@@ -38,6 +41,9 @@
                   <ResponsiveWrapper title="Plans" id="plans-editor" v-model="sla.plans">
                     <PlansEditor :plans="sla.plans" :metrics="sla.metrics" :errors="validationErrorsMap" @update:plans="(p) => { Object.keys(sla.plans).forEach(k => delete sla.plans[k]); Object.assign(sla.plans, p); }" />
                   </ResponsiveWrapper>
+                </div>
+                <div v-show="activeTab === 'description'">
+                  <PolicyDescription :sla="sla" />
                 </div>
                 <div v-show="activeTab === 'source'" class="h-100">
                   <div ref="aceEditor" class="ace-editor-container h-100"></div>
@@ -135,6 +141,7 @@ import ContextEditor from './components/ContextEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
 import PlansEditor from './components/PlansEditor.vue';
 import ResponsiveWrapper from './components/ResponsiveWrapper.vue';
+import PolicyDescription from './components/PolicyDescription.vue';
 
 const Range = ace.require('ace/range').Range;
 
@@ -145,6 +152,7 @@ export default {
     MetricsEditor,
     PlansEditor,
     ResponsiveWrapper,
+    PolicyDescription,
   },
   setup() {
     const activeTab = ref('gui');
