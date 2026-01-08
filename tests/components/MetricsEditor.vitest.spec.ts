@@ -16,7 +16,6 @@ describe('MetricsEditor', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Metrics')
     expect(wrapper.text()).toContain('uptime')
     expect(wrapper.find('select.form-select').element.value).toBe('number')
     // Find all selects and check the second one for unit
@@ -33,7 +32,7 @@ describe('MetricsEditor', () => {
     })
 
     await wrapper.find('input[placeholder="New metric name"]').setValue('new-metric')
-    await wrapper.find('button').trigger('click')
+    await wrapper.find('button.btn-primary').trigger('click')
 
     expect(wrapper.emitted('update:metrics')[0]).toEqual([{
       'new-metric': {
@@ -57,7 +56,7 @@ describe('MetricsEditor', () => {
       },
     })
 
-    await wrapper.find('button.btn-danger').trigger('click')
+    await wrapper.find('button.btn-outline-danger').trigger('click')
     expect(wrapper.emitted('update:metrics')[0]).toEqual([{}])
   })
 

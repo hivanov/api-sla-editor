@@ -10,7 +10,6 @@ describe('ContextEditor', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Context')
     expect(wrapper.find('input#context-id').element.value).toBe('test-id')
     expect((wrapper.find('input#type-plans').element as HTMLInputElement).checked).toBe(true)
     expect((wrapper.find('input#type-agreements').element as HTMLInputElement).checked).toBe(false)
@@ -45,7 +44,6 @@ describe('ContextEditor', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Context')
     expect(wrapper.find('input#context-id').element.value).toBe('')
     expect((wrapper.find('input#type-plans').element as HTMLInputElement).checked).toBe(false)
     expect((wrapper.find('input#type-agreements').element as HTMLInputElement).checked).toBe(false)

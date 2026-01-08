@@ -101,7 +101,6 @@ a,
 
 @media (min-width: 1024px) {
   body {
-    display: flex;
-    place-items: center;
+    /* removed display: flex; place-items: center; to allow full height */
   }
 }
