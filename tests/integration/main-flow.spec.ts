@@ -124,7 +124,7 @@ test.describe('Main flow', () => {
     await basicPlanCard.locator('button:has-text("Add Guarantee")').click();
     await page.waitForLoadState('networkidle');
     
-    await basicPlanCard.locator('.guarantees-editor-component select').selectOption('response-time');
+    await basicPlanCard.locator('.guarantees-editor-component select').first().selectOption('response-time');
     await basicPlanCard.locator('.guarantees-editor-component input[placeholder="e.g. P1DT4H"]').fill('P0DT0H5M0S'); // 5 minutes
     await page.waitForLoadState('networkidle');
 
@@ -181,7 +181,7 @@ test.describe('Main flow', () => {
     expect(editorValue).toContain('response-time');
     expect(editorValue).toContain('title: Basic Plan');
     expect(editorValue).toContain('availability: 99.9%');
-    expect(editorValue).toContain('limit: P0DT0H5M0S');
+    expect(editorValue).toContain('period: P0DT0H5M0S');
     expect(editorValue).toContain('cost: 120');
     expect(editorValue).toContain('currency: EUR');
     expect(editorValue).toContain('period: P30D');

@@ -85,3 +85,19 @@ The application has been updated to be more responsive. Key changes include:
 ### Playwright Test Fix
 
 *   The Playwright integration test `tests/integration/main-flow.spec.ts` had a failing test (`should show validation errors`) due to an outdated locator. The selector was changed from `.col-4 .card .card-body .alert-danger` to `.col-md-4 .card .card-body .alert-danger` to correctly target the validation error message in the responsive layout, which now uses `col-md-4` on the configured desktop viewport.
+
+
+
+### Lessons Learned (Session: SLO Refactoring)
+
+
+
+*   **Component Extraction:** When refactoring complex logic into reusable components (e.g., `ServiceLevelObjectivesEditor`), ensure that all reactive state management and event emitters are fully ported. Unit tests for the new component should be created immediately, and parent components should be tested for correct integration.
+
+*   **Playwright Selector Robustness:** As the UI grows with more similar editors (e.g., `GuaranteesEditor` vs `ServiceLevelObjectivesEditor`), generic selectors like `page.locator('select')` will likely cause "strict mode violations". Always use specific parent classes or unique attributes (e.g., `.guarantees-editor-component select`) to disambiguate.
+
+*   **Schema Evolution:** When updating the JSON schema to allow data in new locations (e.g., moving SLOs from Support Policy to Plans), remember to update the initial state of the relevant objects in the Vue components (e.g., `addPlan` in `PlansEditor.vue`) and verify the synchronization logic with the YAML source.
+
+*   **YAML Property Alignment:** Transitioning from legacy "Simple" fields to "Structured" fields often changes the resulting YAML property names (e.g., from `limit` to `period`). Integration tests that assert against the generated YAML content must be updated to match the default or selected mode of the editor.
+
+*   **Tool Output Verification:** After performing file writes with LLM tools, verify that no critical sections (like `<script>` blocks) were accidentally truncated or omitted, especially when working with large Vue SFCs.
