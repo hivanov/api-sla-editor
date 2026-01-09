@@ -34,4 +34,28 @@ test.describe('Description Tab', () => {
     await expect(description).toContainText('Cost: 10 UNIT');
     await expect(description).toContainText('(Equivalent to 50.00 EUR)');
   });
+
+  test('should reflect holiday calendar names in description', async ({ page }) => {
+    await page.click('text=GUI');
+    
+    // Add Plan
+    await page.fill('input[placeholder="New plan name"]', 'Gold');
+    await page.click('button:has-text("Add Plan")');
+
+    // Add Holiday Source
+    await page.click('button:has-text("Add Holiday Source")');
+    const holidaySource = page.locator('.holiday-source-item').first();
+    await holidaySource.locator('select').selectOption('ical');
+    
+    const input = holidaySource.locator('input[placeholder="https://example.com/holidays.ics"]');
+    await input.fill('https://calendar.google.com/calendar/ical/de.by%23holiday%40group.v.calendar.google.com/public/basic.ics');
+    await input.dispatchEvent('input');
+
+    // Go to Description tab
+    await page.click('text=Description');
+    
+    const description = page.locator('.policy-description');
+    await expect(description).toContainText('Germany: Bavaria Holidays');
+    await expect(description).toContainText('(from feed: https://calendar.google.com/calendar/ical/de.by%23holiday%40group.v.calendar.google.com/public/basic.ics)');
+  });
 });

@@ -97,7 +97,7 @@
 
       <!-- Holiday Schedule -->
       <h6 class="mt-4">Holiday Schedule</h6>
-      <div v-for="(source, index) in safeSupportPolicy.holidaySchedule ? safeSupportPolicy.holidaySchedule.sources : []" :key="index" class="card mb-2 p-2">
+      <div v-for="(source, index) in safeSupportPolicy.holidaySchedule ? safeSupportPolicy.holidaySchedule.sources : []" :key="index" class="card mb-2 p-2 holiday-source-item">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Source #{{ index + 1 }}</span>
           <button class="btn btn-danger btn-sm" @click="removeHolidaySource(index)">Remove</button>
@@ -122,10 +122,16 @@
         </div>
         <div v-if="source.type === 'ical'" class="mb-3">
           <label class="form-label">Calendar URL</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/holidays.ics" :value="source.calendarUrl" @input="updateHolidaySource(index, 'calendarUrl', $event.target.value)">
-          <div class="invalid-feedback" v-if="errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']">
+          <div class="input-group">
+            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/holidays.ics" :value="source.calendarUrl" @input="updateHolidaySource(index, 'calendarUrl', $event.target.value)" :list="'holiday-calendars-' + index">
+            <datalist :id="'holiday-calendars-' + index">
+              <option v-for="cal in allHolidayCalendars" :key="cal.id" :value="getGoogleHolidayCalendarUrl(cal.id)">{{ cal.name }}</option>
+            </datalist>
+          </div>
+          <div class="invalid-feedback d-block" v-if="errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']">
             {{ errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl'].join(', ') }}
           </div>
+          <div class="form-text">Search for a country to find its Google Holiday Calendar.</div>
         </div>
         <div v-if="source.type === 'manual'" class="mb-3">
           <label class="form-label">Dates (comma-separated YYYY-MM-DD)</label>
@@ -151,7 +157,7 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import DurationEditor from './DurationEditor.vue';
 import ServiceLevelObjectivesEditor from './ServiceLevelObjectivesEditor.vue';
 
@@ -182,6 +188,7 @@ export default {
   emits: ['update:supportPolicy'],
   setup(props, { emit }) {
     const safeSupportPolicy = computed(() => props.supportPolicy || {});
+    const holidayData = inject('holidayCalendars', { all: [], getUrl: () => '' });
 
     const updateSupportPolicy = (newPolicy) => {
       emit('update:supportPolicy', newPolicy);
@@ -338,6 +345,8 @@ export default {
 
     return {
       safeSupportPolicy,
+      allHolidayCalendars: holidayData.all,
+      getGoogleHolidayCalendarUrl: holidayData.getUrl,
       addHours,
       updateHours,
       removeHours,

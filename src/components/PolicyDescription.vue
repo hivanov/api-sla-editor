@@ -8,6 +8,7 @@
 import { computed } from 'vue';
 import { marked } from 'marked';
 import { formatDuration, formatRRule, hasContent } from '../utils/formatters';
+import { getHolidayCalendarName } from '../utils/holidays';
 
 export default {
   name: 'PolicyDescription',
@@ -157,7 +158,14 @@ export default {
                 support.holidaySchedule.sources.forEach(s => {
                   if (s.type === 'region') md += `- Regional holidays for **${s.regionCode}**\n`;
                   else if (s.type === 'manual' && s.dates) md += `- Specified dates: ${s.dates.join(', ')}\n`;
-                  else if (s.type === 'ical') md += `- Calendar feed: ${s.calendarUrl}\n`;
+                  else if (s.type === 'ical') {
+                    const calendarName = getHolidayCalendarName(s.calendarUrl);
+                    if (calendarName) {
+                      md += `- **${calendarName}** (from feed: ${s.calendarUrl})\n`;
+                    } else {
+                      md += `- Calendar feed: ${s.calendarUrl}\n`;
+                    }
+                  }
                   if (s.description) md += `  *${s.description}*\n`;
                 });
                 md += `\n`;

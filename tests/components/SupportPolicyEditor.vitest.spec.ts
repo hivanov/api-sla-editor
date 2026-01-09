@@ -1,8 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SupportPolicyEditor from '../../src/components/SupportPolicyEditor.vue'
+import { getAllHolidayCalendars, getGoogleHolidayCalendarUrl } from '../../src/utils/holidays'
 
 describe('SupportPolicyEditor', () => {
+  // Global provide for components that use inject
+  const globalOptions = {
+    provide: {
+      holidayCalendars: {
+        all: getAllHolidayCalendars(),
+        getUrl: getGoogleHolidayCalendarUrl
+      }
+    }
+  };
+
   // Helper to create a basic supportPolicy object for props
   const createBaseSupportPolicy = () => ({
     hoursAvailable: [],
@@ -15,6 +26,7 @@ describe('SupportPolicyEditor', () => {
       props: {
         supportPolicy: createBaseSupportPolicy(),
       },
+      global: globalOptions
     })
     expect(wrapper.text()).toContain('Support Policy')
     expect(wrapper.text()).toContain('Hours Available')
@@ -26,6 +38,7 @@ describe('SupportPolicyEditor', () => {
   it('adds new hours available', async () => {
     const wrapper = mount(SupportPolicyEditor, {
       props: { supportPolicy: createBaseSupportPolicy() },
+      global: globalOptions
     })
     await wrapper.findAll('button.btn-secondary.btn-sm').filter(w => w.text().includes("Add Hours"))[0].trigger('click')
     expect(wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable.length).toBe(1)
@@ -38,7 +51,7 @@ describe('SupportPolicyEditor', () => {
       holidaySchedule: { sources: [] },
       serviceLevelObjectives: [],
     };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy }, global: globalOptions })
 
     // Select Tuesday
     const tuesdayCheckbox = wrapper.find('input#day-0-Tuesday')
@@ -56,7 +69,7 @@ describe('SupportPolicyEditor', () => {
 
   it('applies Workdays preset', async () => {
     const policy = { hoursAvailable: [{ dayOfWeek: [], opens: '', closes: '' }] };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy }, global: globalOptions })
     
     await wrapper.findAll('button.btn-outline-primary').filter(w => w.text().includes("Workdays"))[0].trigger('click')
     const updated = wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable[0]
@@ -67,7 +80,7 @@ describe('SupportPolicyEditor', () => {
 
   it('applies 24x7 preset', async () => {
     const policy = { hoursAvailable: [{ dayOfWeek: [], opens: '', closes: '' }] };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy }, global: globalOptions })
     
     await wrapper.findAll('button.btn-outline-primary').filter(w => w.text().includes("24x7"))[0].trigger('click')
     const updated = wrapper.emitted('update:supportPolicy')[0][0].hoursAvailable[0]
@@ -82,7 +95,7 @@ describe('SupportPolicyEditor', () => {
       holidaySchedule: { sources: [] },
       serviceLevelObjectives: [],
     };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy }, global: globalOptions })
 
     // Find the remove button for hours available, it's the danger button inside the first card's header div
     await wrapper.findAll('.card-body .card.mb-2 .btn-danger.btn-sm').filter(w => w.text() === "Remove")[0].trigger('click') 
@@ -91,7 +104,7 @@ describe('SupportPolicyEditor', () => {
 
   // Holiday Schedule Tests
   it('adds a new holiday source (region)', async () => {
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() }, global: globalOptions })
     await wrapper.findAll('button.btn-secondary.btn-sm').filter(w => w.text().includes("Add Holiday Source"))[0].trigger('click')
     expect(wrapper.emitted('update:supportPolicy')[0][0].holidaySchedule.sources.length).toBe(1)
     expect(wrapper.emitted('update:supportPolicy')[0][0].holidaySchedule.sources[0]).toEqual({ type: 'region' })
@@ -101,7 +114,7 @@ describe('SupportPolicyEditor', () => {
   })
 
   it('adds a new holiday source (ical)', async () => {
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() }, global: globalOptions })
     await wrapper.findAll('button.btn-secondary.btn-sm').filter(w => w.text().includes("Add Holiday Source"))[0].trigger('click')
     await wrapper.find('select').setValue('ical') // Change type to iCal
     expect(wrapper.emitted('update:supportPolicy')[1][0].holidaySchedule.sources[0].type).toBe('ical')
@@ -116,7 +129,7 @@ describe('SupportPolicyEditor', () => {
       holidaySchedule: { sources: [{ type: 'region', regionCode: 'DE' }] },
       serviceLevelObjectives: [],
     };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy }, global: globalOptions })
 
     // Find the remove button for holiday source
     await wrapper.findAll('.card.mb-2.p-2 > .d-flex > .btn-danger.btn-sm')[0].trigger('click') 
@@ -125,7 +138,7 @@ describe('SupportPolicyEditor', () => {
 
   it('updates support policy when SLOs change', async () => {
     const policy = createBaseSupportPolicy();
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } });
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy }, global: globalOptions });
     
     const sloEditor = wrapper.getComponent({ name: 'ServiceLevelObjectivesEditor' });
     const newSlos = [{ priority: 'High', name: 'Test', guarantees: [] }];
@@ -138,7 +151,7 @@ describe('SupportPolicyEditor', () => {
 
   // Contact Points and Channels Tests
   it('adds a new contact point and channel', async () => {
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() }, global: globalOptions })
     await wrapper.findAll('button.btn-secondary').filter(w => w.text().includes("Add Contact Point"))[0].trigger('click')
     expect(wrapper.emitted('update:supportPolicy')[0][0].contactPoints.length).toBe(1)
     
@@ -156,7 +169,7 @@ describe('SupportPolicyEditor', () => {
         channels: [{ type: 'web', url: 'https://example.com' }]
       }]
     };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy }, global: globalOptions })
 
     const select = wrapper.find('select');
     
