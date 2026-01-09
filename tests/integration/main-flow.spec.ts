@@ -105,6 +105,7 @@ test.describe('Main flow', () => {
     
     // Interact with AvailabilityEditor
     const availEditor = basicPlanCard.locator('.availability-editor-component');
+    await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
     await availEditor.locator('input[type="number"]').first().fill('99.9');
     await page.waitForLoadState('networkidle');
 

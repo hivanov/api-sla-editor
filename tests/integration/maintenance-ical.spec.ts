@@ -13,6 +13,7 @@ test.describe('Maintenance iCal Source', () => {
     await page.click('.plans-editor-component button:has-text("Add Plan")');
     
     // Satisfy required availability
+    await page.locator('.availability-editor-component .nav-link:has-text("Manual Entry")').click();
     await page.locator('.availability-editor-component input[type="number"]').first().fill('100');
     
     const maintenanceEditor = page.locator('.maintenance-policy-editor-component');
