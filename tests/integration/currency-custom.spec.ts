@@ -75,4 +75,43 @@ test.describe('Custom Currencies', () => {
     // Check that it's also in the global error list at the bottom
     await expect(page.locator('.validation-card')).toContainText('Value must be at least 0');
   });
+
+  test('should allow choosing a standard currency (e.g. EUR)', async ({ page }) => {
+    await page.click('text=GUI');
+    
+    // Add a Plan
+    await page.click('text=Add Plan');
+    await page.locator('input[placeholder="New plan name"]').fill('Euro Plan');
+    await page.click('button:has-text("Add Plan")');
+
+    const pricingEditor = page.locator('.plan-item:has-text("Euro Plan")').locator('.pricing-editor-component');
+    const currencyInput = pricingEditor.locator('input[placeholder="Currency"]');
+    
+    await currencyInput.fill('EUR');
+    
+    await page.click('text=Source');
+    await expect(page.locator('.ace_content')).toContainText('currency: EUR');
+  });
+
+  test('should allow using custom currency in service credits', async ({ page }) => {
+    await page.click('text=GUI');
+    
+    // Add custom currency
+    await page.click('text=Add Custom Currency');
+    await page.locator('.currency-editor-component input[placeholder="SKU"]').fill('TOKEN');
+    
+    // Add a Plan
+    await page.click('text=Add Plan');
+    await page.locator('input[placeholder="New plan name"]').fill('Credit Plan');
+    await page.click('button:has-text("Add Plan")');
+
+    const creditEditor = page.locator('.plan-item:has-text("Credit Plan")').locator('.service-credits-editor-component');
+    const currencyInput = creditEditor.locator('input[placeholder="Currency"]');
+    
+    await currencyInput.fill('TOKEN');
+    
+    await page.click('text=Source');
+    await expect(page.locator('.ace_content')).toContainText('x-service-credits:');
+    await expect(page.locator('.ace_content')).toContainText('currency: TOKEN');
+  });
 });
