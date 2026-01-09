@@ -52,4 +52,22 @@ describe('CurrencyEditor', () => {
     await wrapper.find('button.btn-outline-danger').trigger('click')
     expect(wrapper.emitted('update:custom-currencies')[0][0]).toEqual([])
   })
+
+  it('displays validation errors for negative conversion rate', () => {
+    const wrapper = mount(CurrencyEditor, {
+      props: {
+        customCurrencies: [{ 
+          code: 'CPU', 
+          description: 'desc', 
+          conversion: { rate: -1, baseCurrency: 'USD' } 
+        }],
+        errors: {
+          '/customCurrencies/0/conversion/rate': ['Value must be at least 0']
+        }
+      },
+    })
+    const rateInput = wrapper.find('input[type="number"]')
+    expect(rateInput.classes()).toContain('is-invalid')
+    expect(wrapper.text()).toContain('Value must be at least 0')
+  })
 })

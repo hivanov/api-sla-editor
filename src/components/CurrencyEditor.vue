@@ -37,7 +37,7 @@
         <div class="row g-2">
           <div class="col-md-6">
             <label class="form-label">Rate (1 {{ currency.code || 'unit' }} = ?)</label>
-            <input type="number" step="any" class="form-control" 
+            <input type="number" step="any" min="0" class="form-control" 
                    :class="{'is-invalid': errors[path + '/' + index + '/conversion/rate']}"
                    placeholder="1.0" 
                    :value="currency.conversion?.rate" 
