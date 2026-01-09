@@ -101,3 +101,11 @@ The application has been updated to be more responsive. Key changes include:
 *   **YAML Property Alignment:** Transitioning from legacy "Simple" fields to "Structured" fields often changes the resulting YAML property names (e.g., from `limit` to `period`). Integration tests that assert against the generated YAML content must be updated to match the default or selected mode of the editor.
 
 *   **Tool Output Verification:** After performing file writes with LLM tools, verify that no critical sections (like `<script>` blocks) were accidentally truncated or omitted, especially when working with large Vue SFCs.
+
+### Lessons Learned (Session: Custom Currencies & Data Management)
+
+*   **Datalists for UX:** Using `<datalist>` instead of `<select>` provides a superior "combo-box" experience, allowing users to select from a large list of standard options (like ISO 4217 currencies) while still maintaining the flexibility to enter custom values (like "CPU Tokens") that haven't been globally defined yet.
+*   **Centralized Data Providers:** For data required by multiple nested components (e.g., the consolidated list of standard + custom currencies), using Vue's `provide/inject` pattern is more maintainable and cleaner than "prop drilling" through several layers of components.
+*   **Comprehensive Data Fetching:** When implementing standard lists (currencies, countries, etc.), fetching a complete dataset via `curl` or external APIs during development ensures better utility than manually creating a small, incomplete subset.
+*   **Strict Mode in Testing:** When tests fail due to "strict mode violations" in Playwright, it's often a sign that the UI has become more complex with similar repeating elements. Use container-specific locators (e.g., `parent.locator('input')`) rather than global selectors to ensure reliability.
+*   **Markdown Integration:** When reflecting new data types (like custom currency conversions) in human-readable views (Description tab), ensure that the logic handles edge cases like missing conversion rates or partial data gracefully to avoid broken formatting.
