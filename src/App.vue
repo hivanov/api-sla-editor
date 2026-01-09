@@ -34,6 +34,10 @@
                     <ContextEditor :context="sla.context" :errors="validationErrorsMap" @update:context="Object.assign(sla.context, $event)" />
                   </ResponsiveWrapper>
                   
+                  <ResponsiveWrapper title="Currencies" id="currency-editor" v-model="sla.customCurrencies">
+                    <CurrencyEditor :custom-currencies="sla.customCurrencies" :errors="validationErrorsMap" @update:custom-currencies="sla.customCurrencies = $event" />
+                  </ResponsiveWrapper>
+                  
                   <ResponsiveWrapper title="Metrics" id="metrics-editor" v-model="sla.metrics">
                     <MetricsEditor :metrics="sla.metrics" :errors="validationErrorsMap" @update:metrics="(m) => { Object.keys(sla.metrics).forEach(k => delete sla.metrics[k]); Object.assign(sla.metrics, m); }" />
                   </ResponsiveWrapper>
@@ -122,7 +126,8 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, watch, reactive, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, reactive, computed, provide } from 'vue';
+import { currencies } from './utils/currencies';
 import 'bootstrap/dist/css/bootstrap.css';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -138,6 +143,7 @@ import supportMonFri from './assets/examples/support-mon-fri.yaml?raw';
 import availability1WeekDowntime from './assets/examples/availability-1-week-downtime.yaml?raw';
 import metrics100ConcurrentConnections from './assets/examples/metrics-100-concurrent-connections.yaml?raw';
 import ContextEditor from './components/ContextEditor.vue';
+import CurrencyEditor from './components/CurrencyEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
 import PlansEditor from './components/PlansEditor.vue';
 import ResponsiveWrapper from './components/ResponsiveWrapper.vue';
@@ -149,6 +155,7 @@ export default {
   name: 'App',
   components: {
     ContextEditor,
+    CurrencyEditor,
     MetricsEditor,
     PlansEditor,
     ResponsiveWrapper,
@@ -188,7 +195,8 @@ export default {
       sla: "1.0.0", // Required by schema
       context: { id: '', type: 'plans' }, // Default structure for context editor
       metrics: {},
-      plans: {}
+      plans: {},
+      customCurrencies: []
     });
 
     const examples = {
@@ -196,6 +204,17 @@ export default {
       'availability-1-week-downtime': availability1WeekDowntime,
       'metrics-100-concurrent-connections': metrics100ConcurrentConnections,
     };
+
+    const availableCurrencies = computed(() => {
+      const custom = (sla.customCurrencies || []).map(c => ({
+        code: c.code,
+        name: c.description || c.code,
+        isCustom: true
+      })).filter(c => c.code);
+      return [...currencies, ...custom];
+    });
+
+    provide('availableCurrencies', availableCurrencies);
 
     const ajv = new Ajv({ allErrors: true });
     addFormats(ajv);
@@ -273,6 +292,11 @@ export default {
              }
           } else {
              Object.keys(sla.plans).forEach(key => delete sla.plans[key]);
+          }
+          if (doc.customCurrencies) {
+             sla.customCurrencies.splice(0, sla.customCurrencies.length, ...doc.customCurrencies);
+          } else {
+             sla.customCurrencies.splice(0, sla.customCurrencies.length);
           }
           if (doc.sla) sla.sla = doc.sla;
         }

@@ -27,6 +27,25 @@
         }
       }
     },
+    "customCurrencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "description"],
+        "properties": {
+          "code": { "type": "string" },
+          "description": { "type": "string" },
+          "conversion": {
+            "type": "object",
+            "required": ["rate", "baseCurrency"],
+            "properties": {
+              "rate": { "type": "number" },
+              "baseCurrency": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
     "plans": {
       "type": "object",
       "additionalProperties": { "$ref": "#/definitions/plan" }
