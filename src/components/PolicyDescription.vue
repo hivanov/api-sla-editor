@@ -39,6 +39,19 @@ export default {
       
       md += `\n---\n\n`;
 
+      // Currencies Section
+      if (props.sla.customCurrencies && props.sla.customCurrencies.length > 0) {
+        md += `## Currencies\n\n`;
+        props.sla.customCurrencies.forEach(c => {
+          md += `- **${c.code}**: ${c.description}`;
+          if (c.conversion && c.conversion.rate !== undefined && c.conversion.baseCurrency) {
+            md += ` (1 ${c.code} = ${c.conversion.rate} ${c.conversion.baseCurrency})`;
+          }
+          md += `\n`;
+        });
+        md += `\n---\n\n`;
+      }
+
       // Plans Section
       if (plans && Object.keys(plans).length > 0) {
         md += `## Service Plans\n\n`;
@@ -59,7 +72,16 @@ export default {
           // Pricing
           if (plan.pricing && plan.pricing.cost !== undefined) {
             md += `#### 💰 Pricing\n`;
-            md += `- **Cost:** ${plan.pricing.cost} ${plan.pricing.currency || ''}\n`;
+            const currencyCode = plan.pricing.currency || '';
+            md += `- **Cost:** ${plan.pricing.cost} ${currencyCode}\n`;
+            
+            // Show conversion if it's a custom currency
+            const customCurrency = props.sla.customCurrencies?.find(c => c.code === currencyCode);
+            if (customCurrency && customCurrency.conversion && customCurrency.conversion.rate !== undefined && customCurrency.conversion.baseCurrency) {
+              const baseCost = (plan.pricing.cost * customCurrency.conversion.rate).toFixed(2);
+              md += `  *(Equivalent to ${baseCost} ${customCurrency.conversion.baseCurrency})*\n`;
+            }
+
             if (plan.pricing.period) {
               md += `- **Billing Period:** ${formatDuration(plan.pricing.period)}\n`;
             }
