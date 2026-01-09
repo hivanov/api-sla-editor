@@ -61,10 +61,13 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["metric", "limit"],
+            "required": ["metric"],
             "properties": {
               "metric": { "type": "string" },
-              "limit": { "type": "string" }
+              "limit": { "type": "string" },
+              "operator": { "type": "string", "enum": [">", "<", ">=", "<=", "=", "between", "avg"] },
+              "value": { "type": "string" },
+              "period": { "$ref": "#/definitions/iso8601Duration" }
             }
           }
         },
@@ -160,7 +163,10 @@
                   "type": "object",
                   "properties": {
                     "metric": { "type": "string" },
-                    "duration": { "$ref": "#/definitions/iso8601Duration" }
+                    "duration": { "$ref": "#/definitions/iso8601Duration" },
+                    "operator": { "type": "string", "enum": [">", "<", ">=", "<=", "=", "between", "avg"] },
+                    "value": { "type": "string" },
+                    "period": { "$ref": "#/definitions/iso8601Duration" }
                   }
                 }
               }

@@ -165,19 +165,79 @@
             <button class="btn btn-danger btn-sm" @click="removeSloGuarantee(index, gIndex)">Remove</button>
           </div>
           <div class="mb-3">
+            <div class="d-flex gap-3 mb-2">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" :name="'slo-mode-' + index + '-' + gIndex" :id="'slo-mode-structured-' + index + '-' + gIndex" 
+                  :checked="getSloGuaranteeMode(guarantee) === 'structured'" 
+                  @change="setSloGuaranteeMode(index, gIndex, 'structured')">
+                <label class="form-check-label small" :for="'slo-mode-structured-' + index + '-' + gIndex">
+                  Structured (Recommended)
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" :name="'slo-mode-' + index + '-' + gIndex" :id="'slo-mode-legacy-' + index + '-' + gIndex" 
+                  :checked="getSloGuaranteeMode(guarantee) === 'legacy'" 
+                  @change="setSloGuaranteeMode(index, gIndex, 'legacy')">
+                <label class="form-check-label small" :for="'slo-mode-legacy-' + index + '-' + gIndex">
+                  Simple Duration (Legacy)
+                </label>
+              </div>
+            </div>
+
             <label class="form-label">Metric</label>
-            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric']}" placeholder="e.g., Uptime" :value="guarantee.metric" @input="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
+            <select class="form-select" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric']}" :value="guarantee.metric" @change="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
+              <option value="" disabled>Select metric</option>
+              <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
+            </select>
             <div class="invalid-feedback" v-if="errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric']">
               {{ errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric'].join(', ') }}
             </div>
           </div>
-          <DurationEditor 
-            :model-value="guarantee.duration" 
-            :errors="errors"
-            :path="path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/duration'"
-            @update:model-value="updateSloGuarantee(index, gIndex, 'duration', $event)"
-            label="Duration"
-          />
+
+          <template v-if="getSloGuaranteeMode(guarantee) === 'structured'">
+            <div class="row g-2">
+              <div class="col-md-4 mb-2">
+                <label class="form-label">Operator</label>
+                <select class="form-select" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/operator']}" :value="guarantee.operator" @change="updateSloGuarantee(index, gIndex, 'operator', $event.target.value)">
+                  <option value="">None</option>
+                  <option value=">">></option>
+                  <option value="<"><</option>
+                  <option value=">=">>=</option>
+                  <option value="<="><=</option>
+                  <option value="=">=</option>
+                  <option value="between">between</option>
+                  <option value="avg">avg</option>
+                </select>
+              </div>
+              
+              <div class="col-md-8 mb-2">
+                <label class="form-label">Value</label>
+                <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/value']}" placeholder="Value" :value="guarantee.value" @input="updateSloGuarantee(index, gIndex, 'value', $event.target.value)">
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <DurationEditor 
+                :model-value="guarantee.period" 
+                :errors="errors"
+                :path="path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/period'"
+                @update:model-value="updateSloGuarantee(index, gIndex, 'period', $event)"
+                label="Period"
+              />
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="mt-2 pt-2 border-top">
+              <DurationEditor 
+                :model-value="guarantee.duration" 
+                :errors="errors"
+                :path="path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/duration'"
+                @update:model-value="updateSloGuarantee(index, gIndex, 'duration', $event)"
+                label="Duration"
+              />
+            </div>
+          </template>
         </div>
         <button class="btn btn-secondary btn-sm mt-2" @click="addSloGuarantee(index)">Add SLO Guarantee</button>
       </div>
@@ -197,6 +257,10 @@ export default {
   },
   props: {
     supportPolicy: {
+      type: Object,
+      default: () => ({}),
+    },
+    metrics: {
       type: Object,
       default: () => ({}),
     },
@@ -328,14 +392,42 @@ export default {
       if (!slo.guarantees) {
         slo.guarantees = [];
       }
-      slo.guarantees.push({ metric: '', duration: '' });
+      slo.guarantees.push({ metric: '' });
+      updateSupportPolicy(newPolicy);
+    };
+
+    const getSloGuaranteeMode = (guarantee) => {
+      if (guarantee.duration !== undefined && guarantee.operator === undefined && guarantee.value === undefined && guarantee.period === undefined) {
+        return 'legacy';
+      }
+      return 'structured';
+    };
+
+    const setSloGuaranteeMode = (sloIndex, guaranteeIndex, mode) => {
+      const newPolicy = { ...safeSupportPolicy.value };
+      const guarantee = { ...newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex] };
+      
+      if (mode === 'legacy') {
+        delete guarantee.operator;
+        delete guarantee.value;
+        delete guarantee.period;
+        if (guarantee.duration === undefined) guarantee.duration = '';
+      } else {
+        delete guarantee.duration;
+      }
+      
+      newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex] = guarantee;
       updateSupportPolicy(newPolicy);
     };
 
     const updateSloGuarantee = (sloIndex, guaranteeIndex, key, value) => {
       const newPolicy = { ...safeSupportPolicy.value };
       const guarantee = newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex];
-      newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex] = { ...guarantee, [key]: value };
+      const newGuarantee = { ...guarantee, [key]: value };
+      if (value === '' || value === null || value === undefined) {
+        delete newGuarantee[key];
+      }
+      newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex] = newGuarantee;
       updateSupportPolicy(newPolicy);
     };
 
@@ -422,6 +514,8 @@ export default {
       addSloGuarantee,
       updateSloGuarantee,
       removeSloGuarantee,
+      getSloGuaranteeMode,
+      setSloGuaranteeMode,
       addContactPoint,
       updateContactPoint,
       removeContactPoint,

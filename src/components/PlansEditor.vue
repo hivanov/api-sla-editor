@@ -34,7 +34,7 @@
         <GuaranteesEditor :guarantees="plan.guarantees" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/guarantees'" @update:guarantees="updatePlanSubObject(name, 'guarantees', $event)" />
 
         <!-- Support Policy Editor -->
-        <SupportPolicyEditor :support-policy="plan['x-support-policy']" :errors="errors" :path="'/plans/' + name + '/x-support-policy'" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
+        <SupportPolicyEditor :support-policy="plan['x-support-policy']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-support-policy'" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
 
         <!-- Service Credits Editor -->
         <ServiceCreditsEditor :service-credits="plan['x-service-credits']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-service-credits'" @update:service-credits="updatePlanSubObject(name, 'x-service-credits', $event)" />

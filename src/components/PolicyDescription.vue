@@ -87,7 +87,25 @@ export default {
           if (validGuarantees.length > 0) {
             md += `#### 🛡️ Guarantees\n`;
             validGuarantees.forEach(g => {
-              md += `- **${g.metric}:** ${formatDuration(g.limit)}\n`;
+              let guaranteeText = `- **${g.metric}:** `;
+              if (g.operator) {
+                if (g.operator === 'avg') {
+                  guaranteeText += `Average of ${g.value || '?'}`;
+                } else if (g.operator === 'between') {
+                  guaranteeText += `Between ${g.value || '?'}`;
+                } else {
+                  guaranteeText += `${g.operator} ${g.value || '?'}`;
+                }
+                
+                if (g.period) {
+                  guaranteeText += ` per ${formatDuration(g.period)}`;
+                }
+              } else if (g.limit) {
+                guaranteeText += `${formatDuration(g.limit)}`;
+              } else if (g.value) {
+                guaranteeText += `${g.value}`;
+              }
+              md += `${guaranteeText}\n`;
             });
             md += `\n`;
           }
@@ -123,20 +141,37 @@ export default {
                 md += `\n`;
               }
 
-              if (support.serviceLevelObjectives && support.serviceLevelObjectives.length > 0) {
-                md += `**Service Level Objectives (SLOs):**\n`;
-                support.serviceLevelObjectives.forEach(slo => {
-                  const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => g.metric && g.metric.trim() !== '') : [];
-                  if (slo.name || slo.priority || validSloGuarantees.length > 0) {
-                    md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
-                    validSloGuarantees.forEach(g => {
-                      md += `  - ${g.metric}: ${formatDuration(g.duration)}\n`;
-                    });
-                  }
-                });
-                md += `\n`;
-              }
-
+                          if (support.serviceLevelObjectives && support.serviceLevelObjectives.length > 0) {
+                            md += `**Service Level Objectives (SLOs):**\n`;
+                            support.serviceLevelObjectives.forEach(slo => {
+                              const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => g.metric && g.metric.trim() !== '') : [];
+                              if (slo.name || slo.priority || validSloGuarantees.length > 0) {
+                                md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
+                                validSloGuarantees.forEach(g => {
+                                  let guaranteeText = `  - ${g.metric}: `;
+                                  if (g.operator) {
+                                    if (g.operator === 'avg') {
+                                      guaranteeText += `Average of ${g.value || '?'}`;
+                                    } else if (g.operator === 'between') {
+                                      guaranteeText += `Between ${g.value || '?'}`;
+                                    } else {
+                                      guaranteeText += `${g.operator} ${g.value || '?'}`;
+                                    }
+                                    
+                                    if (g.period) {
+                                      guaranteeText += ` per ${formatDuration(g.period)}`;
+                                    }
+                                  } else if (g.duration) {
+                                    guaranteeText += `${formatDuration(g.duration)}`;
+                                  } else if (g.value) {
+                                    guaranteeText += `${g.value}`;
+                                  }
+                                  md += `${guaranteeText}\n`;
+                                });
+                              }
+                            });
+                            md += `\n`;
+                          }
               if (support.contactPoints && support.contactPoints.length > 0) {
                 md += `**Contact Channels:**\n`;
                 support.contactPoints.forEach(cp => {

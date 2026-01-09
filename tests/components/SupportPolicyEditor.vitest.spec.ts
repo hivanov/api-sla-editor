@@ -170,7 +170,7 @@ describe('SupportPolicyEditor', () => {
 
     await wrapper.findAll('button.btn-secondary.btn-sm').filter(w => w.text().includes("Add SLO Guarantee"))[0].trigger('click')
     expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees.length).toBe(1)
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees[0]).toEqual({ metric: '', duration: '' })
+    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees[0]).toEqual({ metric: '' })
   })
 
   it('updates an existing SLO guarantee', async () => {
@@ -179,13 +179,33 @@ describe('SupportPolicyEditor', () => {
       holidaySchedule: { sources: [] },
       serviceLevelObjectives: [{ priority: 'High', name: 'Incident Resolution', guarantees: [{ metric: 'Uptime', duration: 'PT1H' }] }],
     };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
+    const metrics = { 'Uptime': {}, 'Performance': {} };
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy, metrics } })
 
-    await wrapper.find('input[placeholder="e.g., Uptime"]').setValue('Performance')
+    await wrapper.find('select.form-select').setValue('Performance')
     expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees[0].metric).toBe('Performance')
 
-    await wrapper.find('input[placeholder="e.g. P1DT4H"]').setValue('PT2H')
-    expect(wrapper.emitted('update:supportPolicy')[1][0].serviceLevelObjectives[0].guarantees[0].duration).toBe('PT2H')
+    // Initial state is legacy mode because `duration` is present
+    const legacyRadio = wrapper.find('input[type="radio"][id^="slo-mode-legacy"]')
+    expect(legacyRadio.element.checked).toBe(true)
+
+    const durationInput = wrapper.find('input[placeholder="e.g. P1DT4H"]')
+    await durationInput.setValue('PT3H')
+    expect(wrapper.emitted('update:supportPolicy')[1][0].serviceLevelObjectives[0].guarantees[0].duration).toBe('PT3H')
+
+    // Switch to structured mode
+    const structuredRadio = wrapper.find('input[type="radio"][id^="slo-mode-structured"]')
+    await structuredRadio.setValue(true)
+    
+    // Check clean up
+    const emitted = wrapper.emitted('update:supportPolicy')[2][0].serviceLevelObjectives[0].guarantees[0]
+    expect(emitted.duration).toBeUndefined()
+
+    // Now interact with structured fields
+    // Re-find inputs as they might have been re-rendered
+    const periodInput = wrapper.find('input[placeholder="e.g. P1DT4H"]') // This is now 'period'
+    await periodInput.setValue('PT2H')
+    expect(wrapper.emitted('update:supportPolicy')[3][0].serviceLevelObjectives[0].guarantees[0].period).toBe('PT2H')
   })
 
   it('removes an SLO guarantee', async () => {
