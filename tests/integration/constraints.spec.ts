@@ -55,11 +55,14 @@ test.describe('Numeric Constraints', () => {
     expect(editorValue).not.toContain('period: P-5D');
   });
 
-  test('should not allow negative downtime in AvailabilityEditor', async ({ page }) => {
-    const planCard = page.locator('.plan-item:has-text("Constraint Plan")');
-    const availEditor = planCard.locator('.availability-editor-component');
-    
-    // First set some positive downtime to move away from 100%
+    test('should not allow negative downtime in AvailabilityEditor', async ({ page }) => {
+      const planCard = page.locator('.plan-item:has-text("Constraint Plan")');
+      const availEditor = planCard.locator('.availability-editor-component');
+      
+      // Switch to Downtime Duration mode
+      await availEditor.locator('.nav-link:has-text("Downtime Duration")').click();
+  
+      // First set some positive downtime to move away from 100%
     const hoursInput = availEditor.locator('.row.g-2 input[type="number"]').nth(1);
     await hoursInput.fill('10');
     

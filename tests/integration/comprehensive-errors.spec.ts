@@ -117,6 +117,7 @@ plans:
   gold:
     availability: "not-a-percentage"
 `);
+    await page.locator('.availability-editor-component .nav-link:has-text("Manual Entry")').click();
     const availInput = page.locator('.availability-editor-component input[placeholder="e.g. 99.9"]');
     await expect(availInput).toHaveClass(/is-invalid/);
     await expect(page.locator('.availability-editor-component .invalid-feedback')).toContainText('Availability must be a percentage');
