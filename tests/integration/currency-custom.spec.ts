@@ -60,4 +60,19 @@ test.describe('Custom Currencies', () => {
       await expect(aceEditor).toContainText('rate: 0.5');
       await expect(aceEditor).toContainText('baseCurrency: EUR');
   });
+
+  test('should show validation error for negative conversion rate', async ({ page }) => {
+    await page.click('text=GUI');
+    await page.click('text=Add Custom Currency');
+    
+    const rateInput = page.locator('.currency-editor-component input[type="number"]');
+    await rateInput.fill('-1.5');
+    
+    // Wait for validation to trigger (it happens on change/watch)
+    await expect(page.locator('.currency-editor-component .invalid-feedback')).toBeVisible();
+    await expect(page.locator('.currency-editor-component .invalid-feedback')).toContainText('Value must be at least 0');
+    
+    // Check that it's also in the global error list at the bottom
+    await expect(page.locator('.validation-card')).toContainText('Value must be at least 0');
+  });
 });
