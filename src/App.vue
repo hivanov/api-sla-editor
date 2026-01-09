@@ -128,6 +128,7 @@
 <script>
 import { ref, onMounted, onUnmounted, watch, reactive, computed, provide } from 'vue';
 import { currencies } from './utils/currencies';
+import { getAllHolidayCalendars, getGoogleHolidayCalendarUrl } from './utils/holidays';
 import 'bootstrap/dist/css/bootstrap.css';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -215,6 +216,10 @@ export default {
     });
 
     provide('availableCurrencies', availableCurrencies);
+    provide('holidayCalendars', {
+      all: getAllHolidayCalendars(),
+      getUrl: getGoogleHolidayCalendarUrl
+    });
 
     const ajv = new Ajv({ allErrors: true });
     addFormats(ajv);
