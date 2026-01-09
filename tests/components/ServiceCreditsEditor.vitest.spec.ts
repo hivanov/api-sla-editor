@@ -51,4 +51,31 @@ describe('ServiceCreditsEditor', () => {
     })
     expect(wrapper.find('input[placeholder="Currency"]').exists()).toBe(true)
   })
+
+  it('provides available currencies in datalist', () => {
+    const availableCurrencies = [
+      { code: 'USD', name: 'US Dollar' },
+      { code: 'EUR', name: 'Euro' },
+      { code: 'CPU', name: 'Compute Unit', isCustom: true }
+    ]
+    const wrapper = mount(ServiceCreditsEditor, {
+      props: {
+        serviceCredits: { currency: 'USD', claimWindow: 'P30D', tiers: [] },
+        path: '/plans/gold/x-service-credits'
+      },
+      global: {
+        provide: {
+          availableCurrencies
+        }
+      }
+    })
+
+    const datalist = wrapper.find('datalist')
+    expect(datalist.exists()).toBe(true)
+    const options = datalist.findAll('option')
+    expect(options.length).toBe(3)
+    expect(options[0].attributes('value')).toBe('USD')
+    expect(options[1].attributes('value')).toBe('EUR')
+    expect(options[2].attributes('value')).toBe('CPU')
+  })
 })

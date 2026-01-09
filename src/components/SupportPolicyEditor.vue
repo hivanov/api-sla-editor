@@ -138,110 +138,14 @@
       <button class="btn btn-secondary btn-sm mt-2" @click="addHolidaySource">Add Holiday Source</button>
 
       <!-- Service Level Objectives -->
-      <h6 class="mt-4">Service Level Objectives (SLOs)</h6>
-      <div v-for="(slo, index) in safeSupportPolicy.serviceLevelObjectives" :key="index" class="card mb-2 p-2">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span>SLO #{{ index + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeSlo(index)">Remove</button>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Priority</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/priority']}" placeholder="e.g., High" :value="slo.priority" @input="updateSlo(index, 'priority', $event.target.value)">
-          <div class="invalid-feedback" v-if="errors[path + '/serviceLevelObjectives/' + index + '/priority']">
-            {{ errors[path + '/serviceLevelObjectives/' + index + '/priority'].join(', ') }}
-          </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Name</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/name']}" placeholder="e.g., Incident Resolution" :value="slo.name" @input="updateSlo(index, 'name', $event.target.value)">
-          <div class="invalid-feedback" v-if="errors[path + '/serviceLevelObjectives/' + index + '/name']">
-            {{ errors[path + '/serviceLevelObjectives/' + index + '/name'].join(', ') }}
-          </div>
-        </div>
-        <h6>Guarantees for SLO</h6>
-        <div v-for="(guarantee, gIndex) in slo.guarantees" :key="gIndex" class="card mb-2 p-2">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span>Guar. #{{ gIndex + 1 }}</span>
-            <button class="btn btn-danger btn-sm" @click="removeSloGuarantee(index, gIndex)">Remove</button>
-          </div>
-          <div class="mb-3">
-            <div class="d-flex gap-3 mb-2">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" :name="'slo-mode-' + index + '-' + gIndex" :id="'slo-mode-structured-' + index + '-' + gIndex" 
-                  :checked="getSloGuaranteeMode(guarantee) === 'structured'" 
-                  @change="setSloGuaranteeMode(index, gIndex, 'structured')">
-                <label class="form-check-label small" :for="'slo-mode-structured-' + index + '-' + gIndex">
-                  Structured (Recommended)
-                </label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" :name="'slo-mode-' + index + '-' + gIndex" :id="'slo-mode-legacy-' + index + '-' + gIndex" 
-                  :checked="getSloGuaranteeMode(guarantee) === 'legacy'" 
-                  @change="setSloGuaranteeMode(index, gIndex, 'legacy')">
-                <label class="form-check-label small" :for="'slo-mode-legacy-' + index + '-' + gIndex">
-                  Simple Duration (Legacy)
-                </label>
-              </div>
-            </div>
-
-            <label class="form-label">Metric</label>
-            <select class="form-select" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric']}" :value="guarantee.metric" @change="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
-              <option value="" disabled>Select metric</option>
-              <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
-            </select>
-            <div class="invalid-feedback" v-if="errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric']">
-              {{ errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/metric'].join(', ') }}
-            </div>
-          </div>
-
-          <template v-if="getSloGuaranteeMode(guarantee) === 'structured'">
-            <div class="row g-2">
-              <div class="col-md-4 mb-2">
-                <label class="form-label">Operator</label>
-                <select class="form-select" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/operator']}" :value="guarantee.operator" @change="updateSloGuarantee(index, gIndex, 'operator', $event.target.value)">
-                  <option value="">None</option>
-                  <option value=">">></option>
-                  <option value="<"><</option>
-                  <option value=">=">>=</option>
-                  <option value="<="><=</option>
-                  <option value="=">=</option>
-                  <option value="between">between</option>
-                  <option value="avg">avg</option>
-                </select>
-              </div>
-              
-              <div class="col-md-8 mb-2">
-                <label class="form-label">Value</label>
-                <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/value']}" placeholder="Value" :value="guarantee.value" @input="updateSloGuarantee(index, gIndex, 'value', $event.target.value)">
-              </div>
-            </div>
-
-            <div class="mb-2">
-              <DurationEditor 
-                :model-value="guarantee.period" 
-                :errors="errors"
-                :path="path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/period'"
-                @update:model-value="updateSloGuarantee(index, gIndex, 'period', $event)"
-                label="Period"
-              />
-            </div>
-          </template>
-
-          <template v-else>
-            <div class="mt-2 pt-2 border-top">
-              <DurationEditor 
-                :model-value="guarantee.duration" 
-                :errors="errors"
-                :path="path + '/serviceLevelObjectives/' + index + '/guarantees/' + gIndex + '/duration'"
-                @update:model-value="updateSloGuarantee(index, gIndex, 'duration', $event)"
-                label="Duration"
-              />
-            </div>
-          </template>
-        </div>
-        <button class="btn btn-secondary btn-sm mt-2" @click="addSloGuarantee(index)">Add SLO Guarantee</button>
-      </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addSlo">Add SLO</button>
+      <ServiceLevelObjectivesEditor 
+        class="mt-4"
+        :model-value="safeSupportPolicy.serviceLevelObjectives"
+        :metrics="metrics"
+        :errors="errors"
+        :path="path + '/serviceLevelObjectives'"
+        @update:model-value="updateSlo"
+      />
     </div>
   </div>
 </template>
@@ -249,11 +153,13 @@
 <script>
 import { computed } from 'vue';
 import DurationEditor from './DurationEditor.vue';
+import ServiceLevelObjectivesEditor from './ServiceLevelObjectivesEditor.vue';
 
 export default {
   name: 'SupportPolicyEditor',
   components: {
-    DurationEditor
+    DurationEditor,
+    ServiceLevelObjectivesEditor
   },
   props: {
     supportPolicy: {
@@ -364,76 +270,9 @@ export default {
       updateSupportPolicy(newPolicy);
     };
 
-    // Service Level Objectives (SLOs) methods
-    const addSlo = () => {
+    const updateSlo = (newSlo) => {
       const newPolicy = { ...safeSupportPolicy.value };
-      if (!newPolicy.serviceLevelObjectives) {
-        newPolicy.serviceLevelObjectives = [];
-      }
-      newPolicy.serviceLevelObjectives.push({ priority: '', name: '', guarantees: [] });
-      updateSupportPolicy(newPolicy);
-    };
-
-    const updateSlo = (index, key, value) => {
-      const newPolicy = { ...safeSupportPolicy.value };
-      newPolicy.serviceLevelObjectives[index] = { ...newPolicy.serviceLevelObjectives[index], [key]: value };
-      updateSupportPolicy(newPolicy);
-    };
-
-    const removeSlo = (index) => {
-      const newPolicy = { ...safeSupportPolicy.value };
-      newPolicy.serviceLevelObjectives.splice(index, 1);
-      updateSupportPolicy(newPolicy);
-    };
-
-    const addSloGuarantee = (sloIndex) => {
-      const newPolicy = { ...safeSupportPolicy.value };
-      const slo = newPolicy.serviceLevelObjectives[sloIndex];
-      if (!slo.guarantees) {
-        slo.guarantees = [];
-      }
-      slo.guarantees.push({ metric: '' });
-      updateSupportPolicy(newPolicy);
-    };
-
-    const getSloGuaranteeMode = (guarantee) => {
-      if (guarantee.duration !== undefined && guarantee.operator === undefined && guarantee.value === undefined && guarantee.period === undefined) {
-        return 'legacy';
-      }
-      return 'structured';
-    };
-
-    const setSloGuaranteeMode = (sloIndex, guaranteeIndex, mode) => {
-      const newPolicy = { ...safeSupportPolicy.value };
-      const guarantee = { ...newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex] };
-      
-      if (mode === 'legacy') {
-        delete guarantee.operator;
-        delete guarantee.value;
-        delete guarantee.period;
-        if (guarantee.duration === undefined) guarantee.duration = '';
-      } else {
-        delete guarantee.duration;
-      }
-      
-      newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex] = guarantee;
-      updateSupportPolicy(newPolicy);
-    };
-
-    const updateSloGuarantee = (sloIndex, guaranteeIndex, key, value) => {
-      const newPolicy = { ...safeSupportPolicy.value };
-      const guarantee = newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex];
-      const newGuarantee = { ...guarantee, [key]: value };
-      if (value === '' || value === null || value === undefined) {
-        delete newGuarantee[key];
-      }
-      newPolicy.serviceLevelObjectives[sloIndex].guarantees[guaranteeIndex] = newGuarantee;
-      updateSupportPolicy(newPolicy);
-    };
-
-    const removeSloGuarantee = (sloIndex, guaranteeIndex) => {
-      const newPolicy = { ...safeSupportPolicy.value };
-      newPolicy.serviceLevelObjectives[sloIndex].guarantees.splice(guaranteeIndex, 1);
+      newPolicy.serviceLevelObjectives = newSlo;
       updateSupportPolicy(newPolicy);
     };
 
@@ -508,14 +347,7 @@ export default {
       addHolidaySource,
       updateHolidaySource,
       removeHolidaySource,
-      addSlo,
       updateSlo,
-      removeSlo,
-      addSloGuarantee,
-      updateSloGuarantee,
-      removeSloGuarantee,
-      getSloGuaranteeMode,
-      setSloGuaranteeMode,
       addContactPoint,
       updateContactPoint,
       removeContactPoint,

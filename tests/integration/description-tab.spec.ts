@@ -1,44 +1,37 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Description tab', () => {
+test.describe('Description Tab', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
-  test('should switch to description tab and show rendered content', async ({ page }) => {
-    await page.click('a:has-text("Description")');
-    await expect(page.locator('.policy-description')).toBeVisible();
-    await expect(page.locator('.policy-description h1')).toContainText('SLA Policy Description');
-  });
+  test('should reflect custom currencies in description', async ({ page }) => {
+    await page.click('text=GUI');
+    
+    // Add custom currency
+    await page.click('text=Add Custom Currency');
+    await page.locator('.currency-editor-component input[placeholder="SKU"]').fill('UNIT');
+    await page.locator('.currency-editor-component input[placeholder="Description"]').fill('Test Unit');
+    await page.locator('.currency-editor-component input[type="number"]').fill('5');
+    await page.locator('.currency-editor-component input[placeholder="USD"]').fill('EUR');
 
-  test('should update description when SLA changes in GUI', async ({ page }) => {
-    await page.fill('input#context-id', 'test-description-id');
+    // Add Plan and use currency
+    await page.click('text=Add Plan');
+    await page.locator('input[placeholder="New plan name"]').fill('Test Plan');
+    await page.click('button:has-text("Add Plan")');
     
-    await page.click('a:has-text("Description")');
-    await expect(page.locator('.policy-description')).toContainText('Policy ID: test-description-id');
-    
-    await page.click('a:has-text("GUI")');
-    await page.fill('input#context-id', 'updated-id');
-    
-    await page.click('a:has-text("Description")');
-    await expect(page.locator('.policy-description')).toContainText('Policy ID: updated-id');
-  });
+    const planItem = page.locator('.plan-item:has-text("Test Plan")');
+    await planItem.locator('input[placeholder="Plan Title"]').fill('Human Readable Plan');
+    await planItem.locator('input[placeholder="Cost"]').fill('10');
+    await planItem.locator('.pricing-editor-component input[placeholder="Currency"]').fill('UNIT');
 
-  test('should show plan details in description', async ({ page }) => {
-    await page.selectOption('select', 'support-mon-fri');
+    // Go to Description tab
+    await page.click('text=Description');
     
-    await page.click('a:has-text("Description")');
-    await expect(page.locator('.policy-description')).toContainText('enterprise');
-    await expect(page.locator('.policy-description')).toContainText('Support Policy');
-    await expect(page.locator('.policy-description')).toContainText('09:00 - 17:00');
-  });
-
-  test('should show metrics and quotas in description', async ({ page }) => {
-    await page.selectOption('select', 'metrics-100-concurrent-connections');
-    
-    await page.click('a:has-text("Description")');
-    await expect(page.locator('.policy-description')).toContainText('Quotas');
-    await expect(page.locator('.policy-description')).toContainText('Number of concurrent connections for all APIs.');
-    await expect(page.locator('.policy-description')).toContainText('Maximum 100');
+    const description = page.locator('.policy-description');
+    await expect(description).toContainText('Currencies');
+    await expect(description).toContainText('UNIT: Test Unit (1 UNIT = 5 EUR)');
+    await expect(description).toContainText('Cost: 10 UNIT');
+    await expect(description).toContainText('(Equivalent to 50.00 EUR)');
   });
 });

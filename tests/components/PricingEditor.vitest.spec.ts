@@ -72,4 +72,31 @@ describe('PricingEditor', () => {
     expect(wrapper.find('input[placeholder="Currency"]').element.value).toBe('')
     expect(wrapper.find('input[placeholder="e.g. P1DT4H"]').element.value).toBe('')
   })
+
+  it('provides available currencies in datalist', () => {
+    const availableCurrencies = [
+      { code: 'USD', name: 'US Dollar' },
+      { code: 'EUR', name: 'Euro' },
+      { code: 'CPU', name: 'Compute Unit', isCustom: true }
+    ]
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: { cost: 100, currency: 'USD', period: 'P1M' },
+        path: '/plans/gold/pricing'
+      },
+      global: {
+        provide: {
+          availableCurrencies
+        }
+      }
+    })
+
+    const datalist = wrapper.find('datalist')
+    expect(datalist.exists()).toBe(true)
+    const options = datalist.findAll('option')
+    expect(options.length).toBe(3)
+    expect(options[0].attributes('value')).toBe('USD')
+    expect(options[1].attributes('value')).toBe('EUR')
+    expect(options[2].attributes('value')).toBe('CPU')
+  })
 })

@@ -85,3 +85,27 @@ The application has been updated to be more responsive. Key changes include:
 ### Playwright Test Fix
 
 *   The Playwright integration test `tests/integration/main-flow.spec.ts` had a failing test (`should show validation errors`) due to an outdated locator. The selector was changed from `.col-4 .card .card-body .alert-danger` to `.col-md-4 .card .card-body .alert-danger` to correctly target the validation error message in the responsive layout, which now uses `col-md-4` on the configured desktop viewport.
+
+
+
+### Lessons Learned (Session: SLO Refactoring)
+
+
+
+*   **Component Extraction:** When refactoring complex logic into reusable components (e.g., `ServiceLevelObjectivesEditor`), ensure that all reactive state management and event emitters are fully ported. Unit tests for the new component should be created immediately, and parent components should be tested for correct integration.
+
+*   **Playwright Selector Robustness:** As the UI grows with more similar editors (e.g., `GuaranteesEditor` vs `ServiceLevelObjectivesEditor`), generic selectors like `page.locator('select')` will likely cause "strict mode violations". Always use specific parent classes or unique attributes (e.g., `.guarantees-editor-component select`) to disambiguate.
+
+*   **Schema Evolution:** When updating the JSON schema to allow data in new locations (e.g., moving SLOs from Support Policy to Plans), remember to update the initial state of the relevant objects in the Vue components (e.g., `addPlan` in `PlansEditor.vue`) and verify the synchronization logic with the YAML source.
+
+*   **YAML Property Alignment:** Transitioning from legacy "Simple" fields to "Structured" fields often changes the resulting YAML property names (e.g., from `limit` to `period`). Integration tests that assert against the generated YAML content must be updated to match the default or selected mode of the editor.
+
+*   **Tool Output Verification:** After performing file writes with LLM tools, verify that no critical sections (like `<script>` blocks) were accidentally truncated or omitted, especially when working with large Vue SFCs.
+
+### Lessons Learned (Session: Custom Currencies & Data Management)
+
+*   **Datalists for UX:** Using `<datalist>` instead of `<select>` provides a superior "combo-box" experience, allowing users to select from a large list of standard options (like ISO 4217 currencies) while still maintaining the flexibility to enter custom values (like "CPU Tokens") that haven't been globally defined yet.
+*   **Centralized Data Providers:** For data required by multiple nested components (e.g., the consolidated list of standard + custom currencies), using Vue's `provide/inject` pattern is more maintainable and cleaner than "prop drilling" through several layers of components.
+*   **Comprehensive Data Fetching:** When implementing standard lists (currencies, countries, etc.), fetching a complete dataset via `curl` or external APIs during development ensures better utility than manually creating a small, incomplete subset.
+*   **Strict Mode in Testing:** When tests fail due to "strict mode violations" in Playwright, it's often a sign that the UI has become more complex with similar repeating elements. Use container-specific locators (e.g., `parent.locator('input')`) rather than global selectors to ensure reliability.
+*   **Markdown Integration:** When reflecting new data types (like custom currency conversions) in human-readable views (Description tab), ensure that the logic handles edge cases like missing conversion rates or partial data gracefully to avoid broken formatting.

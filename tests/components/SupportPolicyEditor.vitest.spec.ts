@@ -123,104 +123,17 @@ describe('SupportPolicyEditor', () => {
     expect(wrapper.emitted('update:supportPolicy')[0][0].holidaySchedule.sources.length).toBe(0)
   })
 
-  // Service Level Objectives Tests
-  it('adds a new SLO', async () => {
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: createBaseSupportPolicy() } })
-    await wrapper.findAll('button.btn-secondary.btn-sm').filter(w => w.text().includes("Add SLO"))[0].trigger('click')
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives.length).toBe(1)
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0]).toEqual({ priority: '', name: '', guarantees: [] })
-  })
-
-  it('updates an existing SLO', async () => {
-    const policy = {
-      hoursAvailable: [],
-      holidaySchedule: { sources: [] },
-      serviceLevelObjectives: [{ priority: 'High', name: 'Incident Resolution', guarantees: [] }],
-    };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
-
-    await wrapper.find('input[placeholder="e.g., High"]').setValue('Critical')
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].priority).toBe('Critical')
-
-    await wrapper.find('input[placeholder="e.g., Incident Resolution"]').setValue('Bug Fix Time')
-    expect(wrapper.emitted('update:supportPolicy')[1][0].serviceLevelObjectives[0].name).toBe('Bug Fix Time')
-  })
-
-  it('removes an SLO', async () => {
-    const policy = {
-      hoursAvailable: [],
-      holidaySchedule: { sources: [] },
-      serviceLevelObjectives: [{ priority: 'High', name: 'Incident Resolution', guarantees: [] }],
-    };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
-
-    // Find the correct remove button for SLO, it's the first danger button inside an SLO card
-    await wrapper.findAll('.card.mb-2 > .d-flex > .btn-danger.btn-sm')[0].trigger('click')
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives.length).toBe(0)
-  })
-
-  // SLO Guarantee Tests
-  it('adds a new SLO guarantee', async () => {
-    const policy = {
-      hoursAvailable: [],
-      holidaySchedule: { sources: [] },
-      serviceLevelObjectives: [{ priority: 'High', name: 'Incident Resolution', guarantees: [] }],
-    };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
-
-    await wrapper.findAll('button.btn-secondary.btn-sm').filter(w => w.text().includes("Add SLO Guarantee"))[0].trigger('click')
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees.length).toBe(1)
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees[0]).toEqual({ metric: '' })
-  })
-
-  it('updates an existing SLO guarantee', async () => {
-    const policy = {
-      hoursAvailable: [],
-      holidaySchedule: { sources: [] },
-      serviceLevelObjectives: [{ priority: 'High', name: 'Incident Resolution', guarantees: [{ metric: 'Uptime', duration: 'PT1H' }] }],
-    };
-    const metrics = { 'Uptime': {}, 'Performance': {} };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy, metrics } })
-
-    await wrapper.find('select.form-select').setValue('Performance')
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees[0].metric).toBe('Performance')
-
-    // Initial state is legacy mode because `duration` is present
-    const legacyRadio = wrapper.find('input[type="radio"][id^="slo-mode-legacy"]')
-    expect(legacyRadio.element.checked).toBe(true)
-
-    const durationInput = wrapper.find('input[placeholder="e.g. P1DT4H"]')
-    await durationInput.setValue('PT3H')
-    expect(wrapper.emitted('update:supportPolicy')[1][0].serviceLevelObjectives[0].guarantees[0].duration).toBe('PT3H')
-
-    // Switch to structured mode
-    const structuredRadio = wrapper.find('input[type="radio"][id^="slo-mode-structured"]')
-    await structuredRadio.setValue(true)
+  it('updates support policy when SLOs change', async () => {
+    const policy = createBaseSupportPolicy();
+    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } });
     
-    // Check clean up
-    const emitted = wrapper.emitted('update:supportPolicy')[2][0].serviceLevelObjectives[0].guarantees[0]
-    expect(emitted.duration).toBeUndefined()
-
-    // Now interact with structured fields
-    // Re-find inputs as they might have been re-rendered
-    const periodInput = wrapper.find('input[placeholder="e.g. P1DT4H"]') // This is now 'period'
-    await periodInput.setValue('PT2H')
-    expect(wrapper.emitted('update:supportPolicy')[3][0].serviceLevelObjectives[0].guarantees[0].period).toBe('PT2H')
-  })
-
-  it('removes an SLO guarantee', async () => {
-    const policy = {
-      hoursAvailable: [],
-      holidaySchedule: { sources: [] },
-      serviceLevelObjectives: [{ priority: 'High', name: 'Incident Resolution', guarantees: [{ metric: 'Uptime', duration: 'PT1H' }] }],
-    };
-    const wrapper = mount(SupportPolicyEditor, { props: { supportPolicy: policy } })
-
-    const sloCard = wrapper.findAll('.card.mb-2.p-2')[0]; // The first SLO card
-    const guaranteeCard = sloCard.findAll('.card.mb-2.p-2').filter(w => w.text().includes("Guar. #1"))[0];
-    await guaranteeCard.find('.btn-danger.btn-sm').trigger('click');
-
-    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives[0].guarantees.length).toBe(0)
+    const sloEditor = wrapper.getComponent({ name: 'ServiceLevelObjectivesEditor' });
+    const newSlos = [{ priority: 'High', name: 'Test', guarantees: [] }];
+    
+    await sloEditor.vm.$emit('update:modelValue', newSlos);
+    
+    expect(wrapper.emitted('update:supportPolicy')).toBeTruthy();
+    expect(wrapper.emitted('update:supportPolicy')[0][0].serviceLevelObjectives).toEqual(newSlos);
   })
 
   // Contact Points and Channels Tests

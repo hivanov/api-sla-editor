@@ -68,4 +68,29 @@ describe('PolicyDescription.vue', () => {
     expect(wrapper.text()).toContain('valid');
     expect(wrapper.text()).toContain('Total Plans: 1');
   });
+
+  it('renders custom currencies and conversions', () => {
+    const sla = {
+      sla: '1.0.0',
+      context: { id: 'test-id', type: 'plans' },
+      customCurrencies: [
+        { code: 'CPU', description: 'Compute Unit', conversion: { rate: 2, baseCurrency: 'USD' } }
+      ],
+      plans: {
+        premium: {
+          title: 'Premium Plan',
+          pricing: { cost: 10, currency: 'CPU' },
+          availability: '99.9%'
+        }
+      }
+    };
+    const wrapper = mount(PolicyDescription, {
+      props: { sla }
+    });
+    
+    expect(wrapper.text()).toContain('Currencies');
+    expect(wrapper.text()).toContain('CPU: Compute Unit (1 CPU = 2 USD)');
+    expect(wrapper.text()).toContain('Cost: 10 CPU');
+    expect(wrapper.text()).toContain('(Equivalent to 20.00 USD)');
+  });
 });

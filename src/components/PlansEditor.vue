@@ -33,6 +33,9 @@
         <!-- Guarantees Editor -->
         <GuaranteesEditor :guarantees="plan.guarantees" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/guarantees'" @update:guarantees="updatePlanSubObject(name, 'guarantees', $event)" />
 
+        <!-- Service Level Objectives Editor -->
+        <ServiceLevelObjectivesEditor :model-value="plan.serviceLevelObjectives" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/serviceLevelObjectives'" @update:model-value="updatePlanSubObject(name, 'serviceLevelObjectives', $event)" />
+
         <!-- Support Policy Editor -->
         <SupportPolicyEditor :support-policy="plan['x-support-policy']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-support-policy'" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
 
@@ -65,6 +68,7 @@ import PricingEditor from './PricingEditor.vue';
 import QuotasEditor from './QuotasEditor.vue';
 import SupportPolicyEditor from './SupportPolicyEditor.vue';
 import GuaranteesEditor from './GuaranteesEditor.vue';
+import ServiceLevelObjectivesEditor from './ServiceLevelObjectivesEditor.vue';
 import ServiceCreditsEditor from './ServiceCreditsEditor.vue';
 import MaintenancePolicyEditor from './MaintenancePolicyEditor.vue';
 import ExclusionsEditor from './ExclusionsEditor.vue';
@@ -78,6 +82,7 @@ export default {
     QuotasEditor,
     SupportPolicyEditor,
     GuaranteesEditor,
+    ServiceLevelObjectivesEditor,
     ServiceCreditsEditor,
     MaintenancePolicyEditor,
     ExclusionsEditor,
@@ -121,6 +126,7 @@ export default {
           description: '',
           availability: '',
           guarantees: [],
+          serviceLevelObjectives: [],
           pricing: {},
           quotas: {},
           'x-support-policy': {},

@@ -27,6 +27,28 @@
         }
       }
     },
+    "customCurrencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "description"],
+        "properties": {
+          "code": { "type": "string" },
+          "description": { "type": "string" },
+          "conversion": {
+            "type": "object",
+            "required": ["rate", "baseCurrency"],
+            "properties": {
+              "rate": { 
+                "type": "number",
+                "minimum": 0
+              },
+              "baseCurrency": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
     "plans": {
       "type": "object",
       "additionalProperties": { "$ref": "#/definitions/plan" }
@@ -71,6 +93,7 @@
             }
           }
         },
+        "serviceLevelObjectives": { "$ref": "#/definitions/serviceLevelObjectives" },
         "x-support-policy": { "$ref": "#/definitions/supportPolicy" },
         "x-service-credits": { "$ref": "#/definitions/serviceCredits" },
         "x-maintenance-policy": { "$ref": "#/definitions/maintenancePolicy" },
@@ -149,26 +172,27 @@
             }
           }
         },
-        "serviceLevelObjectives": {
-          "type": "array",
-          "description": "Attributed to: ITIL Service Design.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "priority": { "type": "string" },
-              "name": { "type": "string" },
-              "guarantees": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "metric": { "type": "string" },
-                    "duration": { "$ref": "#/definitions/iso8601Duration" },
-                    "operator": { "type": "string", "enum": [">", "<", ">=", "<=", "=", "between", "avg"] },
-                    "value": { "type": "string" },
-                    "period": { "$ref": "#/definitions/iso8601Duration" }
-                  }
-                }
+        "serviceLevelObjectives": { "$ref": "#/definitions/serviceLevelObjectives" }
+      }
+    },
+    "serviceLevelObjectives": {
+      "type": "array",
+      "description": "Attributed to: ITIL Service Design.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "priority": { "type": "string" },
+          "name": { "type": "string" },
+          "guarantees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "metric": { "type": "string" },
+                "duration": { "$ref": "#/definitions/iso8601Duration" },
+                "operator": { "type": "string", "enum": [">", "<", ">=", "<=", "=", "between", "avg"] },
+                "value": { "type": "string" },
+                "period": { "$ref": "#/definitions/iso8601Duration" }
               }
             }
           }

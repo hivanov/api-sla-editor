@@ -60,19 +60,21 @@ describe('PlansEditor', () => {
     await wrapper.find('button.btn-primary').trigger('click')
 
     expect(wrapper.emitted('update:plans')[0][0]).toEqual({
-      'new-plan': {
-        title: '',
-        description: '',
-        availability: '',
-        guarantees: [],
-        pricing: {},
-        quotas: {},
-        'x-support-policy': {},
-        'x-service-credits': {},
-        'x-maintenance-policy': {},
-        'x-sla-exclusions': [],
-        'x-lifecycle-policy': {},
-      },
+            'new-plan': {
+              title: '',
+              description: '',
+              availability: '',
+              guarantees: [],
+              serviceLevelObjectives: [],
+              pricing: {},
+              quotas: {},
+              'x-support-policy': {},
+              'x-service-credits': {},
+              'x-maintenance-policy': {},
+              'x-sla-exclusions': [],
+              'x-lifecycle-policy': {},
+            }
+      ,
     })
   })
 

@@ -60,4 +60,46 @@ test.describe('SLO Guarantees Editor', () => {
     await expect(durationInput).toBeVisible();
     await durationInput.fill('P1D');
   });
+
+  test('should allow adding SLOs directly at the Plan level', async ({ page }) => {
+    // 1. Define a metric
+    const metricsEditor = page.locator('.metrics-editor-component');
+    await metricsEditor.locator('input[placeholder="New metric name"]').fill('plan-metric');
+    await metricsEditor.locator('button:has-text("Add Metric")').click();
+
+    // 2. Add a Plan
+    const plansEditor = page.locator('.plans-editor-component');
+    await plansEditor.locator('input[placeholder="New plan name"]').fill('Premium');
+    await plansEditor.locator('button:has-text("Add Plan")').click();
+
+    const premiumPlan = plansEditor.locator('.card', { hasText: 'Premium' }).first();
+    
+    // 3. Find SLO Editor at Plan level (should be outside x-support-policy)
+    // We can look for the SLO editor that is a direct child of the plan card body, 
+    // or just look for the text.
+    const planSloEditor = premiumPlan.locator('.service-level-objectives-editor-component').first();
+    await expect(planSloEditor).toBeVisible();
+
+    // 4. Add SLO
+    await planSloEditor.locator('button:has-text("Add SLO")').click();
+    await planSloEditor.locator('input[placeholder="e.g., High"]').fill('P1');
+    await planSloEditor.locator('input[placeholder="e.g., Incident Resolution"]').fill('Response Time Objective');
+
+    // 5. Add SLO Guarantee
+    await planSloEditor.locator('button:has-text("Add SLO Guarantee")').click();
+    
+    const metricSelect = planSloEditor.locator('select.form-select').first();
+    await metricSelect.selectOption('plan-metric');
+    
+    // 6. Verify Value
+    const valueInput = planSloEditor.locator('input[placeholder="Value"]').first();
+    await valueInput.fill('200ms');
+
+    // 7. Check source/YAML
+    await page.click('a:has-text("Source")');
+    const aceEditor = page.locator('.ace_content');
+    await expect(aceEditor).toContainText('serviceLevelObjectives:');
+    await expect(aceEditor).toContainText('priority: P1');
+    await expect(aceEditor).toContainText('name: Response Time Objective');
+  });
 });

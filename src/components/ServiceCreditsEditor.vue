@@ -6,7 +6,15 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Currency</label>
-        <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/currency']}" placeholder="Currency" :value="safeServiceCredits.currency" @input="updateField('currency', $event.target.value)">
+        <input type="text" class="form-control" 
+               :class="{'is-invalid': errors[path + '/currency']}" 
+               placeholder="Currency" 
+               :value="safeServiceCredits.currency" 
+               @input="updateField('currency', $event.target.value)"
+               :list="datalistId">
+        <datalist :id="datalistId">
+            <option v-for="c in availableCurrencies" :key="c.code" :value="c.code">{{ c.name }}</option>
+        </datalist>
         <div class="invalid-feedback" v-if="errors[path + '/currency']">
           {{ errors[path + '/currency'].join(', ') }}
         </div>
@@ -65,13 +73,13 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import DurationEditor from './DurationEditor.vue';
 
 export default {
   name: 'ServiceCreditsEditor',
   components: {
-    DurationEditor
+    DurationEditor,
   },
   props: {
     serviceCredits: {
@@ -94,6 +102,8 @@ export default {
   emits: ['update:serviceCredits'],
   setup(props, { emit }) {
     const safeServiceCredits = computed(() => props.serviceCredits || {});
+    const availableCurrencies = inject('availableCurrencies', []);
+    const datalistId = computed(() => (props.path || 'service-credits').replace(/\//g, '-') + '-currency-list');
 
     const updateServiceCredits = (newCredits) => {
       const cleaned = { ...newCredits };
@@ -162,6 +172,8 @@ export default {
       handleCompensationInput,
       updateTierCondition,
       removeTier,
+      availableCurrencies,
+      datalistId,
     };
   },
 };

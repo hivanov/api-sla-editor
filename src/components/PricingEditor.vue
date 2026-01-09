@@ -13,7 +13,15 @@
       </div>
       <div class="mb-3">
         <label class="form-label">Currency</label>
-        <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/currency']}" placeholder="Currency" :value="safePricing.currency" @input="update('currency', $event.target.value)">
+        <input type="text" class="form-control" 
+               :class="{'is-invalid': errors[path + '/currency']}" 
+               placeholder="Currency" 
+               :value="safePricing.currency" 
+               @input="update('currency', $event.target.value)"
+               :list="datalistId">
+        <datalist :id="datalistId">
+            <option v-for="c in availableCurrencies" :key="c.code" :value="c.code">{{ c.name }}</option>
+        </datalist>
         <div class="invalid-feedback" v-if="errors[path + '/currency']">
           {{ errors[path + '/currency'].join(', ') }}
         </div>
@@ -30,7 +38,7 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import DurationEditor from './DurationEditor.vue';
 
 export default {
@@ -55,6 +63,8 @@ export default {
   emits: ['update:pricing'],
   setup(props, { emit }) {
     const safePricing = computed(() => props.pricing || {});
+    const availableCurrencies = inject('availableCurrencies', []);
+    const datalistId = computed(() => (props.path || 'pricing').replace(/\//g, '-') + '-currency-list');
 
     const update = (key, value) => {
       // Convert cost to number as per schema
@@ -71,6 +81,8 @@ export default {
     return {
       safePricing,
       update,
+      availableCurrencies,
+      datalistId,
     };
   },
 };
