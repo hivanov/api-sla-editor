@@ -85,7 +85,9 @@ test.describe('Force Majeure Integration', () => {
     await exclusionsEditor.locator('button:has-text("Add Standard Force Majeure")').click();
 
     // 3. Add Manual Exclusion (Metric)
-    await exclusionsEditor.locator('button:has-text("Add Metric")').click();
+    await exclusionsEditor.locator('button:has-text("Add Exclusion")').click();
+    // Switch to Metric mode manually as default is now Text
+    await exclusionsEditor.locator('.d-flex.align-items-center select').last().selectOption('metric');
     
     // The new exclusion is empty, so defaults to metric or text depending on logic
     // We implemented default empty -> Metric to preserve old behavior
@@ -125,8 +127,8 @@ test.describe('Force Majeure Integration', () => {
     const planCard = page.locator('.plans-editor-component .plan-item:has-text("Custom Text Plan")');
     const exclusionsEditor = planCard.locator('.exclusions-editor-component');
 
-    // 2. Click "Add Description"
-    await exclusionsEditor.locator('button:has-text("Add Description")').click();
+    // 2. Click "Add Description" (renamed to Add Exclusion)
+    await exclusionsEditor.locator('button:has-text("Add Exclusion")').click();
 
     // 3. Verify it's a textarea
     const textarea = exclusionsEditor.locator('textarea').first();

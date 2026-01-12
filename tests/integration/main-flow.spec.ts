@@ -162,6 +162,9 @@ test.describe('Main flow', () => {
 
     // Interact with ExclusionsEditor
     await basicPlanCard.locator('.exclusions-editor-component button:has-text("Add Exclusion")').click();
+    // Switch to Metric mode manually as default is now Text
+    await basicPlanCard.locator('.exclusions-editor-component .d-flex.align-items-center select').last().selectOption('metric');
+    
     const exclusionEditor = basicPlanCard.locator('.exclusions-editor-component .prometheus-measurement-editor');
     await exclusionEditor.locator('select').nth(1).selectOption('response-time');
     await exclusionEditor.locator('input[type="text"]').fill('500');

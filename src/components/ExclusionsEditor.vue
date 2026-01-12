@@ -38,8 +38,7 @@
           {{ errors[path + '/' + index].join(', ') }}
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addMetricExclusion">Add Metric</button>
-      <button class="btn btn-secondary btn-sm mt-2 ms-2" @click="addTextExclusion">Add Description</button>
+      <button class="btn btn-secondary btn-sm mt-2" @click="addExclusion">Add Exclusion</button>
       <button class="btn btn-outline-secondary btn-sm mt-2 ms-2" @click="addStandardExclusions">Add Standard Force Majeure</button>
     </div>
   </div>
@@ -106,14 +105,7 @@ export default {
       emit('update:exclusions', newList);
     };
 
-    const addMetricExclusion = () => {
-      const newList = [...safeExclusions.value, ''];
-      // Default new manual exclusion to metric (reset override if any)
-      delete typeOverrides[newList.length - 1]; 
-      updateExclusions(newList);
-    };
-
-    const addTextExclusion = () => {
+    const addExclusion = () => {
       const newList = [...safeExclusions.value, ''];
       // Force new exclusion to text
       typeOverrides[newList.length - 1] = 'text';
@@ -164,8 +156,7 @@ export default {
 
     return {
       safeExclusions,
-      addMetricExclusion,
-      addTextExclusion,
+      addExclusion,
       addStandardExclusions,
       updateExclusion,
       removeExclusion,
