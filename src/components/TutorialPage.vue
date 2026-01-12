@@ -115,11 +115,12 @@
                   </h2>
                   <div id="step2" class="accordion-collapse collapse" data-bs-parent="#tutorialSteps">
                     <div class="accordion-body">
-                      Define what you measure. For a Pet Store, technical metrics are good, but business-aligned metrics are better:
+                      Define the metrics that provide value to your service. In our Pet Store:
                       <ul>
-                        <li><code>order_latency</code> (Number, ms): Time taken to process a pet purchase.</li>
-                        <li><code>inventory_accuracy</code> (Percentage): How often the displayed stock matches physical reality.</li>
-                        <li><code>api_availability</code> (Percentage): Overall uptime of the Pet Store endpoints.</li>
+                        <li><code>request_latency</code> (Number, ms): The time between request receipt and response.</li>
+                        <li><code>api_availability</code> (Percentage, %): Successful requests vs total requests.</li>
+                        <li><code>order_processing_time</code> (Number, s): Time from order creation to "Ready for Pickup".</li>
+                        <li><code>monthly_requests</code> (Integer): Total requests consumed by the client.</li>
                       </ul>
                     </div>
                   </div>
@@ -129,31 +130,30 @@
                 <div class="accordion-item">
                   <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3">
-                      3. Create Plans (Free vs. Paid)
+                      3. Create Plans (Quotas & Guarantees)
                     </button>
                   </h2>
                   <div id="step3" class="accordion-collapse collapse" data-bs-parent="#tutorialSteps">
                     <div class="accordion-body">
-                      <div class="row">
-                        <div class="col-md-6">
-                          <h6><strong>Free Tier</strong></h6>
-                          <ul>
-                            <li><strong>Availability:</strong> 99.0%</li>
-                            <li><strong>Pricing:</strong> 0 USD</li>
-                            <li><strong>Quota:</strong> Max 100 orders/month.</li>
-                            <li><strong>Support:</strong> Email only, 48h response.</li>
-                          </ul>
-                        </div>
-                        <div class="col-md-6">
-                          <h6><strong>Pro Tier</strong></h6>
-                          <ul>
-                            <li><strong>Availability:</strong> 99.95%</li>
-                            <li><strong>Pricing:</strong> 49.99 USD / month</li>
-                            <li><strong>Quota:</strong> Unlimited orders.</li>
-                            <li><strong>Support:</strong> 24/7 Phone, 1h response.</li>
-                          </ul>
-                        </div>
-                      </div>
+                      <p>Synchronize your metrics with specific commitments in your plans:</p>
+                      
+                      <h6><strong>Free Tier (Community)</strong></h6>
+                      <ul>
+                        <li><strong>Availability:</strong> 99.0%</li>
+                        <li><strong>Pricing:</strong> 0 USD.</li>
+                        <li><strong>Quotas:</strong> <code>monthly_requests</code> limited to 1,000.</li>
+                        <li><strong>Guarantees:</strong> <code>request_latency</code> &lt; 2000ms.</li>
+                        <li><strong>SLO:</strong> 95% of orders processed within 30s.</li>
+                      </ul>
+
+                      <h6><strong>Pro Tier (Business)</strong></h6>
+                      <ul>
+                        <li><strong>Availability:</strong> 99.95%</li>
+                        <li><strong>Pricing:</strong> 99 USD / Month, includes 1M requests.</li>
+                        <li><strong>Quotas:</strong> <code>monthly_requests</code> limited to 10,000,000.</li>
+                        <li><strong>Guarantees:</strong> <code>request_latency</code> &lt; 200ms (strict commitment).</li>
+                        <li><strong>SLO:</strong> 99% of orders processed within 5s.</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -162,20 +162,72 @@
                 <div class="accordion-item">
                   <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step4">
-                      4. Maintenance & Force Majeure
+                      4. Advanced Policies (Support & Lifecycle)
                     </button>
                   </h2>
                   <div id="step4" class="accordion-collapse collapse" data-bs-parent="#tutorialSteps">
                     <div class="accordion-body">
-                      <p>Protect your team by defining when the SLA <em>doesn't</em> apply:</p>
+                      <p>Professional SLAs require more than just technical numbers:</p>
                       <ul>
-                        <li><strong>Maintenance:</strong> Define a window like <code>FREQ=WEEKLY;BYDAY=SU;BYHOUR=2</code> (Sundays at 2 AM). Set "Counts as Downtime" to False.</li>
-                        <li><strong>Force Majeure:</strong> Add a clause for "Uncontrollable events like cloud provider region failure or natural disasters."</li>
+                        <li><strong>Support Channels:</strong> Add <code>Email</code> (support@petstore.com) for everyone, and <code>Phone</code> (+1-800-PET-HELP) for Pro users.</li>
+                        <li><strong>Support Calendar:</strong> Use a public holiday calendar (e.g., <code>Mali</code> or <code>New Caledonia</code>) to define when support staff are off.</li>
+                        <li><strong>Lifecycle:</strong> 
+                          <ul>
+                            <li><strong>Minimum Term:</strong> 12 Months (P12M).</li>
+                            <li><strong>Notice Period:</strong> 30 Days (P30D).</li>
+                            <li><strong>Auto-Renewal:</strong> Enabled.</li>
+                            <li><strong>Data Retention:</strong> 90 days (P90D) after termination.</li>
+                          </ul>
+                        </li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
+                <!-- Step 5 -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step5">
+                      5. Maintenance & Safety Net
+                    </button>
+                  </h2>
+                  <div id="step5" class="accordion-collapse collapse" data-bs-parent="#tutorialSteps">
+                    <div class="accordion-body">
+                      <ul>
+                        <li><strong>Maintenance:</strong> Link an external iCal (e.g., <code>https://status.cloudprovider.com/maintenance.ics</code>) to sync your provider's downtime with your SLA automatically.</li>
+                        <li><strong>Standard Force Majeure:</strong> Ensure you include circumstances beyond reasonable control:
+                          <ul>
+                            <li>Natural disasters (Earthquakes, Floods).</li>
+                            <li>War, Terrorism, or Civil Unrest.</li>
+                            <li>Global Internet backbone failures or ISP outages.</li>
+                            <li>Government actions or strikes.</li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-5">
+          <div class="card shadow-sm bg-light">
+            <div class="card-body">
+              <h3 class="h5">Tutorial Summary</h3>
+              <p>By following these steps, you have achieved a <strong>comprehensive, machine-readable SLA</strong> for the Pet Store API. You have successfully:</p>
+              <ul class="mb-4">
+                <li>Defined business-aligned metrics that reflect real user value.</li>
+                <li>Created tiered offerings (Free vs Pro) with explicit cost and usage boundaries.</li>
+                <li>Matched technical Guarantees with operational Quotas.</li>
+                <li>Integrated external calendars for real-world support and maintenance tracking.</li>
+                <li>Established a clear lifecycle for the contract and its data.</li>
+              </ul>
+              <div class="alert alert-success">
+                <h5 class="h6 fw-bold mb-2">Ready to use?</h5>
+                Go to the <strong>Source</strong> tab at the top of the editor. There you can see the generated YAML. You can copy this content to your project repository, or use it to configure automated monitoring and billing systems.
               </div>
             </div>
           </div>

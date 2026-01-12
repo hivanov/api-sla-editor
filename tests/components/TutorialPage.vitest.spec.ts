@@ -13,6 +13,9 @@ describe('TutorialPage', () => {
     expect(wrapper.text()).toContain('Pet Store API');
     expect(wrapper.text()).toContain('Free Tier');
     expect(wrapper.text()).toContain('Pro Tier');
+    expect(wrapper.text()).toContain('Advanced Policies (Support & Lifecycle)');
+    expect(wrapper.text()).toContain('Data Retention');
+    expect(wrapper.text()).toContain('Source tab');
   });
 
   it('emits close event when button is clicked', async () => {
