@@ -1,16 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ExclusionsEditor from '../../src/components/ExclusionsEditor.vue'
+import PrometheusMeasurementEditor from '../../src/components/PrometheusMeasurementEditor.vue'
 
 describe('ExclusionsEditor', () => {
   it('renders correctly', () => {
     const wrapper = mount(ExclusionsEditor, {
       props: {
-        exclusions: ['Network failure'],
+        exclusions: ['avg_over_time(requests[5m]) < 100'],
+        metrics: { requests: { type: 'integer' } }
       },
     })
     expect(wrapper.text()).toContain('SLA Exclusions')
-    expect(wrapper.find('input[placeholder="Exclusion description"]').element.value).toBe('Network failure')
+    expect(wrapper.findComponent(PrometheusMeasurementEditor).exists()).toBe(true)
+    expect(wrapper.findComponent(PrometheusMeasurementEditor).props('modelValue')).toBe('avg_over_time(requests[5m]) < 100')
   })
 
   it('adds an exclusion', async () => {
@@ -25,6 +28,6 @@ describe('ExclusionsEditor', () => {
     const wrapper = mount(ExclusionsEditor, {
       props: { exclusions: null },
     })
-    expect(wrapper.findAll('input').length).toBe(0)
+    expect(wrapper.findAllComponents(PrometheusMeasurementEditor).length).toBe(0)
   })
 })

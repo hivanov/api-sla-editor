@@ -71,18 +71,26 @@ The project uses Vitest for unit/component tests and Playwright for integration 
 
 ### Running Unit/Component Tests (Vitest)
 
-To run all Vitest tests once in a non-interactive mode:
+To run all Vitest tests once:
 
 ```bash
-npm exec vitest -- --run
+npm run test:unit
 ```
 
 ### Running Integration Tests (Playwright)
 
-To run Playwright integration tests:
+To run all Playwright integration tests:
 
 ```bash
-npx playwright test
+npm run test:integration
+```
+
+### Running All Tests
+
+To run both unit and integration tests:
+
+```bash
+npm test
 ```
 
 **Note:** Playwright tests are configured to run with a default viewport of `1280x720` (as defined in `playwright-integration.config.ts`) to ensure consistent testing of the desktop layout.

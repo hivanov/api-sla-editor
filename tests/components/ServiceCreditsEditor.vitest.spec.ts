@@ -78,4 +78,23 @@ describe('ServiceCreditsEditor', () => {
     expect(options[1].attributes('value')).toBe('EUR')
     expect(options[2].attributes('value')).toBe('CPU')
   })
+
+  it('displays validation errors', () => {
+    const wrapper = mount(ServiceCreditsEditor, {
+      props: {
+        serviceCredits: { currency: '', claimWindow: 'invalid' },
+        errors: {
+          '/plans/gold/x-service-credits/currency': ['Currency is required'],
+          '/plans/gold/x-service-credits/claimWindow': ['Invalid duration format']
+        },
+        path: '/plans/gold/x-service-credits'
+      },
+    })
+
+    expect(wrapper.find('input[placeholder="Currency"]').classes()).toContain('is-invalid')
+    expect(wrapper.find('input[placeholder="e.g. P1DT4H"]').classes()).toContain('is-invalid')
+    
+    expect(wrapper.text()).toContain('Currency is required')
+    expect(wrapper.text()).toContain('Invalid duration format')
+  })
 })

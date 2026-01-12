@@ -46,7 +46,7 @@
         <MaintenancePolicyEditor :maintenance-policy="plan['x-maintenance-policy']" :errors="errors" :path="'/plans/' + name + '/x-maintenance-policy'" @update:maintenance-policy="updatePlanSubObject(name, 'x-maintenance-policy', $event)" />
 
         <!-- Exclusions Editor -->
-        <ExclusionsEditor :exclusions="plan['x-sla-exclusions']" :errors="errors" :path="'/plans/' + name + '/x-sla-exclusions'" @update:exclusions="updatePlanSubObject(name, 'x-sla-exclusions', $event)" />
+        <ExclusionsEditor :exclusions="plan['x-sla-exclusions']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-sla-exclusions'" @update:exclusions="updatePlanSubObject(name, 'x-sla-exclusions', $event)" />
 
         <!-- Lifecycle Policy Editor -->
         <LifecyclePolicyEditor :lifecycle-policy="plan['x-lifecycle-policy']" :errors="errors" :path="'/plans/' + name + '/x-lifecycle-policy'" @update:lifecycle-policy="updatePlanSubObject(name, 'x-lifecycle-policy', $event)" />

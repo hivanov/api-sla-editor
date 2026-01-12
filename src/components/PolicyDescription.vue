@@ -7,7 +7,7 @@
 <script>
 import { computed } from 'vue';
 import { marked } from 'marked';
-import { formatDuration, formatRRule, hasContent } from '../utils/formatters';
+import { formatDuration, formatRRule, hasContent, formatPrometheusMeasurement } from '../utils/formatters';
 import { getHolidayCalendarName } from '../utils/holidays';
 
 export default {
@@ -94,41 +94,49 @@ export default {
           if (validQuotas.length > 0) {
             md += `#### 📊 Quotas\n`;
             for (const [metricKey, quota] of validQuotas) {
-              const metric = metrics && metrics[metricKey];
-              const metricName = metric ? (metric.description || metricKey) : metricKey;
-              md += `- **${metricName}:** `;
-              if (quota.max !== undefined) md += `Maximum ${quota.max} `;
-              if (quota.unit) md += `${quota.unit}`;
-              else if (metric && metric.unit) md += `${metric.unit}`;
-              md += `\n`;
+              if (typeof quota === 'string' && quota.includes('(')) {
+                md += `- ${formatPrometheusMeasurement(quota)}\n`;
+              } else {
+                const metric = metrics && metrics[metricKey];
+                const metricName = metric ? (metric.description || metricKey) : metricKey;
+                md += `- **${metricName}:** `;
+                if (quota.max !== undefined) md += `Maximum ${quota.max} `;
+                if (quota.unit) md += `${quota.unit}`;
+                else if (metric && metric.unit) md += `${metric.unit}`;
+                md += `\n`;
+              }
             }
             md += `\n`;
           }
 
           // Guarantees
-          const validGuarantees = plan.guarantees ? plan.guarantees.filter(g => g.metric && g.metric.trim() !== '') : [];
+          const validGuarantees = plan.guarantees ? plan.guarantees.filter(g => (g.metric && g.metric.trim() !== '') || (g.measurement && g.measurement.trim() !== '')) : [];
           if (validGuarantees.length > 0) {
             md += `#### 🛡️ Guarantees\n`;
             validGuarantees.forEach(g => {
-              let guaranteeText = `- **${g.metric}:** `;
-              if (g.operator) {
-                if (g.operator === 'avg') {
-                  guaranteeText += `Average of ${g.value || '?'}`;
-                } else if (g.operator === 'between') {
-                  guaranteeText += `Between ${g.value || '?'}`;
-                } else {
-                  guaranteeText += `${g.operator} ${g.value || '?'}`;
+              if (g.measurement) {
+                md += `- ${formatPrometheusMeasurement(g.measurement)}\n`;
+              } else {
+                let guaranteeText = `- **${g.metric}:** `;
+                if (g.operator) {
+                  if (g.operator === 'avg') {
+                    guaranteeText += `Average of ${g.value || '?'}`;
+                  } else if (g.operator === 'between') {
+                    guaranteeText += `Between ${g.value || '?'}`;
+                  } else {
+                    guaranteeText += `${g.operator} ${g.value || '?'}`;
+                  }
+                  
+                  if (g.period) {
+                    guaranteeText += ` per ${formatDuration(g.period)}`;
+                  }
+                } else if (g.limit) {
+                  guaranteeText += `${formatDuration(g.limit)}`;
+                } else if (g.value) {
+                  guaranteeText += `${g.value}`;
                 }
-                
-                if (g.period) {
-                  guaranteeText += ` per ${formatDuration(g.period)}`;
-                }
-              } else if (g.limit) {
-                guaranteeText += `${formatDuration(g.limit)}`;
-              } else if (g.value) {
-                guaranteeText += `${g.value}`;
+                md += `${guaranteeText}\n`;
               }
-              md += `${guaranteeText}\n`;
             });
             md += `\n`;
           }
@@ -174,29 +182,33 @@ export default {
                           if (support.serviceLevelObjectives && support.serviceLevelObjectives.length > 0) {
                             md += `**Service Level Objectives (SLOs):**\n`;
                             support.serviceLevelObjectives.forEach(slo => {
-                              const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => g.metric && g.metric.trim() !== '') : [];
+                              const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => (g.metric && g.metric.trim() !== '') || (g.measurement && g.measurement.trim() !== '')) : [];
                               if (slo.name || slo.priority || validSloGuarantees.length > 0) {
                                 md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
                                 validSloGuarantees.forEach(g => {
-                                  let guaranteeText = `  - ${g.metric}: `;
-                                  if (g.operator) {
-                                    if (g.operator === 'avg') {
-                                      guaranteeText += `Average of ${g.value || '?'}`;
-                                    } else if (g.operator === 'between') {
-                                      guaranteeText += `Between ${g.value || '?'}`;
-                                    } else {
-                                      guaranteeText += `${g.operator} ${g.value || '?'}`;
+                                  if (g.measurement) {
+                                    md += `  - ${formatPrometheusMeasurement(g.measurement)}\n`;
+                                  } else {
+                                    let guaranteeText = `  - ${g.metric}: `;
+                                    if (g.operator) {
+                                      if (g.operator === 'avg') {
+                                        guaranteeText += `Average of ${g.value || '?'}`;
+                                      } else if (g.operator === 'between') {
+                                        guaranteeText += `Between ${g.value || '?'}`;
+                                      } else {
+                                        guaranteeText += `${g.operator} ${g.value || '?'}`;
+                                      }
+                                      
+                                      if (g.period) {
+                                        guaranteeText += ` per ${formatDuration(g.period)}`;
+                                      }
+                                    } else if (g.duration) {
+                                      guaranteeText += `${formatDuration(g.duration)}`;
+                                    } else if (g.value) {
+                                      guaranteeText += `${g.value}`;
                                     }
-                                    
-                                    if (g.period) {
-                                      guaranteeText += ` per ${formatDuration(g.period)}`;
-                                    }
-                                  } else if (g.duration) {
-                                    guaranteeText += `${formatDuration(g.duration)}`;
-                                  } else if (g.value) {
-                                    guaranteeText += `${g.value}`;
+                                    md += `${guaranteeText}\n`;
                                   }
-                                  md += `${guaranteeText}\n`;
                                 });
                               }
                             });
@@ -300,7 +312,7 @@ export default {
             if (validExclusions.length > 0) {
               md += `#### 🚫 Exclusions\n`;
               validExclusions.forEach(e => {
-                md += `- ${e}\n`;
+                md += `- ${formatPrometheusMeasurement(e)}\n`;
               });
               md += `\n`;
             }

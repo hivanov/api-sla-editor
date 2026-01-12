@@ -27,4 +27,31 @@ describe('LifecyclePolicyEditor', () => {
     })
     expect(wrapper.find('#autoRenewal').exists()).toBe(true)
   })
+
+  it('displays validation errors', () => {
+    const wrapper = mount(LifecyclePolicyEditor, {
+      props: {
+        lifecyclePolicy: { 
+          minimumTerm: 'invalid', 
+          noticePeriod: 'invalid',
+          dataRetention: { afterTermination: 'invalid' }
+        },
+        errors: {
+          '/plans/gold/x-lifecycle-policy/minimumTerm': ['Invalid term'],
+          '/plans/gold/x-lifecycle-policy/noticePeriod': ['Invalid notice period'],
+          '/plans/gold/x-lifecycle-policy/dataRetention/afterTermination': ['Invalid retention']
+        },
+        path: '/plans/gold/x-lifecycle-policy'
+      },
+    })
+
+    const durationInputs = wrapper.findAll('input[placeholder="e.g. P1DT4H"]')
+    expect(durationInputs[0].classes()).toContain('is-invalid') // minimumTerm
+    expect(durationInputs[1].classes()).toContain('is-invalid') // noticePeriod
+    expect(durationInputs[2].classes()).toContain('is-invalid') // dataRetention
+    
+    expect(wrapper.text()).toContain('Invalid term')
+    expect(wrapper.text()).toContain('Invalid notice period')
+    expect(wrapper.text()).toContain('Invalid retention')
+  })
 })
