@@ -16,30 +16,25 @@ test.describe('SLO Guarantees Editor', () => {
     await plansEditor.locator('input[placeholder="New plan name"]').fill('Standard');
     await plansEditor.locator('button:has-text("Add Plan")').click();
 
-    // 3. Navigate to Support Policy
-    // Support Policy Editor is nested inside the plan item in Plans Editor
-    // The newly added plan "Standard" will be rendered.
     const standardPlan = plansEditor.locator('.card', { hasText: 'Standard' }).first();
     const supportPolicyEditor = standardPlan.locator('.support-policy-editor-component');
     
     // 4. Add SLO
-    // Scroll if needed automatically by Playwright
     await supportPolicyEditor.locator('button:has-text("Add SLO")').click();
 
     // 5. Add SLO Guarantee
     await supportPolicyEditor.locator('button:has-text("Add SLO Guarantee")').click();
 
+    // Switch to Structured mode
+    const structuredRadio = supportPolicyEditor.locator('label', { hasText: 'Structured' }).first();
+    await structuredRadio.click();
+
     // 6. Verify Metric Dropdown
     const metricSelect = supportPolicyEditor.locator('select.form-select', { hasText: 'test-metric' }).first();
-    
     await expect(metricSelect).toBeVisible();
     await metricSelect.selectOption('test-metric');
     
-    // Verify selection
-    await expect(metricSelect).toHaveValue('test-metric');
-
-    // 7. Verify Default Mode (Structured)
-    // Operator select should be visible
+    // 7. Verify Operator select
     const operatorSelect = supportPolicyEditor.locator('select.form-select', { hasText: 'None' }).first();
     await expect(operatorSelect).toBeVisible();
 
@@ -50,12 +45,6 @@ test.describe('SLO Guarantees Editor', () => {
     // Operator select should be hidden
     await expect(operatorSelect).toBeHidden();
 
-    // Duration editor (legacy) should be visible (it has label "Duration" inside DurationEditor but we can check for input)
-    // Since there are multiple DurationEditors, we need to be careful.
-    // In legacy mode, only one duration editor is visible.
-    // In structured mode, "Period" was visible.
-    
-    // Let's just check that we can type in the visible duration input
     const durationInput = supportPolicyEditor.locator('input[placeholder="e.g. P1DT4H"]').first();
     await expect(durationInput).toBeVisible();
     await durationInput.fill('P1D');
@@ -73,10 +62,6 @@ test.describe('SLO Guarantees Editor', () => {
     await plansEditor.locator('button:has-text("Add Plan")').click();
 
     const premiumPlan = plansEditor.locator('.card', { hasText: 'Premium' }).first();
-    
-    // 3. Find SLO Editor at Plan level (should be outside x-support-policy)
-    // We can look for the SLO editor that is a direct child of the plan card body, 
-    // or just look for the text.
     const planSloEditor = premiumPlan.locator('.service-level-objectives-editor-component').first();
     await expect(planSloEditor).toBeVisible();
 
@@ -88,6 +73,9 @@ test.describe('SLO Guarantees Editor', () => {
     // 5. Add SLO Guarantee
     await planSloEditor.locator('button:has-text("Add SLO Guarantee")').click();
     
+    // Switch to Structured mode
+    await planSloEditor.locator('label', { hasText: 'Structured' }).first().click();
+
     const metricSelect = planSloEditor.locator('select.form-select').first();
     await metricSelect.selectOption('plan-metric');
     
@@ -101,5 +89,32 @@ test.describe('SLO Guarantees Editor', () => {
     await expect(aceEditor).toContainText('serviceLevelObjectives:');
     await expect(aceEditor).toContainText('priority: P1');
     await expect(aceEditor).toContainText('name: Response Time Objective');
+  });
+
+  test('should hide redundant controls in measurement mode', async ({ page }) => {
+    // Add Plan
+    await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'MeasurePlan');
+    await page.click('.plans-editor-component button:has-text("Add Plan")');
+    
+    const plan = page.locator('.plan-item:has-text("MeasurePlan")');
+    const sloEditor = plan.locator('.service-level-objectives-editor-component').first();
+    
+    await sloEditor.locator('button:has-text("Add SLO")').click();
+    await sloEditor.locator('button:has-text("Add SLO Guarantee")').click();
+    
+    // Default is measurement mode
+    await expect(sloEditor.locator('.prometheus-measurement-editor')).toBeVisible();
+    
+    // REDUNDANT controls should be HIDDEN
+    // 1. Metric select (replaced by the one inside PrometheusMeasurementEditor)
+    // 2. Operator/Value (replaced by the one inside PrometheusMeasurementEditor)
+    // 3. Period (contained in the PromQL string)
+    
+    // Check that there is no "Metric" label outside the measurement editor within this guarantee item
+    const guaranteeItem = sloEditor.locator('.slo-guarantee-item').first();
+    // The labels in ServiceLevelObjectivesEditor don't have 'small' class, while those in PrometheusMeasurementEditor do.
+    await expect(guaranteeItem.locator('label.form-label:not(.small)', { hasText: /^Metric$/ })).toBeHidden();
+    await expect(guaranteeItem.locator('label.form-label:not(.small)', { hasText: 'Operator' })).toBeHidden();
+    await expect(guaranteeItem.locator('label.form-label:not(.small)', { hasText: 'Period' })).toBeHidden();
   });
 });

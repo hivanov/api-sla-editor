@@ -39,7 +39,7 @@
             "type": "object",
             "required": ["rate", "baseCurrency"],
             "properties": {
-              "rate": { 
+              "rate": {
                 "type": "number",
                 "minimum": 0
               },
@@ -65,7 +65,7 @@
       "properties": {
         "title": { "type": "string" },
         "description": { "type": "string" },
-        "availability": { 
+        "availability": {
           "type": "string",
           "pattern": "^\\d+(\\.\\d+)?%$"
         },
@@ -75,7 +75,7 @@
           "properties": {
             "cost": { "type": "number" },
             "currency": { "type": "string" },
-            "period": { "type": "string" }
+            "period": { "$ref": "#/definitions/iso8601Duration" }
           }
         },
         "quotas": { "type": "object" },
@@ -83,11 +83,15 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["metric"],
+            "anyOf": [
+              { "required": ["metric"] },
+              { "required": ["measurement"] }
+            ],
             "properties": {
               "metric": { "type": "string" },
-              "limit": { "type": "string" },
-              "operator": { "type": "string", "enum": [">", "<", ">=", "<=", "=", "between", "avg"] },
+              "measurement": { "type": "string" },
+              "limit": { "$ref": "#/definitions/iso8601Duration" },
+              "operator": { "type": "string", "enum": [ ">", "<", ">=", "<=", "=", "between", "avg" ] },
               "value": { "type": "string" },
               "period": { "$ref": "#/definitions/iso8601Duration" }
             }
@@ -119,7 +123,7 @@
                   "required": ["type", "url"],
                   "properties": {
                     "type": { "type": "string", "enum": ["web", "email", "phone", "chat"] },
-                    "url": { 
+                    "url": {
                       "type": "string",
                       "description": "Mandatory URI. Must start with http://, https://, mailto://, or tel://",
                       "pattern": "^(https?|mailto|tel):\\/\\/.+"
@@ -187,10 +191,15 @@
             "type": "array",
             "items": {
               "type": "object",
+              "anyOf": [
+                { "required": ["metric"] },
+                { "required": ["measurement"] }
+              ],
               "properties": {
                 "metric": { "type": "string" },
+                "measurement": { "type": "string" },
                 "duration": { "$ref": "#/definitions/iso8601Duration" },
-                "operator": { "type": "string", "enum": [">", "<", ">=", "<=", "=", "between", "avg"] },
+                "operator": { "type": "string", "enum": [ ">", "<", ">=", "<=", "=", "between", "avg" ] },
                 "value": { "type": "string" },
                 "period": { "$ref": "#/definitions/iso8601Duration" }
               }
@@ -217,7 +226,7 @@
             "type": "object",
             "properties": {
               "type": { "type": "string" },
-              "rrule": { 
+              "rrule": {
                 "type": "string",
                 "pattern": "^FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(;.*)?$"
               },
