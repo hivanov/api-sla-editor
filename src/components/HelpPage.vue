@@ -17,8 +17,8 @@
             <div :id="'collapse' + index" class="accordion-collapse collapse" :aria-labelledby="'heading' + index" data-bs-parent="#helpAccordion">
               <div class="accordion-body">
                 <div class="mb-3">
-                  <h5 class="h6 fw-bold text-primary">Detailed Explanation</h5>
-                  <p>{{ item.detail }}</p>
+                  <h5 class="h6 fw-bold text-primary border-bottom pb-2">Detailed Explanation</h5>
+                  <div v-html="renderMarkdown(item.detail)" class="markdown-body mt-2"></div>
                 </div>
                 
                 <div class="mb-3" v-if="item.example">
@@ -58,9 +58,17 @@
 </template>
 
 <script>
+import { marked } from 'marked';
+
 export default {
   name: 'HelpPage',
   emits: ['close'],
+  methods: {
+    renderMarkdown(text) {
+      if (!text) return '';
+      return marked(text);
+    }
+  },
   data() {
     return {
       helpItems: [
@@ -190,5 +198,31 @@ export default {
 .accordion-button:not(.collapsed) {
   background-color: #e7f1ff;
   color: #0c63e4;
+}
+
+:deep(.markdown-body) {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+:deep(.markdown-body p) {
+  margin-bottom: 1rem;
+}
+
+:deep(.markdown-body ul), :deep(.markdown-body ol) {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+:deep(.markdown-body li) {
+  margin-bottom: 0.25rem;
+}
+
+:deep(.markdown-body code) {
+  background-color: #f6f8fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  font-size: 85%;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
 }
 </style>
