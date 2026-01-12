@@ -109,3 +109,9 @@ The application has been updated to be more responsive. Key changes include:
 *   **Reverse Lookups for UX:** When storing raw data (like a Google Calendar URL), providing a reverse-lookup utility (`getHolidayCalendarName`) is essential for maintaining a high-quality human-readable "Description" view, as it allows displaying the friendly name instead of a cryptic URI.
 *   **Official URL Patterns:** Many public resources (like Google Calendar holidays) follow predictable patterns (`[lang].[country].official#holiday@...`). Hardcoding these patterns in a utility, combined with special-case overrides, allows for a lightweight but comprehensive "dynamic" list.
 *   **Integration Test Visibility:** When testing UI changes that affect generated output (like YAML in an Ace Editor), ensure the test script explicitly navigates to the "Source" tab (or whichever view contains the output) to ensure Playwright can "see" and assert against the DOM content.
+
+### Lessons Learned (Session: Help & Tutorial Pages)
+
+*   **Bootstrap Interactive Components:** Vue components using Bootstrap classes for interactive elements (like Accordions, Dropdowns, Tooltips) require the Bootstrap JS bundle (`bootstrap.bundle.min.js`) to be imported in the entry point (`main.js`). CSS alone is insufficient for these components.
+*   **Integration Test Maintenance:** When modifying UI flows (like changing a default editor mode from "Metric" to "Text"), proactively grep for tests that might rely on the old default behavior to avoid timeouts and "element not found" errors in unrelated test suites.
+

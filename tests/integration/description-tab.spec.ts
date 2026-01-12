@@ -82,6 +82,10 @@ test.describe('Description Tab', () => {
 
     // 4. Add an Exclusion
     await goldPlan.locator('.exclusions-editor-component button:has-text("Add Exclusion")').click();
+    
+    // Switch to Metric mode
+    await goldPlan.locator('.exclusions-editor-component .d-flex.align-items-center select').last().selectOption('metric');
+
     const exclEditor = goldPlan.locator('.exclusions-editor-component .prometheus-measurement-editor');
     await exclEditor.locator('select').nth(1).selectOption('latency');
     await exclEditor.locator('input[type="number"]').first().fill('10');

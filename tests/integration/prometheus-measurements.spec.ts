@@ -50,6 +50,9 @@ test.describe('Prometheus-like Measurements', () => {
     const goldPlan = page.locator('.plans-editor-component .plan-item:has-text("Gold Plan")');
     await goldPlan.locator('.exclusions-editor-component button:has-text("Add Exclusion")').click();
     
+    // Switch to Metric mode
+    await goldPlan.locator('.exclusions-editor-component .d-flex.align-items-center select').last().selectOption('metric');
+    
     const exclEditor = goldPlan.locator('.exclusions-editor-component .prometheus-measurement-editor');
     
     // Default is avg_over_time
