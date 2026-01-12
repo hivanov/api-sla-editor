@@ -133,10 +133,16 @@ export default {
         {
           title: "Support Policies",
           brief: "When and how help is available.",
-          detail: "Defines the hours of operation for support (e.g., 'Mon-Fri 9-5') and response time guarantees (e.g., 'Critical issues answered within 1 hour').",
-          example: "<strong>Availability:</strong> Business Hours (Mon-Fri, 09:00-17:00)<br><strong>Response Time:</strong> 4 hours for High Severity.",
-          interpretation: "Don't expect an answer on Sunday unless you have the Enterprise plan.",
-          links: [{ text: "Schema.org OpeningHours", url: "https://schema.org/OpeningHoursSpecification" }]
+          detail: "Support policies define the human aspect of your service commitment. They consist of three main components: \n\n" +
+                  "1. **Hours Available:** Defines when support staff is active. Uses the Schema.org OpeningHoursSpecification. Properties include 'dayOfWeek' (list of days), 'opens' (start time, e.g., 09:00), and 'closes' (end time, e.g., 17:00). You can also link a 'Holiday Schedule' (e.g., German Public Holidays) which will automatically exclude those days from support availability.\n" +
+                  "2. **Contact Points:** The channels through which users can reach support. Each point has a 'Type' (Email, Phone, Web, Slack, etc.) and a 'Value' (the actual address or URL). You can specify which language is supported at each point.\n" +
+                  "3. **Response Times:** The promised speed of support based on the severity of the issue. You define a 'Severity' (Critical, High, Medium, Low) and a 'Target' duration (e.g., PT1H for 1 hour). PT follows ISO 8601 format.",
+          example: "<strong>Hours:</strong> Mon-Fri 09:00-17:00 (Berlin Time).<br><strong>Contact:</strong> email: support@example.com.<br><strong>Response:</strong> Critical issues within 1 hour.",
+          interpretation: "If a user emails at 10 AM on a Tuesday, they should expect a reply for a critical bug by 11 AM. If they email on a Sunday, the timer starts at 9 AM on Monday.",
+          links: [
+            { text: "Schema.org OpeningHours", url: "https://schema.org/OpeningHoursSpecification" },
+            { text: "ISO 8601 Durations", url: "https://en.wikipedia.org/wiki/ISO_8601#Durations" }
+          ]
         },
         {
           title: "Service Credits",
@@ -148,10 +154,17 @@ export default {
         {
           title: "Maintenance Policies",
           brief: "Scheduled downtime rules.",
-          detail: "Defines when planned maintenance can occur without counting as 'downtime' against the SLA. Usually defined using recurrence rules (RRULE).",
-          example: "<strong>Window:</strong> Every Sunday at 02:00 UTC for 1 hour.",
-          interpretation: "If the site is down during this specific hour for updates, it doesn't violate the 99.9% guarantee.",
-          links: [{ text: "iCalendar RRULE", url: "https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html" }]
+          detail: "Defines the rules for planned service interruptions. Key properties include:\n\n" +
+                  "1. **Counts as Downtime:** A boolean flag. If 'false', any downtime during a maintenance window is ignored when calculating availability for SLA guarantees.\n" +
+                  "2. **Maintenance Window:** When the work happens. Usually defined by an RRULE (Recurrence Rule), which allows for complex patterns like 'Every second Sunday of the month at 2 AM'. It also includes a 'duration' (how long the window lasts).\n" +
+                  "3. **Notice Period:** How far in advance the provider must notify the user before starting maintenance (e.g., P7D for 7 days notice).\n" +
+                  "4. **Blackout Periods:** Specific times (like 'Black Friday' or 'End of Quarter') where no maintenance is allowed to ensure maximum stability.",
+          example: "<strong>Window:</strong> FREQ=MONTHLY;BYDAY=1SU (First Sunday).<br><strong>Notice:</strong> P14D (14 days).<br><strong>Counts as Downtime:</strong> False.",
+          interpretation: "The provider can take the service down for 2 hours on the first Sunday of every month without it hurting their 99.9% uptime promise, provided they told the user about it 2 weeks ago.",
+          links: [
+            { text: "iCalendar RRULE Tool", url: "https://jakubroztocil.github.io/rrule/" },
+            { text: "RFC 5545 Maintenance Standard", url: "https://www.rfc-editor.org/rfc/rfc5545" }
+          ]
         },
         {
           title: "Exclusions",
