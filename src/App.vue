@@ -149,7 +149,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, watch, reactive, computed, provide } from 'vue';
+import { ref, onMounted, onUnmounted, watch, reactive, computed, provide, nextTick } from 'vue';
 import { currencies } from './utils/currencies';
 import { getAllHolidayCalendars, getGoogleHolidayCalendarUrl } from './utils/holidays';
 import 'bootstrap/dist/css/bootstrap.css';
@@ -415,8 +415,9 @@ export default {
 
     let isProgrammaticChange = false;
 
-    onMounted(() => {
-      window.addEventListener('resize', handleResize);
+    const initEditor = () => {
+      if (!aceEditor.value) return;
+      
       ace.config.set('basePath', 'https://cdn.jsdelivr.net/npm/ace-builds@' + ace.version + '/src-noconflict/');
       editor = ace.edit(aceEditor.value);
       editor.setTheme('ace/theme/monokai');
@@ -437,10 +438,26 @@ export default {
       isProgrammaticChange = false;
 
       validateYaml(yamlContent.value);
+    };
+
+    onMounted(() => {
+      window.addEventListener('resize', handleResize);
+      initEditor();
     });
 
     onUnmounted(() => {
       window.removeEventListener('resize', handleResize);
+    });
+
+    watch(currentView, async (newView) => {
+      if (newView === 'editor') {
+        await nextTick();
+        initEditor();
+        if (activeTab.value === 'source' && editor) {
+          editor.resize();
+          editor.renderer.updateFull();
+        }
+      }
     });
 
     watch(activeTab, (newTab) => {

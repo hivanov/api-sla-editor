@@ -115,3 +115,8 @@ The application has been updated to be more responsive. Key changes include:
 *   **Bootstrap Interactive Components:** Vue components using Bootstrap classes for interactive elements (like Accordions, Dropdowns, Tooltips) require the Bootstrap JS bundle (`bootstrap.bundle.min.js`) to be imported in the entry point (`main.js`). CSS alone is insufficient for these components.
 *   **Integration Test Maintenance:** When modifying UI flows (like changing a default editor mode from "Metric" to "Text"), proactively grep for tests that might rely on the old default behavior to avoid timeouts and "element not found" errors in unrelated test suites.
 
+### Lessons Learned (Session: Bug Fix - Editor Persistence)
+
+*   **Ace Editor & v-if:** When using `v-if` to conditionally hide/show a container holding an Ace Editor, the editor instance is destroyed when unmounted. Returning to the view requires explicit re-initialization of the editor instance on the next tick (`nextTick`) after the DOM has been restored. Using `v-show` instead can preserve the instance but might require manual `resize()` calls to fix layout issues.
+
+
