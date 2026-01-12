@@ -116,14 +116,18 @@ test.describe('Main flow', () => {
     await page.waitForLoadState('networkidle');
 
     // Interact with QuotasEditor
-    await basicPlanCard.locator('.quotas-editor-component select').selectOption('max-users');
-    await basicPlanCard.locator('.quotas-editor-component input[placeholder="New quota value"]').fill('100');
     await basicPlanCard.locator('.quotas-editor-component button:has-text("Add Quota")').click();
+    const quotaEditor = basicPlanCard.locator('.quotas-editor-component .prometheus-measurement-editor');
+    await quotaEditor.locator('select').nth(1).selectOption('max-users'); // Metric select
+    await quotaEditor.locator('input[type="text"]').fill('100'); // Value input
     await page.waitForLoadState('networkidle');
     
     // Add a guarantee to the plan
     await basicPlanCard.locator('button:has-text("Add Guarantee")').click();
     await page.waitForLoadState('networkidle');
+    
+    // Switch to Structured mode
+    await basicPlanCard.locator('.guarantees-editor-component label', { hasText: 'Structured' }).first().click();
     
     await basicPlanCard.locator('.guarantees-editor-component select').first().selectOption('response-time');
     await basicPlanCard.locator('.guarantees-editor-component input[placeholder="e.g. P1DT4H"]').fill('P0DT0H5M0S'); // 5 minutes
@@ -158,7 +162,11 @@ test.describe('Main flow', () => {
 
     // Interact with ExclusionsEditor
     await basicPlanCard.locator('.exclusions-editor-component button:has-text("Add Exclusion")').click();
-    await basicPlanCard.locator('.exclusions-editor-component input[placeholder="Exclusion description"]').fill('Force Majeure');
+    const exclusionEditor = basicPlanCard.locator('.exclusions-editor-component .prometheus-measurement-editor');
+    await exclusionEditor.locator('select').nth(1).selectOption('response-time');
+    await exclusionEditor.locator('input[type="text"]').fill('500');
+    // We don't verify "Force Majeure" anymore since it's now a PromQL string
+    // await basicPlanCard.locator('.exclusions-editor-component input[placeholder="Exclusion description"]').fill('Force Majeure');
 
     // Interact with LifecyclePolicyEditor
     await basicPlanCard.locator('.lifecycle-policy-editor-component input#autoRenewal').check();
@@ -186,7 +194,7 @@ test.describe('Main flow', () => {
     expect(editorValue).toContain('cost: 120');
     expect(editorValue).toContain('currency: EUR');
     expect(editorValue).toContain('period: P30D');
-    expect(editorValue).toContain('max-users: \'100\'');
+    expect(editorValue).toContain('avg_over_time(max-users[5m]) < 100');
     expect(editorValue).toContain('mailto://support@example.com');
     expect(editorValue).toContain('dayOfWeek:');
     expect(editorValue).toContain('- Monday');
@@ -200,6 +208,6 @@ test.describe('Main flow', () => {
     expect(editorValue).toContain('x-maintenance-policy');
     expect(editorValue).toContain('x-sla-exclusions');
     expect(editorValue).toContain('x-lifecycle-policy');
-    expect(editorValue).toContain('Force Majeure');
+    expect(editorValue).toContain('avg_over_time(response-time[5m]) < 500');
   });
 });

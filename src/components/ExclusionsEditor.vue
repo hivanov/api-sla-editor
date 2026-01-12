@@ -4,13 +4,20 @@
       SLA Exclusions
     </div>
     <div class="card-body">
-      <div v-for="(exclusion, index) in safeExclusions" :key="index" class="mb-2">
-        <div class="input-group">
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + index]}" :value="exclusion" @input="updateExclusion(index, $event.target.value)" placeholder="Exclusion description">
-          <button class="btn btn-danger" @click="removeExclusion(index)">Remove</button>
-          <div class="invalid-feedback" v-if="errors[path + '/' + index]">
-            {{ errors[path + '/' + index].join(', ') }}
-          </div>
+      <div v-for="(exclusion, index) in safeExclusions" :key="index" class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-bold small">Exclusion #{{ index + 1 }}</span>
+          <button class="btn btn-outline-danger btn-sm" @click="removeExclusion(index)">Remove</button>
+        </div>
+        <PrometheusMeasurementEditor 
+          :model-value="exclusion" 
+          :metrics="metrics"
+          :errors="errors"
+          :path="path + '/' + index"
+          @update:model-value="updateExclusion(index, $event)"
+        />
+        <div class="invalid-feedback d-block" v-if="errors[path + '/' + index]">
+          {{ errors[path + '/' + index].join(', ') }}
         </div>
       </div>
       <button class="btn btn-secondary btn-sm mt-2" @click="addExclusion">Add Exclusion</button>
@@ -20,13 +27,21 @@
 
 <script>
 import { computed } from 'vue';
+import PrometheusMeasurementEditor from './PrometheusMeasurementEditor.vue';
 
 export default {
   name: 'ExclusionsEditor',
+  components: {
+    PrometheusMeasurementEditor
+  },
   props: {
     exclusions: {
       type: Array,
       default: () => [],
+    },
+    metrics: {
+      type: Object,
+      default: () => ({}),
     },
     errors: {
       type: Object,

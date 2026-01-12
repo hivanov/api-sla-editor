@@ -26,13 +26,18 @@
           {{ errors[path + '/currency'].join(', ') }}
         </div>
       </div>
-      <DurationEditor 
-        :modelValue="safePricing.period" 
-        :errors="errors"
-        :path="path + '/period'"
-        @update:modelValue="update('period', $event)"
-        label="Period"
-      />
+      <div class="pricing-period-container">
+        <DurationEditor 
+          :modelValue="safePricing.period" 
+          :errors="errors"
+          :path="path + '/period'"
+          @update:modelValue="update('period', $event)"
+          label="Period"
+        />
+        <div class="invalid-feedback d-block" v-if="errors[path + '/period']">
+          {{ errors[path + '/period'].join(', ') }}
+        </div>
+      </div>
     </div>
   </div>
 </template>

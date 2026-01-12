@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDuration, formatRRule, hasContent } from '../../src/utils/formatters';
+import { formatDuration, formatRRule, hasContent, formatPrometheusMeasurement } from '../../src/utils/formatters';
 
 describe('formatDuration', () => {
   it('formats simple days', () => {
@@ -71,4 +71,74 @@ describe('hasContent', () => {
     expect(hasContent(null)).toBe(false);
     expect(hasContent(undefined)).toBe(false);
   });
+});
+
+describe('formatPrometheusMeasurement', () => {
+
+  it('formats avg_over_time', () => {
+
+    expect(formatPrometheusMeasurement('avg_over_time(requests[5m]) < 100'))
+
+      .toBe('The average of requests over 5 minutes is less than 100');
+
+  });
+
+
+
+  it('formats quantile_over_time', () => {
+
+    expect(formatPrometheusMeasurement('quantile_over_time(0.99, latency[6h]) < 15'))
+
+      .toBe('The 99th percentile of latency over 6 hours is less than 15');
+
+  });
+
+
+
+    it('formats histogram_quantile', () => {
+
+
+
+      expect(formatPrometheusMeasurement('histogram_quantile(0.95, sum by (le) (rate(latency[1d]))) between 10 and 20'))
+
+
+
+        .toBe('The 95th percentile of latency over 1 day is between 10 and 20');
+
+
+
+    });
+
+
+
+  
+
+
+
+  it('handles "between" operator', () => {
+
+    expect(formatPrometheusMeasurement('max_over_time(errors[10m]) between 5 and 10'))
+
+      .toBe('The maximum of errors over 10 minutes is between 5 and 10');
+
+  });
+
+
+
+  it('falls back to raw string for unknown formats', () => {
+
+    expect(formatPrometheusMeasurement('plain text exclusion')).toBe('plain text exclusion');
+
+  });
+
+
+
+  it('handles missing metric name gracefully', () => {
+
+    expect(formatPrometheusMeasurement('quantile_over_time(0.95, [5m]) between 3 and 5'))
+
+      .toBe('The 95th percentile of (metric not specified) over 5 minutes is between 3 and 5');
+
+  });
+
 });

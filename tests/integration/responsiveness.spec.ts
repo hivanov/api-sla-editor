@@ -48,6 +48,6 @@ test.describe('Responsiveness and Layout', () => {
     
     // Go back to GUI tab
     await page.click('a:has-text("GUI")');
-    await expect(page.locator('text=Context')).toBeVisible();
+    await expect(page.locator('.card-header:has-text("Context")').first()).toBeVisible();
   });
 });

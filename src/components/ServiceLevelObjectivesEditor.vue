@@ -27,13 +27,21 @@
           <button class="btn btn-danger btn-sm" @click="removeSloGuarantee(index, gIndex)">Remove</button>
         </div>
         <div class="mb-3">
-          <div class="d-flex gap-3 mb-2">
+          <div class="d-flex gap-3 mb-2 flex-wrap">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" :name="'slo-mode-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" :id="'slo-mode-measurement-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" 
+                :checked="getSloGuaranteeMode(guarantee) === 'measurement'" 
+                @change="setSloGuaranteeMode(index, gIndex, 'measurement')">
+              <label class="form-check-label small" :for="'slo-mode-measurement-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex">
+                Measurement (Recommended)
+              </label>
+            </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" :name="'slo-mode-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" :id="'slo-mode-structured-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" 
                 :checked="getSloGuaranteeMode(guarantee) === 'structured'" 
                 @change="setSloGuaranteeMode(index, gIndex, 'structured')">
               <label class="form-check-label small" :for="'slo-mode-structured-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex">
-                Structured (Recommended)
+                Structured
               </label>
             </div>
             <div class="form-check">
@@ -46,14 +54,32 @@
             </div>
           </div>
 
-          <label class="form-label">Metric</label>
-          <select class="form-select" :class="{'is-invalid': errors[path + '/' + index + '/guarantees/' + gIndex + '/metric']}" :value="guarantee.metric" @change="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
-            <option value="" disabled>Select metric</option>
-            <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
-          </select>
-          <div class="invalid-feedback" v-if="errors[path + '/' + index + '/guarantees/' + gIndex + '/metric']">
-            {{ errors[path + '/' + index + '/guarantees/' + gIndex + '/metric'].join(', ') }}
-          </div>
+          <template v-if="getSloGuaranteeMode(guarantee) === 'measurement'">
+            <PrometheusMeasurementEditor 
+              :model-value="guarantee.measurement" 
+              :metrics="metrics"
+              :errors="errors"
+              :path="path + '/' + index + '/guarantees/' + gIndex + '/measurement'"
+              @update:model-value="updateSloGuarantee(index, gIndex, 'measurement', $event)"
+            />
+            <div class="invalid-feedback d-block" v-if="errors[path + '/' + index + '/guarantees/' + gIndex]">
+              {{ errors[path + '/' + index + '/guarantees/' + gIndex].join(', ') }}
+            </div>
+            <div class="invalid-feedback d-block" v-if="errors[path + '/' + index + '/guarantees/' + gIndex + '/measurement']">
+              {{ errors[path + '/' + index + '/guarantees/' + gIndex + '/measurement'].join(', ') }}
+            </div>
+          </template>
+
+          <template v-else>
+            <label class="form-label">Metric</label>
+            <select class="form-select" :class="{'is-invalid': errors[path + '/' + index + '/guarantees/' + gIndex + '/metric']}" :value="guarantee.metric" @change="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
+              <option value="" disabled>Select metric</option>
+              <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
+            </select>
+            <div class="invalid-feedback" v-if="errors[path + '/' + index + '/guarantees/' + gIndex + '/metric']">
+              {{ errors[path + '/' + index + '/guarantees/' + gIndex + '/metric'].join(', ') }}
+            </div>
+          </template>
         </div>
 
         <template v-if="getSloGuaranteeMode(guarantee) === 'structured'">
@@ -89,7 +115,7 @@
           </div>
         </template>
 
-        <template v-else>
+        <template v-else-if="getSloGuaranteeMode(guarantee) === 'legacy'">
           <div class="mt-2 pt-2 border-top">
             <DurationEditor 
               :model-value="guarantee.duration" 
@@ -110,11 +136,13 @@
 <script>
 import { computed } from 'vue';
 import DurationEditor from './DurationEditor.vue';
+import PrometheusMeasurementEditor from './PrometheusMeasurementEditor.vue';
 
 export default {
   name: 'ServiceLevelObjectivesEditor',
   components: {
-    DurationEditor
+    DurationEditor,
+    PrometheusMeasurementEditor
   },
   props: {
     modelValue: {
@@ -172,12 +200,15 @@ export default {
       } else {
         slo.guarantees = [...slo.guarantees];
       }
-      slo.guarantees.push({ metric: '' });
+      slo.guarantees.push({ measurement: '' });
       newObjectives[sloIndex] = slo;
       updateObjectives(newObjectives);
     };
 
     const getSloGuaranteeMode = (guarantee) => {
+      if (guarantee.measurement !== undefined) {
+        return 'measurement';
+      }
       if (guarantee.duration !== undefined && guarantee.operator === undefined && guarantee.value === undefined && guarantee.period === undefined) {
         return 'legacy';
       }
@@ -190,13 +221,24 @@ export default {
       slo.guarantees = [...slo.guarantees];
       const guarantee = { ...slo.guarantees[guaranteeIndex] };
       
-      if (mode === 'legacy') {
+      if (mode === 'measurement') {
+        delete guarantee.metric;
+        delete guarantee.operator;
+        delete guarantee.value;
+        delete guarantee.period;
+        delete guarantee.duration;
+        if (guarantee.measurement === undefined) guarantee.measurement = '';
+      } else if (mode === 'legacy') {
+        delete guarantee.measurement;
         delete guarantee.operator;
         delete guarantee.value;
         delete guarantee.period;
         if (guarantee.duration === undefined) guarantee.duration = '';
+        if (guarantee.metric === undefined) guarantee.metric = '';
       } else {
+        delete guarantee.measurement;
         delete guarantee.duration;
+        if (guarantee.metric === undefined) guarantee.metric = '';
       }
       
       slo.guarantees[guaranteeIndex] = guarantee;

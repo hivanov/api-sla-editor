@@ -99,4 +99,26 @@ describe('PricingEditor', () => {
     expect(options[1].attributes('value')).toBe('EUR')
     expect(options[2].attributes('value')).toBe('CPU')
   })
+
+  it('displays validation errors', () => {
+    const wrapper = mount(PricingEditor, {
+      props: {
+        pricing: { cost: -1, currency: '', period: 'invalid' },
+        errors: {
+          '/plans/gold/pricing/cost': ['Cost must be at least 0'],
+          '/plans/gold/pricing/currency': ['Currency is required'],
+          '/plans/gold/pricing/period': ['Invalid duration format']
+        },
+        path: '/plans/gold/pricing'
+      },
+    })
+
+    expect(wrapper.find('input[placeholder="Cost"]').classes()).toContain('is-invalid')
+    expect(wrapper.find('input[placeholder="Currency"]').classes()).toContain('is-invalid')
+    expect(wrapper.find('input[placeholder="e.g. P1DT4H"]').classes()).toContain('is-invalid')
+    
+    expect(wrapper.text()).toContain('Cost must be at least 0')
+    expect(wrapper.text()).toContain('Currency is required')
+    expect(wrapper.text()).toContain('Invalid duration format')
+  })
 })

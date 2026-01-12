@@ -194,7 +194,7 @@ export default {
 
     const sla = reactive({
       sla: "1.0.0", // Required by schema
-      context: { id: '', type: 'plans' }, // Default structure for context editor
+      context: { id: 'example-sla', type: 'plans' }, // Default structure for context editor
       metrics: {},
       plans: {},
       customCurrencies: []
@@ -307,6 +307,7 @@ export default {
         }
 
         const valid = validate(doc);
+        if (!valid) console.log('DEBUG VALIDATION:', JSON.stringify(validate.errors, null, 2));
         clearMarkers();
 
         if (valid) {

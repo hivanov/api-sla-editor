@@ -4,33 +4,36 @@
       Quotas
     </div>
     <div class="card-body">
-      <div v-for="(value, key) in safeQuotas" :key="key" class="mb-2">
-        <div class="input-group">
-          <span class="input-group-text">{{ key }}</span>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + key]}" :value="value" @input="updateQuota(key, $event.target.value)" placeholder="Quota Value">
-          <button class="btn btn-danger" @click="removeQuota(key)">Remove</button>
-          <div class="invalid-feedback" v-if="errors[path + '/' + key]">
-            {{ errors[path + '/' + key].join(', ') }}
-          </div>
+      <div v-for="(value, key) in safeQuotas" :key="key" class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-bold small">Quota Entry</span>
+          <button class="btn btn-outline-danger btn-sm" @click="removeQuota(key)">Remove</button>
+        </div>
+        <PrometheusMeasurementEditor 
+          :model-value="value" 
+          :metrics="metrics"
+          :errors="errors"
+          :path="path + '/' + key"
+          @update:model-value="updateQuota(key, $event)"
+        />
+        <div class="invalid-feedback d-block" v-if="errors[path + '/' + key]">
+          {{ errors[path + '/' + key].join(', ') }}
         </div>
       </div>
-      <div class="input-group mt-3">
-        <select class="form-select" v-model="newQuotaKey">
-          <option value="" disabled>Select metric</option>
-          <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
-        </select>
-        <input type="text" class="form-control" placeholder="New quota value" v-model="newQuotaValue">
-        <button class="btn btn-primary" @click="addQuota">Add Quota</button>
-      </div>
+      <button class="btn btn-secondary btn-sm mt-2" @click="addQuota">Add Quota</button>
     </div>
   </div>
 </template>
 
 <script>
 import { ref, computed } from 'vue';
+import PrometheusMeasurementEditor from './PrometheusMeasurementEditor.vue';
 
 export default {
   name: 'QuotasEditor',
+  components: {
+    PrometheusMeasurementEditor
+  },
   props: {
     quotas: {
       type: Object,
@@ -51,9 +54,6 @@ export default {
   },
   emits: ['update:quotas'],
   setup(props, { emit }) {
-    const newQuotaKey = ref('');
-    const newQuotaValue = ref('');
-
     const safeQuotas = computed(() => props.quotas || {});
 
     const updateQuota = (key, value) => {
@@ -62,12 +62,9 @@ export default {
     };
 
     const addQuota = () => {
-      if (newQuotaKey.value && !safeQuotas.value[newQuotaKey.value]) {
-        const newQuotas = { ...safeQuotas.value, [newQuotaKey.value]: newQuotaValue.value };
-        emit('update:quotas', newQuotas);
-        newQuotaKey.value = '';
-        newQuotaValue.value = '';
-      }
+      const newKey = 'q' + Date.now();
+      const newQuotas = { ...safeQuotas.value, [newKey]: '' };
+      emit('update:quotas', newQuotas);
     };
 
     const removeQuota = (key) => {
@@ -77,8 +74,6 @@ export default {
     };
 
     return {
-      newQuotaKey,
-      newQuotaValue,
       safeQuotas,
       updateQuota,
       addQuota,
