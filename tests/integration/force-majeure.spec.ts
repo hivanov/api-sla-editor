@@ -85,7 +85,7 @@ test.describe('Force Majeure Integration', () => {
     await exclusionsEditor.locator('button:has-text("Add Standard Force Majeure")').click();
 
     // 3. Add Manual Exclusion (Metric)
-    await exclusionsEditor.locator('button:has-text("Add Exclusion")').click();
+    await exclusionsEditor.locator('button:has-text("Add Metric")').click();
     
     // The new exclusion is empty, so defaults to metric or text depending on logic
     // We implemented default empty -> Metric to preserve old behavior
@@ -115,5 +115,38 @@ test.describe('Force Majeure Integration', () => {
     // The PromQL editor defaults: avg_over_time([5m]) < 99.9 (or similar depending on defaults)
     expect(yamlContent).toContain('avg_over_time'); 
     expect(yamlContent).toContain('99.9');
+  });
+
+  test('should support adding custom text description via button', async ({ page }) => {
+    // 1. Setup a Plan
+    await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'Custom Text Plan');
+    await page.click('.plans-editor-component button:has-text("Add Plan")');
+    
+    const planCard = page.locator('.plans-editor-component .plan-item:has-text("Custom Text Plan")');
+    const exclusionsEditor = planCard.locator('.exclusions-editor-component');
+
+    // 2. Click "Add Description"
+    await exclusionsEditor.locator('button:has-text("Add Description")').click();
+
+    // 3. Verify it's a textarea
+    const textarea = exclusionsEditor.locator('textarea').first();
+    await expect(textarea).toBeVisible();
+    await expect(exclusionsEditor.locator('.prometheus-measurement-editor')).not.toBeVisible();
+
+    // 4. Verify Selector is Text
+    const selector = exclusionsEditor.locator('select.form-select-sm').first();
+    await expect(selector).toHaveValue('text');
+
+    // 5. Fill Text
+    await textarea.fill('Meteor strike');
+
+    // 6. Verify in Source
+    await page.click('a:has-text("Source")');
+    const yamlContent = await page.evaluate(() => {
+      const editor = ace.edit(document.querySelector('.ace_editor'));
+      return editor.getValue();
+    });
+
+    expect(yamlContent).toContain('Meteor strike');
   });
 });
