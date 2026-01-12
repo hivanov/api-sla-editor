@@ -2,16 +2,35 @@
   <div class="d-flex flex-column vh-100 bg-light">
     <header class="bg-dark text-light p-3 shadow-sm">
       <div class="container-xxl d-flex justify-content-between align-items-center">
-        <h1 class="h3 mb-0">SLA Editor</h1>
-        <div class="d-flex gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <h1 class="h3 mb-0" style="cursor: pointer;" @click="currentView = 'editor'">SLA Editor</h1>
+          <div class="vr d-none d-md-block bg-secondary"></div>
+          <nav class="d-none d-md-flex gap-2">
+            <button class="btn btn-sm btn-outline-light" :class="{ active: currentView === 'tutorial' }" @click="currentView = 'tutorial'">Tutorial</button>
+            <button class="btn btn-sm btn-outline-light" :class="{ active: currentView === 'help' }" @click="currentView = 'help'">Help</button>
+          </nav>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <!-- Mobile Menu for Help/Tutorial -->
+          <div class="dropdown d-md-none">
+             <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+               Menu
+             </button>
+             <ul class="dropdown-menu">
+               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'editor'">Editor</a></li>
+               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'tutorial'">Tutorial</a></li>
+               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'help'">Help</a></li>
+             </ul>
+          </div>
+
           <span class="badge" :class="validationErrors.length === 0 ? 'bg-success' : 'bg-danger'">
             {{ validationErrors.length === 0 ? 'Valid' : validationErrors.length + ' Errors' }}
           </span>
         </div>
       </div>
     </header>
-    <main class="flex-grow-1 overflow-hidden">
-      <div class="container-xxl h-100 px-0 px-md-3">
+    <main class="flex-grow-1" :class="currentView === 'editor' ? 'overflow-hidden' : 'overflow-auto'">
+      <div v-if="currentView === 'editor'" class="container-xxl h-100 px-0 px-md-3">
         <div class="row g-0 g-md-3 h-100">
           <div class="col-12 col-md-8 h-100 d-flex flex-column p-2 p-md-3">
             <div class="card flex-grow-1 mb-3 shadow-sm overflow-hidden">
@@ -121,6 +140,10 @@
           </div>
         </div>
       </div>
+
+      <HelpPage v-else-if="currentView === 'help'" @close="currentView = 'editor'" />
+      <TutorialPage v-else-if="currentView === 'tutorial'" @close="currentView = 'editor'" />
+
     </main>
   </div>
 </template>
@@ -149,6 +172,8 @@ import MetricsEditor from './components/MetricsEditor.vue';
 import PlansEditor from './components/PlansEditor.vue';
 import ResponsiveWrapper from './components/ResponsiveWrapper.vue';
 import PolicyDescription from './components/PolicyDescription.vue';
+import HelpPage from './components/HelpPage.vue';
+import TutorialPage from './components/TutorialPage.vue';
 
 const Range = ace.require('ace/range').Range;
 
@@ -161,9 +186,12 @@ export default {
     PlansEditor,
     ResponsiveWrapper,
     PolicyDescription,
+    HelpPage,
+    TutorialPage,
   },
   setup() {
     const activeTab = ref('gui');
+    const currentView = ref('editor');
     const aceEditor = ref(null);
     let editor = null;
     const validationErrors = ref([]);
@@ -476,6 +504,7 @@ export default {
 
     return {
       activeTab,
+      currentView,
       aceEditor,
       validationErrors,
       validationErrorsMap,
