@@ -3,23 +3,40 @@
     <header class="bg-dark text-light p-3 shadow-sm">
       <div class="container-xxl d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-3">
-          <h1 class="h3 mb-0" style="cursor: pointer;" @click="currentView = 'editor'">SLA Editor</h1>
+          <h1 class="h3 mb-0" style="cursor: pointer;" @click="setView('editor')">SLA Editor</h1>
           <div class="vr d-none d-md-block bg-secondary"></div>
           <nav class="d-none d-md-flex gap-2">
-            <button class="btn btn-sm btn-outline-light" :class="{ active: currentView === 'tutorial' }" @click="currentView = 'tutorial'">Tutorial</button>
-            <button class="btn btn-sm btn-outline-light" :class="{ active: currentView === 'help' }" @click="currentView = 'help'">Help</button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: currentView === 'terraform' }">
+                Transform
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
+              </ul>
+            </div>
+             <div class="dropdown">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['tutorial', 'help'].includes(currentView) }">
+                Help
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help Page</a></li>
+              </ul>
+            </div>
           </nav>
         </div>
         <div class="d-flex gap-2 align-items-center">
-          <!-- Mobile Menu for Help/Tutorial -->
+          <!-- Mobile Menu -->
           <div class="dropdown d-md-none">
              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                Menu
              </button>
              <ul class="dropdown-menu">
-               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'editor'">Editor</a></li>
-               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'tutorial'">Tutorial</a></li>
-               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'help'">Help</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('editor')">Editor</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform</a></li>
+               <li><hr class="dropdown-divider"></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help</a></li>
              </ul>
           </div>
 
@@ -51,6 +68,10 @@
                 <div v-show="activeTab === 'gui'" class="p-3">
                   <ResponsiveWrapper title="Context" id="context-editor" v-model="sla.context">
                     <ContextEditor :context="sla.context" :errors="validationErrorsMap" @update:context="Object.assign(sla.context, $event)" />
+                  </ResponsiveWrapper>
+
+                  <ResponsiveWrapper title="GCP Monitoring" id="gcp-monitoring-editor" v-model="sla['x-gcp-monitoring']">
+                    <GcpMonitoringEditor :gcp-monitoring="sla['x-gcp-monitoring']" :errors="validationErrorsMap" @update:gcp-monitoring="sla['x-gcp-monitoring'] = $event" />
                   </ResponsiveWrapper>
                   
                   <ResponsiveWrapper title="Currencies" id="currency-editor" v-model="sla.customCurrencies">
@@ -141,8 +162,9 @@
         </div>
       </div>
 
-      <HelpPage v-else-if="currentView === 'help'" @close="currentView = 'editor'" />
-      <TutorialPage v-else-if="currentView === 'tutorial'" @close="currentView = 'editor'" />
+      <HelpPage v-else-if="currentView === 'help'" @close="setView('editor')" />
+      <TutorialPage v-else-if="currentView === 'tutorial'" @close="setView('editor')" />
+      <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" @close="setView('editor')" />
 
     </main>
   </div>
@@ -166,6 +188,7 @@ import example from './assets/example.yaml?raw';
 import supportMonFri from './assets/examples/support-mon-fri.yaml?raw';
 import availability1WeekDowntime from './assets/examples/availability-1-week-downtime.yaml?raw';
 import metrics100ConcurrentConnections from './assets/examples/metrics-100-concurrent-connections.yaml?raw';
+import gcpMonitoringComplex from './assets/examples/gcp-monitoring-complex.yaml?raw';
 import ContextEditor from './components/ContextEditor.vue';
 import CurrencyEditor from './components/CurrencyEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
@@ -174,6 +197,8 @@ import ResponsiveWrapper from './components/ResponsiveWrapper.vue';
 import PolicyDescription from './components/PolicyDescription.vue';
 import HelpPage from './components/HelpPage.vue';
 import TutorialPage from './components/TutorialPage.vue';
+import GcpMonitoringEditor from './components/GcpMonitoringEditor.vue';
+import TerraformGenerator from './components/TerraformGenerator.vue';
 
 const Range = ace.require('ace/range').Range;
 
@@ -188,6 +213,8 @@ export default {
     PolicyDescription,
     HelpPage,
     TutorialPage,
+    GcpMonitoringEditor,
+    TerraformGenerator,
   },
   setup() {
     const activeTab = ref('gui');
@@ -196,6 +223,16 @@ export default {
     let editor = null;
     const validationErrors = ref([]);
     const markers = ref([]);
+
+    const setView = (view) => {
+      currentView.value = view;
+      // Force close any open Bootstrap dropdowns
+      document.querySelectorAll('.dropdown-menu.show').forEach(el => el.classList.remove('show'));
+      document.querySelectorAll('.dropdown-toggle.show').forEach(el => {
+        el.classList.remove('show');
+        el.setAttribute('aria-expanded', 'false');
+      });
+    };
 
     const validationErrorsMap = computed(() => {
       const map = {};
@@ -225,13 +262,15 @@ export default {
       context: { id: 'example-sla', type: 'plans' }, // Default structure for context editor
       metrics: {},
       plans: {},
-      customCurrencies: []
+      customCurrencies: [],
+      'x-gcp-monitoring': { projectId: '' }
     });
 
     const examples = {
       'support-mon-fri': supportMonFri,
       'availability-1-week-downtime': availability1WeekDowntime,
       'metrics-100-concurrent-connections': metrics100ConcurrentConnections,
+      'gcp-monitoring-complex': gcpMonitoringComplex,
     };
 
     const availableCurrencies = computed(() => {
@@ -330,6 +369,11 @@ export default {
              sla.customCurrencies.splice(0, sla.customCurrencies.length, ...doc.customCurrencies);
           } else {
              sla.customCurrencies.splice(0, sla.customCurrencies.length);
+          }
+          if (doc['x-gcp-monitoring']) {
+             sla['x-gcp-monitoring'] = doc['x-gcp-monitoring'];
+          } else {
+             sla['x-gcp-monitoring'] = { projectId: '' };
           }
           if (doc.sla) sla.sla = doc.sla;
         }
@@ -530,6 +574,7 @@ export default {
       loadExample,
       setYamlContent,
       jumpToError,
+      setView,
     };
   },
 };

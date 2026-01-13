@@ -44,13 +44,34 @@ export default {
       if (props.sla.customCurrencies && props.sla.customCurrencies.length > 0) {
         md += `## Currencies\n\n`;
         props.sla.customCurrencies.forEach(c => {
-          md += `- **${c.code}**: ${c.description}`;
+          md += `- **${c.code}**`;
+          if (c.description) {
+            md += `: ${c.description}`;
+          }
           if (c.conversion && c.conversion.rate !== undefined && c.conversion.baseCurrency) {
             md += ` (1 ${c.code} = ${c.conversion.rate} ${c.conversion.baseCurrency})`;
           }
           md += `\n`;
         });
         md += `\n---\n\n`;
+      }
+
+      // Metrics Section
+      if (metrics && Object.keys(metrics).length > 0) {
+        md += `## Metrics Definitions\n\n`;
+        for (const [name, metric] of Object.entries(metrics)) {
+          md += `### ${name}\n`;
+          if (metric.description) {
+            md += `${metric.description}\n\n`;
+          }
+          if (metric.type) md += `- **Type:** ${metric.type}\n`;
+          if (metric.unit) md += `- **Unit:** ${metric.unit}\n`;
+          if (metric.monitoringId) md += `- **Monitoring ID:** \`${metric.monitoringId}\`\n`;
+          if (metric.resourceType) md += `- **Resource Type:** \`${metric.resourceType}\`\n`;
+          if (metric.metricKind) md += `- **Kind:** ${metric.metricKind}\n`;
+          md += `\n`;
+        }
+        md += `---\n\n`;
       }
 
       // Plans Section
@@ -61,7 +82,7 @@ export default {
 
           md += `### ${plan.title || planName}\n`;
           if (plan.description) {
-            md += `*${plan.description}*\n\n`;
+            md += `${plan.description}\n\n`;
           }
 
           // Availability
@@ -312,7 +333,11 @@ export default {
             if (validExclusions.length > 0) {
               md += `#### 🚫 Exclusions\n`;
               validExclusions.forEach(e => {
-                md += `- ${formatPrometheusMeasurement(e)}\n`;
+                if (e.includes('(') && e.includes(')')) {
+                  md += `- ${formatPrometheusMeasurement(e)}\n`;
+                } else {
+                  md += `- ${e}\n`;
+                }
               });
               md += `\n`;
             }

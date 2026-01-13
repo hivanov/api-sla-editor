@@ -15,8 +15,13 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Description</label>
-          <textarea class="form-control" :class="{'is-invalid': errors['/plans/' + name + '/description']}" placeholder="Plan Description" :value="plan.description" @input="updatePlan(name, 'description', $event.target.value)"></textarea>
-          <div class="invalid-feedback" v-if="errors['/plans/' + name + '/description']">
+          <MarkdownEditor 
+            :model-value="plan.description" 
+            :invalid="!!errors['/plans/' + name + '/description']"
+            placeholder="Plan Description (Markdown supported)"
+            @update:modelValue="updatePlan(name, 'description', $event)" 
+          />
+          <div class="invalid-feedback d-block" v-if="errors['/plans/' + name + '/description']">
             {{ errors['/plans/' + name + '/description'].join(', ') }}
           </div>
         </div>
@@ -63,6 +68,7 @@
 
 <script>
 import { ref } from 'vue';
+import MarkdownEditor from './MarkdownEditor.vue';
 import AvailabilityEditor from './AvailabilityEditor.vue';
 import PricingEditor from './PricingEditor.vue';
 import QuotasEditor from './QuotasEditor.vue';
@@ -77,6 +83,7 @@ import LifecyclePolicyEditor from './LifecyclePolicyEditor.vue';
 export default {
   name: 'PlansEditor',
   components: {
+    MarkdownEditor,
     AvailabilityEditor,
     PricingEditor,
     QuotasEditor,

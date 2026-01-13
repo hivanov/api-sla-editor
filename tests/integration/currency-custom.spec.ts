@@ -15,7 +15,7 @@ test.describe('Custom Currencies', () => {
     // Fill details
     const codeInput = page.locator('.currency-editor-component input[placeholder="SKU"]');
     await codeInput.fill('SKU');
-    const descInput = page.locator('.currency-editor-component input[placeholder="Description"]');
+    const descInput = page.locator('.currency-editor-component textarea[placeholder*="Markdown"]');
     await descInput.fill('Stock Keeping Unit');
 
     // 2. Add a Plan

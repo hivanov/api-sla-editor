@@ -62,9 +62,10 @@ plans: {}`);
     // 4. Switch to GUI and verify error display
     await page.click('a:has-text("GUI")');
     const metricCard = page.locator('.metrics-editor-component .card:has-text("test-metric")');
-    const typeSelect = metricCard.locator('select').first();
+    // Targeting "Type" select specifically
+    const typeSelect = metricCard.locator('.col-md-6:has(label:has-text("Type")) select');
     await expect(typeSelect).toHaveClass(/is-invalid/);
-    await expect(metricCard.locator('.invalid-feedback')).toBeVisible();
+    await expect(metricCard.locator('.invalid-feedback').first()).toBeVisible();
 
     // 5. Fix the error in GUI
     await typeSelect.selectOption('string');
@@ -90,12 +91,12 @@ plans: {}`);
     await page.click('.metrics-editor-component button:has-text("Add Metric")');
 
     const metricCard = page.locator('.metrics-editor-component .card:has-text("valid-metric")');
-    const typeSelect = metricCard.locator('select').first();
+    const typeSelect = metricCard.locator('.col-md-6:has(label:has-text("Type")) select');
     
     await typeSelect.selectOption('integer');
     await expect(typeSelect).toHaveValue('integer');
 
-    const unitSelect = metricCard.locator('select').last();
+    const unitSelect = metricCard.locator('.col-md-6:has(label:has-text("Unit")) select');
     await unitSelect.selectOption('requests');
     await expect(unitSelect).toHaveValue('requests');
 

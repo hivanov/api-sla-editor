@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PlansEditor from '../../src/components/PlansEditor.vue'
+import MarkdownEditor from '../../src/components/MarkdownEditor.vue'
 import AvailabilityEditor from '../../src/components/AvailabilityEditor.vue'
 import PricingEditor from '../../src/components/PricingEditor.vue'
 import QuotasEditor from '../../src/components/QuotasEditor.vue'
@@ -38,6 +39,7 @@ describe('PlansEditor', () => {
     expect(wrapper.find('input[placeholder="Plan Title"]').element.value).toBe('Gold Enterprise Tier')
 
     // Check for child components
+    expect(wrapper.findComponent(MarkdownEditor).exists()).toBe(true)
     expect(wrapper.findComponent(AvailabilityEditor).exists()).toBe(true)
     expect(wrapper.findComponent(PricingEditor).exists()).toBe(true)
     expect(wrapper.findComponent(QuotasEditor).exists()).toBe(true)

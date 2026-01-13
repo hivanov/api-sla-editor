@@ -23,8 +23,17 @@
         "properties": {
           "type": { "type": "string", "enum": ["boolean", "integer", "number", "string"] },
           "unit": { "type": "string" },
-          "description": { "type": "string" }
+          "description": { "type": "string" },
+          "monitoringId": { "type": "string", "description": "The ID of the metric in the monitoring system (e.g., compute.googleapis.com/instance/cpu/utilization)" },
+          "resourceType": { "type": "string", "description": "The monitored resource type (e.g., gce_instance)" },
+          "metricKind": { "type": "string", "enum": ["GAUGE", "DELTA", "CUMULATIVE"] }
         }
+      }
+    },
+    "x-gcp-monitoring": {
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" }
       }
     },
     "customCurrencies": {

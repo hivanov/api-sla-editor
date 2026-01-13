@@ -69,69 +69,66 @@ test.describe('Main flow', () => {
 
     // 2. Fill in ContextEditor data
     await page.fill('input#context-id', 'test-sla-id');
-    await page.waitForLoadState('networkidle');
 
     // 3. Fill in MetricsEditor data
     await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'response-time');
     await page.click('.metrics-editor-component button:has-text("Add Metric")');
-    await page.waitForLoadState('networkidle');
 
     await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'max-users');
     await page.click('.metrics-editor-component button:has-text("Add Metric")');
-    await page.waitForLoadState('networkidle');
     
     // Locate and fill the properties of the newly added metrics
     const rtCard = page.locator('.metrics-editor-component .card:has-text("response-time")');
-    await rtCard.locator('select').first().selectOption('number');
-    await rtCard.locator('select').last().selectOption('ms');
-    await rtCard.locator('textarea[placeholder="Description"]').fill('Average response time');
+    // Use more robust selectors based on labels
+    // The structure is roughly: 
+    // <div class="col-md-6"><label>Type</label><select>...
+    // <div class="col-md-6"><label>Unit</label><select>...
+    
+    // We can target the select that is a sibling or child of the label container
+    await rtCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
+    await rtCard.locator('.col-md-6:has(label:has-text("Unit")) select').selectOption('ms');
+    
+    // Description is now a markdown editor
+    await rtCard.locator('textarea[placeholder*="Markdown"]').fill('Average response time');
 
     const muCard = page.locator('.metrics-editor-component .card:has-text("max-users")');
-    await muCard.locator('select').first().selectOption('integer');
-    await muCard.locator('select').last().selectOption('items');
-    await muCard.locator('textarea[placeholder="Description"]').fill('Maximum concurrent users');
-    
-    await page.waitForLoadState('networkidle');
+    await muCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('integer');
+    await muCard.locator('.col-md-6:has(label:has-text("Unit")) select').selectOption('items');
+    await muCard.locator('textarea[placeholder*="Markdown"]').fill('Maximum concurrent users');
 
     // 4. Fill in PlansEditor data
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'Basic Plan');
     await page.click('.plans-editor-component button:has-text("Add Plan")');
-    await page.waitForLoadState('networkidle');
     
     // Locate and fill the properties of the newly added plan
     const basicPlanCard = page.locator('.plans-editor-component .plan-item:has-text("Basic Plan")');
     await basicPlanCard.locator('input[placeholder="Plan Title"]').fill('Basic Plan');
-    await basicPlanCard.locator('textarea[placeholder="Plan Description"]').fill('A basic service plan.');
+    await basicPlanCard.locator('textarea[placeholder*="Plan Description"]').fill('A basic service plan.');
     
     // Interact with AvailabilityEditor
     const availEditor = basicPlanCard.locator('.availability-editor-component');
     await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
     await availEditor.locator('input[type="number"]').first().fill('99.9');
-    await page.waitForLoadState('networkidle');
 
     // Interact with PricingEditor
     await basicPlanCard.locator('.pricing-editor-component input[placeholder="Cost"]').fill('120');
     await basicPlanCard.locator('.pricing-editor-component input[placeholder="Currency"]').fill('EUR');
     await basicPlanCard.locator('.pricing-editor-component input[placeholder="e.g. P1DT4H"]').fill('P30D');
-    await page.waitForLoadState('networkidle');
 
     // Interact with QuotasEditor
     await basicPlanCard.locator('.quotas-editor-component button:has-text("Add Quota")').click();
     const quotaEditor = basicPlanCard.locator('.quotas-editor-component .prometheus-measurement-editor');
     await quotaEditor.locator('select').nth(1).selectOption('max-users'); // Metric select
     await quotaEditor.locator('input[type="text"]').fill('100'); // Value input
-    await page.waitForLoadState('networkidle');
     
     // Add a guarantee to the plan
     await basicPlanCard.locator('button:has-text("Add Guarantee")').click();
-    await page.waitForLoadState('networkidle');
     
     // Switch to Structured mode
     await basicPlanCard.locator('.guarantees-editor-component label', { hasText: 'Structured' }).first().click();
     
     await basicPlanCard.locator('.guarantees-editor-component select').first().selectOption('response-time');
     await basicPlanCard.locator('.guarantees-editor-component input[placeholder="e.g. P1DT4H"]').fill('P0DT0H5M0S'); // 5 minutes
-    await page.waitForLoadState('networkidle');
 
     // Interact with SupportPolicyEditor - Contact Points
     const supportEditor = basicPlanCard.locator('.support-policy-editor-component');
@@ -141,12 +138,10 @@ test.describe('Main flow', () => {
     // After selecting email, value should be 'mailto://'
     const urlInput = supportEditor.locator('input[placeholder="https://... or mailto:..."]');
     await urlInput.fill('mailto://support@example.com');
-    await page.waitForLoadState('networkidle');
 
     // Interact with SupportPolicyEditor - Hours Available
     await supportEditor.locator('button:has-text("Add Hours")').click();
     await supportEditor.locator('button:has-text("Workdays")').click();
-    await page.waitForLoadState('networkidle');
 
     // Interact with ServiceCreditsEditor
     await basicPlanCard.locator('.service-credits-editor-component input[placeholder="Currency"]').fill('EUR');
@@ -161,11 +156,14 @@ test.describe('Main flow', () => {
     await basicPlanCard.locator('.maintenance-policy-editor-component input[placeholder="e.g. P1DT4H"]').first().fill('P14D');
 
     // Interact with ExclusionsEditor
-    await basicPlanCard.locator('.exclusions-editor-component button:has-text("Add Exclusion")').click();
-    // Switch to Metric mode manually as default is now Text
-    await basicPlanCard.locator('.exclusions-editor-component .d-flex.align-items-center select').last().selectOption('metric');
+    const exclusionsComponent = basicPlanCard.locator('.exclusions-editor-component');
+    await exclusionsComponent.getByRole('button', { name: 'Add Exclusion' }).click();
     
-    const exclusionEditor = basicPlanCard.locator('.exclusions-editor-component .prometheus-measurement-editor');
+    // Switch to Metric mode manually as default is now Text
+    const exclusionItem = exclusionsComponent.locator('.mb-3').last();
+    await exclusionItem.locator('select.form-select-sm').selectOption('metric');
+    
+    const exclusionEditor = exclusionItem.locator('.prometheus-measurement-editor');
     await exclusionEditor.locator('select').nth(1).selectOption('response-time');
     await exclusionEditor.locator('input[type="text"]').fill('500');
     // We don't verify "Force Majeure" anymore since it's now a PromQL string

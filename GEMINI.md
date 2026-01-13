@@ -115,8 +115,12 @@ The application has been updated to be more responsive. Key changes include:
 *   **Bootstrap Interactive Components:** Vue components using Bootstrap classes for interactive elements (like Accordions, Dropdowns, Tooltips) require the Bootstrap JS bundle (`bootstrap.bundle.min.js`) to be imported in the entry point (`main.js`). CSS alone is insufficient for these components.
 *   **Integration Test Maintenance:** When modifying UI flows (like changing a default editor mode from "Metric" to "Text"), proactively grep for tests that might rely on the old default behavior to avoid timeouts and "element not found" errors in unrelated test suites.
 
-### Lessons Learned (Session: Bug Fix - Editor Persistence)
+### Lessons Learned (Session: GCP Terraform Monitoring Transformation)
 
-*   **Ace Editor & v-if:** When using `v-if` to conditionally hide/show a container holding an Ace Editor, the editor instance is destroyed when unmounted. Returning to the view requires explicit re-initialization of the editor instance on the next tick (`nextTick`) after the DOM has been restored. Using `v-show` instead can preserve the instance but might require manual `resize()` calls to fix layout issues.
+*   **Protocol Consistency:** When handling URIs (like `mailto:` or `tel:`), ensure the application and transformation logic agree on the format (e.g., whether `//` is included). Auto-formatting in the UI should be mirrored by robust parsing in the generator (using regex to handle both `mailto:` and `mailto://` variants).
+*   **Recursive Data Collection:** When generating system-wide configurations (like Alert Policies), explicitly traverse all possible locations for relevant data (e.g., both Plan-level guarantees AND SLO-level guarantees in both Plans and Support Policies).
+*   **Terraform Syntax (Escaping):** Complex Terraform attributes like monitoring filters require nested quote escaping. In JavaScript/Vue templates, this often means using triple backslashes (`\\\\\\"`) to ensure the resulting `.tf` file contains properly escaped quotes (`\\"`).
+*   **Full-File Test Validation:** Piecewise string assertion (`toContainText`) in integration tests can be brittle and miss regressions in other parts of the generated file. Prefer capturing the entire editor content via `page.evaluate` and comparing against a normalized "expected" baseline.
+*   **Custom Resource Generation:** Heuristics can be used to decide when to generate supporting resources (like `google_monitoring_metric_descriptor`). For example, any metric with `custom.googleapis.com` in its ID should likely have its own descriptor generated.
 
 

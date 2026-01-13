@@ -1,5 +1,5 @@
 <template>
-  <div class="card mb-3 shadow-sm responsive-wrapper" ref="wrapper">
+  <div class="card mb-3 shadow-sm responsive-wrapper" ref="wrapper" :id="id">
     <div class="card-header d-flex justify-content-between align-items-center bg-white py-2">
       <span class="fw-bold">{{ title }}</span>
       <div v-if="isNarrow" class="form-check form-switch mb-0">
