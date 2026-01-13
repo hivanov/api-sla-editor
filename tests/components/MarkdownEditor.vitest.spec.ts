@@ -59,4 +59,30 @@ describe('MarkdownEditor', () => {
     expect(wrapper.vm.preview).toBe(false);
     expect(wrapper.find('textarea').exists()).toBe(true);
   });
+
+  it('applies bold formatting', async () => {
+    const wrapper = mount(MarkdownEditor, {
+      props: { modelValue: 'hello world' }
+    });
+    
+    const textarea = wrapper.find('textarea').element;
+    textarea.setSelectionRange(0, 5); // Select 'hello'
+    
+    await wrapper.find('button[title="Bold"]').trigger('click');
+    
+    expect(wrapper.emitted('update:modelValue')[0]).toEqual(['**hello** world']);
+  });
+
+  it('applies italic formatting', async () => {
+    const wrapper = mount(MarkdownEditor, {
+      props: { modelValue: 'hello world' }
+    });
+    
+    const textarea = wrapper.find('textarea').element;
+    textarea.setSelectionRange(6, 11); // Select 'world'
+    
+    await wrapper.find('button[title="Italic"]').trigger('click');
+    
+    expect(wrapper.emitted('update:modelValue')[0]).toEqual(['hello *world*']);
+  });
 });
