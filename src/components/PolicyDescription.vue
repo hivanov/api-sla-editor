@@ -79,7 +79,7 @@ export default {
 
           md += `### ${plan.title || planName}\n`;
           if (plan.description) {
-            md += `*${plan.description}*\n\n`;
+            md += `${plan.description}\n\n`;
           }
 
           // Availability
@@ -330,7 +330,11 @@ export default {
             if (validExclusions.length > 0) {
               md += `#### 🚫 Exclusions\n`;
               validExclusions.forEach(e => {
-                md += `- ${formatPrometheusMeasurement(e)}\n`;
+                if (e.includes('(') && e.includes(')')) {
+                  md += `- ${formatPrometheusMeasurement(e)}\n`;
+                } else {
+                  md += `- ${e}\n`;
+                }
               });
               md += `\n`;
             }

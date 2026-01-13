@@ -109,7 +109,7 @@ test.describe('Main flow', () => {
     // Locate and fill the properties of the newly added plan
     const basicPlanCard = page.locator('.plans-editor-component .plan-item:has-text("Basic Plan")');
     await basicPlanCard.locator('input[placeholder="Plan Title"]').fill('Basic Plan');
-    await basicPlanCard.locator('textarea[placeholder="Plan Description"]').fill('A basic service plan.');
+    await basicPlanCard.locator('textarea[placeholder*="Plan Description"]').fill('A basic service plan.');
     
     // Interact with AvailabilityEditor
     const availEditor = basicPlanCard.locator('.availability-editor-component');

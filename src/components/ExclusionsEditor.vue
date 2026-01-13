@@ -17,13 +17,12 @@
         </div>
         
         <div v-if="getExclusionType(index, exclusion) === 'text'">
-          <textarea 
-            class="form-control" 
-            rows="2" 
-            placeholder="Describe the exclusion..." 
-            :value="exclusion" 
-            @input="updateExclusion(index, $event.target.value)"
-          ></textarea>
+          <MarkdownEditor 
+            :model-value="exclusion" 
+            :invalid="!!errors[path + '/' + index]"
+            placeholder="Describe the exclusion... (Markdown supported)"
+            @update:modelValue="updateExclusion(index, $event)" 
+          />
         </div>
         <PrometheusMeasurementEditor 
           v-else
@@ -46,6 +45,7 @@
 
 <script>
 import { computed, reactive } from 'vue';
+import MarkdownEditor from './MarkdownEditor.vue';
 import PrometheusMeasurementEditor from './PrometheusMeasurementEditor.vue';
 
 const STANDARD_EXCLUSIONS = [
@@ -60,6 +60,7 @@ const STANDARD_EXCLUSIONS = [
 export default {
   name: 'ExclusionsEditor',
   components: {
+    MarkdownEditor,
     PrometheusMeasurementEditor
   },
   props: {
