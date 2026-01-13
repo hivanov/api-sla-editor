@@ -29,3 +29,5 @@ playwright/.cache/
 *.bak
 *.swo
 .DS_Store
+.gemini/
+gha-creds-*.json
