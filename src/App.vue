@@ -6,18 +6,35 @@
           <h1 class="h3 mb-0" style="cursor: pointer;" @click="currentView = 'editor'">SLA Editor</h1>
           <div class="vr d-none d-md-block bg-secondary"></div>
           <nav class="d-none d-md-flex gap-2">
-            <button class="btn btn-sm btn-outline-light" :class="{ active: currentView === 'tutorial' }" @click="currentView = 'tutorial'">Tutorial</button>
-            <button class="btn btn-sm btn-outline-light" :class="{ active: currentView === 'help' }" @click="currentView = 'help'">Help</button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: currentView === 'terraform' }">
+                Transform
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'terraform'">Generate Terraform (GCP)</a></li>
+              </ul>
+            </div>
+             <div class="dropdown">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['tutorial', 'help'].includes(currentView) }">
+                Help
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'tutorial'">Tutorial</a></li>
+                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'help'">Help Page</a></li>
+              </ul>
+            </div>
           </nav>
         </div>
         <div class="d-flex gap-2 align-items-center">
-          <!-- Mobile Menu for Help/Tutorial -->
+          <!-- Mobile Menu -->
           <div class="dropdown d-md-none">
              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                Menu
              </button>
              <ul class="dropdown-menu">
                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'editor'">Editor</a></li>
+               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'terraform'">Generate Terraform</a></li>
+               <li><hr class="dropdown-divider"></li>
                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'tutorial'">Tutorial</a></li>
                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'help'">Help</a></li>
              </ul>
@@ -51,6 +68,10 @@
                 <div v-show="activeTab === 'gui'" class="p-3">
                   <ResponsiveWrapper title="Context" id="context-editor" v-model="sla.context">
                     <ContextEditor :context="sla.context" :errors="validationErrorsMap" @update:context="Object.assign(sla.context, $event)" />
+                  </ResponsiveWrapper>
+
+                  <ResponsiveWrapper title="GCP Monitoring" id="gcp-monitoring-editor" v-model="sla['x-gcp-monitoring']">
+                    <GcpMonitoringEditor :gcp-monitoring="sla['x-gcp-monitoring']" :errors="validationErrorsMap" @update:gcp-monitoring="sla['x-gcp-monitoring'] = $event" />
                   </ResponsiveWrapper>
                   
                   <ResponsiveWrapper title="Currencies" id="currency-editor" v-model="sla.customCurrencies">
@@ -143,6 +164,7 @@
 
       <HelpPage v-else-if="currentView === 'help'" @close="currentView = 'editor'" />
       <TutorialPage v-else-if="currentView === 'tutorial'" @close="currentView = 'editor'" />
+      <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" />
 
     </main>
   </div>
@@ -174,6 +196,8 @@ import ResponsiveWrapper from './components/ResponsiveWrapper.vue';
 import PolicyDescription from './components/PolicyDescription.vue';
 import HelpPage from './components/HelpPage.vue';
 import TutorialPage from './components/TutorialPage.vue';
+import GcpMonitoringEditor from './components/GcpMonitoringEditor.vue';
+import TerraformGenerator from './components/TerraformGenerator.vue';
 
 const Range = ace.require('ace/range').Range;
 
@@ -188,6 +212,8 @@ export default {
     PolicyDescription,
     HelpPage,
     TutorialPage,
+    GcpMonitoringEditor,
+    TerraformGenerator,
   },
   setup() {
     const activeTab = ref('gui');
@@ -225,7 +251,8 @@ export default {
       context: { id: 'example-sla', type: 'plans' }, // Default structure for context editor
       metrics: {},
       plans: {},
-      customCurrencies: []
+      customCurrencies: [],
+      'x-gcp-monitoring': { projectId: '', channels: [] }
     });
 
     const examples = {
@@ -330,6 +357,11 @@ export default {
              sla.customCurrencies.splice(0, sla.customCurrencies.length, ...doc.customCurrencies);
           } else {
              sla.customCurrencies.splice(0, sla.customCurrencies.length);
+          }
+          if (doc['x-gcp-monitoring']) {
+             sla['x-gcp-monitoring'] = doc['x-gcp-monitoring'];
+          } else {
+             sla['x-gcp-monitoring'] = { projectId: '', channels: [] };
           }
           if (doc.sla) sla.sla = doc.sla;
         }
