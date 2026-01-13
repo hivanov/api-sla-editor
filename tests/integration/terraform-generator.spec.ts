@@ -33,6 +33,10 @@ test.describe('Terraform Generator', () => {
     const metricCard = page.locator('.metrics-editor-component .card').filter({ hasText: 'cpu_load' });
     await metricCard.locator('input[placeholder*="compute.googleapis.com"]').fill('compute.googleapis.com/instance/cpu/utilization');
     await metricCard.locator('input[placeholder*="gce_instance"]').fill('gce_instance');
+    // Set Kind (optional but good to test)
+    await metricCard.locator('select').filter({ hasText: 'Select Kind' }).selectOption('GAUGE');
+    // Set Description (Markdown)
+    await metricCard.locator('textarea[placeholder*="Markdown"]').fill('Tracks CPU load');
 
     // 3. Configure a Plan
     await page.click('.card-header:has-text("Plans")');

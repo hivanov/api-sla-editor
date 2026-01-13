@@ -154,8 +154,8 @@ export default {
                    }
 
                    // Check flattened properties
-                   if (!metricDef.metricType || !metricDef.resourceType) {
-                      localErrors.value.push(`No GCP metric mapping (metricType, resourceType) for '${metricName}'. Skipping alert generation.`);
+                   if (!metricDef.monitoringId || !metricDef.resourceType) {
+                      localErrors.value.push(`No GCP metric mapping (monitoringId, resourceType) for '${metricName}'. Skipping alert generation.`);
                       return;
                    }
 
@@ -168,11 +168,11 @@ export default {
                    tf += `  conditions {\n`;
                    tf += `    display_name = "${metricName} breach"\n`;
                    tf += `    condition_threshold {\n`;
-                   tf += `      filter     = "resource.type = \"${metricDef.resourceType}\" AND metric.type = \"${metricDef.metricType}\""\n`;
+                   tf += `      filter     = "resource.type = \"${metricDef.resourceType}\" AND metric.type = \"${metricDef.monitoringId}\""\n`;
                    tf += `      duration   = "${guarantee.period ? parseDurationToSeconds(guarantee.period) + 's' : '60s'}"\n`;
                    tf += `      comparison = "${getComparison(guarantee.operator)}"\n`;
                    
-                   // Assuming value is numeric for now. 
+                   // Assuming value is numeric for now.
                    // TODO: Handle parsing of value based on unit (e.g. 200ms -> 200)
                    let thresholdValue = parseFloat(guarantee.value); 
                    if (isNaN(thresholdValue)) thresholdValue = 0; // Fallback
