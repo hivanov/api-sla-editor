@@ -87,26 +87,58 @@ export default {
           tf += `provider "google" {\n  project = "${gcp.projectId}"\n}\n\n`;
        }
 
-       // Notification Channels
-       const channelIds = {};
-       if (gcp && gcp.channels) {
-          gcp.channels.forEach((channel, index) => {
-             const resourceName = `channel_${index}`;
-             channelIds[index] = `google_monitoring_notification_channel.${resourceName}.name`;
-             
-             tf += `resource "google_monitoring_notification_channel" "${resourceName}" {\n`;
-             tf += `  display_name = "${channel.displayName || 'Channel ' + index}"\n`;
-             tf += `  type         = "${channel.type}"\n`;
-             tf += `  labels = {\n`;
-             if (channel.labels) {
-                Object.entries(channel.labels).forEach(([k, v]) => {
-                   tf += `    "${k}" = "${v}"\n`;
+       // Notification Channels from Support Policy Contact Points
+       const channelIds = new Set();
+       const channelsTf = [];
+
+       if (sla.plans) {
+          Object.values(sla.plans).forEach(plan => {
+             const support = plan['x-support-policy'];
+             if (support && support.contactPoints) {
+                support.contactPoints.forEach(cp => {
+                   if (cp.channels) {
+                      cp.channels.forEach(ch => {
+                         let type = '';
+                         let labels = {};
+                         let displayName = ch.description || 'SLA Contact';
+
+                         if (ch.type === 'email' && ch.url && ch.url.startsWith('mailto:')) {
+                            type = 'email';
+                            labels['email_address'] = ch.url.replace('mailto:', '');
+                            displayName = labels['email_address'];
+                         } else if ((ch.type === 'phone' || ch.type === 'sms') && ch.url && ch.url.startsWith('tel:')) {
+                             type = 'sms';
+                             labels['number'] = ch.url.replace('tel:', '');
+                             displayName = labels['number'];
+                         }
+                         
+                         if (type) {
+                            // Deduplicate based on type+labels
+                            const key = `${type}:${JSON.stringify(labels)}`;
+                            if (!channelIds.has(key)) {
+                               channelIds.add(key);
+                               const resourceName = `channel_${channelIds.size}`;
+                               
+                               let chunk = `resource "google_monitoring_notification_channel" "${resourceName}" {\n`;
+                               chunk += `  display_name = "${displayName}"\n`;
+                               chunk += `  type         = "${type}"\n`;
+                               chunk += `  labels = {\n`;
+                               Object.entries(labels).forEach(([k, v]) => {
+                                  chunk += `    "${k}" = "${v}"\n`;
+                               });
+                               chunk += `  }\n`;
+                               chunk += `}\n\n`;
+                               channelsTf.push({ resourceName, chunk });
+                            }
+                         }
+                      });
+                   }
                 });
              }
-             tf += `  }\n`;
-             tf += `}\n\n`;
           });
        }
+
+       channelsTf.forEach(c => tf += c.chunk);
 
        // Alert Policies from Plans -> Guarantees
        if (sla.plans) {
@@ -121,9 +153,9 @@ export default {
                       return;
                    }
 
-                   const gcpMetric = metricDef['x-gcp-metric'];
-                   if (!gcpMetric) {
-                      localErrors.value.push(`No GCP metric mapping for '${metricName}'. Skipping alert generation.`);
+                   // Check flattened properties
+                   if (!metricDef.metricType || !metricDef.resourceType) {
+                      localErrors.value.push(`No GCP metric mapping (metricType, resourceType) for '${metricName}'. Skipping alert generation.`);
                       return;
                    }
 
@@ -133,13 +165,10 @@ export default {
                    tf += `resource "google_monitoring_alert_policy" "${policyName}" {\n`;
                    tf += `  display_name = "SLA Breach: ${planName} - ${metricName}"\n`;
                    tf += `  combiner     = "OR"\n`;
-                   tf += `  conditions {
-`;
+                   tf += `  conditions {\n`;
                    tf += `    display_name = "${metricName} breach"\n`;
-                   tf += `    condition_threshold {
-`;
-                   tf += `      filter     = "resource.type = \"${gcpMetric.resourceType}\" AND metric.type = \"${gcpMetric.metricType}\""
-`;
+                   tf += `    condition_threshold {\n`;
+                   tf += `      filter     = "resource.type = \"${metricDef.resourceType}\" AND metric.type = \"${metricDef.metricType}\""\n`;
                    tf += `      duration   = "${guarantee.period ? parseDurationToSeconds(guarantee.period) + 's' : '60s'}"\n`;
                    tf += `      comparison = "${getComparison(guarantee.operator)}"\n`;
                    
@@ -150,18 +179,17 @@ export default {
 
                    tf += `      threshold_value = ${thresholdValue}\n`;
                    
-                   tf += `      aggregations {
-`;
+                   tf += `      aggregations {\n`;
                    tf += `        alignment_period   = "60s"\n`;
                    tf += `        per_series_aligner = "ALIGN_MEAN"\n`; // Default
                    tf += `      }\n`;
                    tf += `    }\n`;
                    tf += `  }\n`;
                    
-                   if (Object.keys(channelIds).length > 0) {
+                   if (channelsTf.length > 0) {
                       tf += `  notification_channels = [\n`;
-                      Object.values(channelIds).forEach(id => {
-                         tf += `    ${id},\n`;
+                      channelsTf.forEach(c => {
+                         tf += `    google_monitoring_notification_channel.${c.resourceName}.name,\n`;
                       });
                       tf += `  ]\n`;
                    }

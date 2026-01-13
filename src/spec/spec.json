@@ -24,35 +24,17 @@
           "type": { "type": "string", "enum": ["boolean", "integer", "number", "string"] },
           "unit": { "type": "string" },
           "description": { "type": "string" },
-          "x-gcp-metric": {
-            "type": "object",
-            "required": ["metricType", "resourceType"],
-            "properties": {
-              "metricType": { "type": "string", "description": "The GCP metric type (e.g., compute.googleapis.com/instance/cpu/utilization)" },
-              "resourceType": { "type": "string", "description": "The monitored resource type (e.g., gce_instance)" },
-              "metricKind": { "type": "string", "enum": ["GAUGE", "DELTA", "CUMULATIVE"] },
-              "valueType": { "type": "string", "enum": ["BOOL", "INT64", "DOUBLE", "STRING", "DISTRIBUTION"] }
-            }
-          }
+          "metricType": { "type": "string", "description": "The GCP metric type (e.g., compute.googleapis.com/instance/cpu/utilization)" },
+          "resourceType": { "type": "string", "description": "The monitored resource type (e.g., gce_instance)" },
+          "metricKind": { "type": "string", "enum": ["GAUGE", "DELTA", "CUMULATIVE"] },
+          "valueType": { "type": "string", "enum": ["BOOL", "INT64", "DOUBLE", "STRING", "DISTRIBUTION"] }
         }
       }
     },
     "x-gcp-monitoring": {
       "type": "object",
       "properties": {
-        "projectId": { "type": "string" },
-        "channels": {
-           "type": "array",
-           "items": {
-             "type": "object",
-             "required": ["type", "labels"],
-             "properties": {
-                "displayName": { "type": "string" },
-                "type": { "type": "string", "enum": ["email", "slack", "sms"] },
-                "labels": { "type": "object" }
-             }
-           }
-        }
+        "projectId": { "type": "string" }
       }
     },
     "customCurrencies": {

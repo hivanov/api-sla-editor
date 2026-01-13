@@ -252,7 +252,7 @@ export default {
       metrics: {},
       plans: {},
       customCurrencies: [],
-      'x-gcp-monitoring': { projectId: '', channels: [] }
+      'x-gcp-monitoring': { projectId: '' }
     });
 
     const examples = {
@@ -361,7 +361,7 @@ export default {
           if (doc['x-gcp-monitoring']) {
              sla['x-gcp-monitoring'] = doc['x-gcp-monitoring'];
           } else {
-             sla['x-gcp-monitoring'] = { projectId: '', channels: [] };
+             sla['x-gcp-monitoring'] = { projectId: '' };
           }
           if (doc.sla) sla.sla = doc.sla;
         }
