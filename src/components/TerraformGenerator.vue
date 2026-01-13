@@ -3,6 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light border-bottom">
        <h4 class="mb-0">GCP Terraform Generator</h4>
        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" @click="$emit('close')">Back to Editor</button>
           <button class="btn btn-primary" @click="generate" :disabled="hasBlockingErrors">Generate</button>
           <button class="btn btn-outline-secondary" @click="download" :disabled="!generatedCode">Download .tf</button>
        </div>
@@ -35,6 +36,7 @@ export default {
       required: true
     }
   },
+  emits: ['close'],
   setup(props) {
     const generatedCode = ref('');
     const localErrors = ref([]);

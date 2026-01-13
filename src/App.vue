@@ -164,7 +164,7 @@
 
       <HelpPage v-else-if="currentView === 'help'" @close="currentView = 'editor'" />
       <TutorialPage v-else-if="currentView === 'tutorial'" @close="currentView = 'editor'" />
-      <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" />
+      <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" @close="currentView = 'editor'" />
 
     </main>
   </div>

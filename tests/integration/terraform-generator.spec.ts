@@ -115,4 +115,60 @@ test.describe('Terraform Generator', () => {
     await expect(editor).toContainText('filter     = "resource.type = \"gce_instance\" AND metric.type = \"compute.googleapis.com/instance/cpu/utilization\""');
     await expect(editor).toContainText('comparison = "COMPARISON_GT"'); // < 80 means alert if > 80
   });
+
+  test('should navigate back to editor and preserve active tab', async ({ page }) => {
+    const navigateToTerraform = async () => {
+      await page.waitForTimeout(300);
+      await page.click('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
+      // Use evaluate to click the item directly in the browser
+      await page.evaluate(() => {
+        const items = Array.from(document.querySelectorAll('.dropdown-item'));
+        const gcpItem = items.find(el => el.textContent.includes('Generate Terraform (GCP)'));
+        if (gcpItem) gcpItem.click();
+      });
+      await expect(page.locator('h4:has-text("GCP Terraform Generator")')).toBeVisible();
+    };
+
+    // 1. Start in GUI tab
+    await page.click('a.nav-link:has-text("GUI")');
+    await expect(page.locator('#context-editor')).toBeVisible();
+
+    // 2. Go to Terraform Generator
+    await navigateToTerraform();
+
+    // 3. Click Back to Editor
+    await page.click('button:has-text("Back to Editor")');
+    
+    // 4. Verify back in Editor and GUI tab is active
+    await expect(page.locator('a.nav-link.active')).toHaveText('GUI');
+    await expect(page.locator('#context-editor')).toBeVisible();
+
+    // 5. Switch to Description tab
+    await page.click('a.nav-link:has-text("Description")');
+    await expect(page.locator('.policy-description')).toBeVisible();
+
+    // 6. Go to Terraform Generator
+    await navigateToTerraform();
+
+    // 7. Click Back to Editor
+    await page.click('button:has-text("Back to Editor")');
+
+    // 8. Verify back in Editor and Description tab is active
+    await expect(page.locator('a.nav-link.active')).toHaveText('Description');
+    await expect(page.locator('.policy-description')).toBeVisible();
+
+    // 9. Switch to Source tab
+    await page.click('a.nav-link:has-text("Source")');
+    await expect(page.locator('.ace_editor')).toBeVisible();
+
+    // 10. Go to Terraform Generator
+    await navigateToTerraform();
+
+    // 11. Click Back to Editor
+    await page.click('button:has-text("Back to Editor")');
+
+    // 12. Verify back in Editor and Source tab is active
+    await expect(page.locator('a.nav-link.active')).toHaveText('Source');
+    await expect(page.locator('.ace_editor')).toBeVisible();
+  });
 });
