@@ -188,6 +188,7 @@ import example from './assets/example.yaml?raw';
 import supportMonFri from './assets/examples/support-mon-fri.yaml?raw';
 import availability1WeekDowntime from './assets/examples/availability-1-week-downtime.yaml?raw';
 import metrics100ConcurrentConnections from './assets/examples/metrics-100-concurrent-connections.yaml?raw';
+import gcpMonitoringComplex from './assets/examples/gcp-monitoring-complex.yaml?raw';
 import ContextEditor from './components/ContextEditor.vue';
 import CurrencyEditor from './components/CurrencyEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
@@ -269,6 +270,7 @@ export default {
       'support-mon-fri': supportMonFri,
       'availability-1-week-downtime': availability1WeekDowntime,
       'metrics-100-concurrent-connections': metrics100ConcurrentConnections,
+      'gcp-monitoring-complex': gcpMonitoringComplex,
     };
 
     const availableCurrencies = computed(() => {

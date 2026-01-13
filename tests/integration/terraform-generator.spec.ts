@@ -92,7 +92,7 @@ test.describe('Terraform Generator', () => {
     // Maybe the select option change triggered a DOM update that detached the element?
     // Let's re-locate the input.
     
-    await channelCard.locator('input[placeholder*="mailto"]').fill('mailto:ops@example.com');
+    await channelCard.locator('input[placeholder*="mailto"]').fill('mailto://ops@example.com');
 
     // 6. Generate Terraform
     await page.click('button:has-text("Transform")');
@@ -100,20 +100,56 @@ test.describe('Terraform Generator', () => {
     await page.click('button:has-text("Generate")');
 
     // 7. Verify Output
-    const editor = page.locator('.ace_content');
-    await expect(editor).toContainText('provider "google"');
-    await expect(editor).toContainText('project = "test-project-id"');
-    
-    // Verify Notification Channel generation
-    await expect(editor).toContainText('resource "google_monitoring_notification_channel"');
-    await expect(editor).toContainText('display_name = "ops@example.com"'); // Logic uses email as display name
-    await expect(editor).toContainText('type         = "email"');
-    await expect(editor).toContainText('"email_address" = "ops@example.com"'); // Parsed from mailto:
+    const getEditorValue = async () => {
+        return await page.evaluate(() => {
+            const el = document.querySelector('.ace_editor');
+            if (!el) return '';
+            // @ts-ignore
+            const editor = ace.edit(el);
+            return editor.getValue();
+        });
+    };
 
-    // Verify Alert Policy
-    await expect(editor).toContainText('resource "google_monitoring_alert_policy"');
-    await expect(editor).toContainText('filter     = "resource.type = \"gce_instance\" AND metric.type = \"compute.googleapis.com/instance/cpu/utilization\""');
-    await expect(editor).toContainText('comparison = "COMPARISON_GT"'); // < 80 means alert if > 80
+    const tf = await getEditorValue();
+
+    const expectedTf = `provider "google" {
+  project = "test-project-id"
+}
+
+resource "google_monitoring_notification_channel" "channel_1" {
+  display_name = "ops@example.com"
+  type         = "email"
+  labels = {
+    "email_address" = "ops@example.com"
+  }
+}
+
+resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
+  display_name = "SLA Breach: Gold - direct - cpu_load"
+  combiner     = "OR"
+  conditions {
+    display_name = "cpu_load breach"
+    condition_threshold {
+      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
+      duration   = "0s"
+      comparison = "COMPARISON_GT"
+      threshold_value = 0
+      aggregations {
+        alignment_period   = "60s"
+        per_series_aligner = "ALIGN_MEAN"
+      }
+    }
+  }
+  notification_channels = [
+    google_monitoring_notification_channel.channel_1.name,
+  ]
+}
+
+`;
+
+    const normalize = (s: string) => s.split('\n').map(line => line.trimEnd()).join('\n').trim();
+    
+    expect(normalize(tf)).toBe(normalize(expectedTf));
   });
 
   test('should navigate back to editor and preserve active tab', async ({ page }) => {

@@ -89,6 +89,30 @@ export default {
           tf += `provider "google" {\n  project = "${gcp.projectId}"\n}\n\n`;
        }
 
+       // Metric Descriptors
+       if (sla.metrics) {
+          Object.entries(sla.metrics).forEach(([metricId, metricDef]) => {
+             if (metricDef.monitoringId && metricDef.resourceType) {
+                // Only generate if it's a custom metric (optional heuristic, but let's generate for all configured)
+                // Actually GCP monitoringId might be a standard one. 
+                // If it starts with custom.googleapis.com, it definitely needs a descriptor if we want to manage it.
+                if (metricDef.monitoringId.includes('custom.googleapis.com')) {
+                   const resourceName = `metric_${metricId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+                   tf += `resource "google_monitoring_metric_descriptor" "${resourceName}" {\n`;
+                   tf += `  description = "${metricDef.description || metricId}"\n`;
+                   tf += `  display_name = "${metricId}"\n`;
+                   tf += `  type = "${metricDef.monitoringId}"\n`;
+                   tf += `  metric_kind = "${metricDef.metricKind || 'GAUGE'}"\n`;
+                   tf += `  value_type = "${getValueType(metricDef.type)}"\n`;
+                   if (metricDef.unit) {
+                      tf += `  unit = "${metricDef.unit}"\n`;
+                   }
+                   tf += `}\n\n`;
+                }
+             }
+          });
+       }
+
        // Notification Channels from Support Policy Contact Points
        const channelIds = new Set();
        const channelsTf = [];
@@ -102,16 +126,16 @@ export default {
                       cp.channels.forEach(ch => {
                          let type = '';
                          let labels = {};
-                         let displayName = ch.description || 'SLA Contact';
+                         let displayName = cp.contactType || ch.description || 'SLA Contact';
 
                          if (ch.type === 'email' && ch.url && ch.url.startsWith('mailto:')) {
                             type = 'email';
-                            labels['email_address'] = ch.url.replace('mailto:', '');
-                            displayName = labels['email_address'];
+                            labels['email_address'] = ch.url.replace(/^mailto:(\/\/)?/, '');
+                            if (!cp.contactType) displayName = labels['email_address'];
                          } else if ((ch.type === 'phone' || ch.type === 'sms') && ch.url && ch.url.startsWith('tel:')) {
                              type = 'sms';
-                             labels['number'] = ch.url.replace('tel:', '');
-                             displayName = labels['number'];
+                             labels['number'] = ch.url.replace(/^tel:(\/\/)?/, '');
+                             if (!cp.contactType) displayName = labels['number'];
                          }
                          
                          if (type) {
@@ -142,67 +166,96 @@ export default {
 
        channelsTf.forEach(c => tf += c.chunk);
 
-       // Alert Policies from Plans -> Guarantees
+       // Collect all guarantees to generate alert policies
+       const allGuarantees = [];
+
        if (sla.plans) {
           Object.entries(sla.plans).forEach(([planName, plan]) => {
+             // 1. Direct guarantees
              if (plan.guarantees) {
-                plan.guarantees.forEach((guarantee, gIndex) => {
-                   const metricName = guarantee.metric;
-                   const metricDef = sla.metrics[metricName];
-                   
-                   if (!metricDef) {
-                      localErrors.value.push(`Metric definition not found for '${metricName}' in plan '${planName}'.`);
-                      return;
+                plan.guarantees.forEach((g, i) => allGuarantees.push({ planName, guarantee: g, index: i, source: 'direct' }));
+             }
+             // 2. Plan SLOs
+             if (plan.serviceLevelObjectives) {
+                plan.serviceLevelObjectives.forEach((slo, sloIdx) => {
+                   if (slo.guarantees) {
+                      slo.guarantees.forEach((g, i) => allGuarantees.push({ planName, guarantee: g, index: `${sloIdx}_${i}`, source: `slo_${slo.name || sloIdx}` }));
                    }
-
-                   // Check flattened properties
-                   if (!metricDef.monitoringId || !metricDef.resourceType) {
-                      localErrors.value.push(`No GCP metric mapping (monitoringId, resourceType) for '${metricName}'. Skipping alert generation.`);
-                      return;
+                });
+             }
+             // 3. Support Policy SLOs
+             const support = plan['x-support-policy'];
+             if (support && support.serviceLevelObjectives) {
+                support.serviceLevelObjectives.forEach((slo, sloIdx) => {
+                   if (slo.guarantees) {
+                      slo.guarantees.forEach((g, i) => allGuarantees.push({ planName, guarantee: g, index: `support_slo_${sloIdx}_${i}`, source: `support_slo_${slo.name || sloIdx}` }));
                    }
-
-                   // Build Alert Policy
-                   const policyName = `alert_${planName}_${metricName}_${gIndex}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
-                   
-                   tf += `resource "google_monitoring_alert_policy" "${policyName}" {\n`;
-                   tf += `  display_name = "SLA Breach: ${planName} - ${metricName}"\n`;
-                   tf += `  combiner     = "OR"\n`;
-                   tf += `  conditions {\n`;
-                   tf += `    display_name = "${metricName} breach"\n`;
-                   tf += `    condition_threshold {\n`;
-                   tf += `      filter     = "resource.type = \"${metricDef.resourceType}\" AND metric.type = \"${metricDef.monitoringId}\""\n`;
-                   tf += `      duration   = "${guarantee.period ? parseDurationToSeconds(guarantee.period) + 's' : '60s'}"\n`;
-                   tf += `      comparison = "${getComparison(guarantee.operator)}"\n`;
-                   
-                   // Assuming value is numeric for now.
-                   // TODO: Handle parsing of value based on unit (e.g. 200ms -> 200)
-                   let thresholdValue = parseFloat(guarantee.value); 
-                   if (isNaN(thresholdValue)) thresholdValue = 0; // Fallback
-
-                   tf += `      threshold_value = ${thresholdValue}\n`;
-                   
-                   tf += `      aggregations {\n`;
-                   tf += `        alignment_period   = "60s"\n`;
-                   tf += `        per_series_aligner = "ALIGN_MEAN"\n`; // Default
-                   tf += `      }\n`;
-                   tf += `    }\n`;
-                   tf += `  }\n`;
-                   
-                   if (channelsTf.length > 0) {
-                      tf += `  notification_channels = [\n`;
-                      channelsTf.forEach(c => {
-                         tf += `    google_monitoring_notification_channel.${c.resourceName}.name,\n`;
-                      });
-                      tf += `  ]\n`;
-                   }
-
-                   tf += `}\n\n`;
                 });
              }
           });
        }
 
+       // Generate Alert Policies
+       allGuarantees.forEach(({ planName, guarantee, index, source }) => {
+          const metricName = guarantee.metric;
+          const metricDef = sla.metrics[metricName];
+          
+          if (!metricDef) {
+             localErrors.value.push(`Metric definition not found for '${metricName}' in plan '${planName}'.`);
+             return;
+          }
+
+          if (!metricDef.monitoringId || !metricDef.resourceType) {
+             localErrors.value.push(`No GCP metric mapping (monitoringId, resourceType) for '${metricName}'. Skipping alert generation.`);
+             return;
+          }
+
+          const policyName = `alert_${planName}_${source}_${index}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+          
+          tf += `resource "google_monitoring_alert_policy" "${policyName}" {\n`;
+          tf += `  display_name = "SLA Breach: ${planName} - ${source} - ${metricName}"\n`;
+          tf += `  combiner     = "OR"\n`;
+          tf += `  conditions {\n`;
+          tf += `    display_name = "${metricName} breach"\n`;
+          tf += `    condition_threshold {\n`;
+          tf += `      filter     = "resource.type = \\\"${metricDef.resourceType}\\\" AND metric.type = \\\"${metricDef.monitoringId}\\\""\n`;
+          tf += `      duration   = "${guarantee.period ? parseDurationToSeconds(guarantee.period) + 's' : (guarantee.duration ? parseDurationToSeconds(guarantee.duration) + 's' : '60s')}"\n`;
+          tf += `      comparison = "${getComparison(guarantee.operator)}"\n`;
+          
+          let thresholdValue = parseFloat(guarantee.value); 
+          if (isNaN(thresholdValue)) thresholdValue = 0;
+
+          tf += `      threshold_value = ${thresholdValue}\n`;
+          
+          tf += `      aggregations {\n`;
+          tf += `        alignment_period   = "60s"\n`;
+          tf += `        per_series_aligner = "ALIGN_MEAN"\n`;
+          tf += `      }\n`;
+          tf += `    }\n`;
+          tf += `  }\n`;
+          
+          if (channelsTf.length > 0) {
+             tf += `  notification_channels = [\n`;
+             channelsTf.forEach(c => {
+                tf += `    google_monitoring_notification_channel.${c.resourceName}.name,\n`;
+             });
+             tf += `  ]\n`;
+          }
+
+          tf += `}\n\n`;
+       });
+
        generatedCode.value = tf;
+    };
+
+    const getValueType = (type) => {
+       switch (type) {
+          case 'integer': return 'INT64';
+          case 'number': return 'DOUBLE';
+          case 'boolean': return 'BOOL';
+          case 'string': return 'STRING';
+          default: return 'DOUBLE';
+       }
     };
 
     const getComparison = (operator) => {

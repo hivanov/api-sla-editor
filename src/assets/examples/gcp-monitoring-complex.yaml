@@ -1,0 +1,105 @@
+sla: 1.0.0
+context:
+  id: gcp-infrastructure-services
+  type: plans
+x-gcp-monitoring:
+  projectId: production-data-platform
+metrics:
+  cpu_utilization:
+    type: number
+    unit: percent
+    description: "Average CPU utilization across the cluster"
+    monitoringId: "compute.googleapis.com/instance/cpu/utilization"
+    resourceType: "gce_instance"
+    metricKind: "GAUGE"
+  request_latency:
+    type: number
+    unit: ms
+    description: "Ninetieth percentile response time for API requests"
+    monitoringId: "custom.googleapis.com/api/request_latency"
+    resourceType: "global"
+    metricKind: "GAUGE"
+  error_rate:
+    type: number
+    unit: percent
+    description: "Rate of 5xx responses"
+    monitoringId: "custom.googleapis.com/api/error_rate"
+    resourceType: "global"
+    metricKind: "GAUGE"
+plans:
+  Gold:
+    title: "Mission Critical Support"
+    description: "Tier 1 support for production environments with strict guarantees"
+    availability: "99.99%"
+    pricing:
+      cost: 5000
+      currency: USD
+      period: P30D
+    guarantees:
+      - metric: cpu_utilization
+        operator: "<"
+        value: "80"
+        period: PT5M
+    serviceLevelObjectives:
+      - name: "Latency Performance"
+        priority: "High"
+        guarantees:
+          - metric: request_latency
+            operator: "<"
+            value: "200"
+            period: PT1M
+    x-support-policy:
+      contactPoints:
+        - contactType: "SRE On-Call"
+          channels:
+            - type: email
+              url: "mailto://sre-alerts@example.com"
+              description: "Primary pager channel"
+            - type: phone
+              url: "tel://+15550123456"
+              description: "Emergency voice bridge"
+      hoursAvailable:
+        - dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+          opens: "00:00"
+          closes: "23:59"
+          timezone: "UTC"
+      serviceLevelObjectives:
+        - name: "Incident Response"
+          priority: "P0"
+          guarantees:
+            - metric: error_rate
+              operator: "<"
+              value: "0.1"
+              period: PT1M
+  Silver:
+    title: "Standard Production"
+    description: "Recommended for standard production workloads"
+    availability: "99.9%"
+    pricing:
+      cost: 1500
+      currency: USD
+      period: P30D
+    guarantees:
+      - metric: cpu_utilization
+        operator: "<"
+        value: "90"
+        period: PT15M
+    serviceLevelObjectives:
+      - name: "Latency Performance"
+        priority: "Medium"
+        guarantees:
+          - metric: request_latency
+            operator: "<"
+            value: "500"
+            period: PT5M
+    x-support-policy:
+      contactPoints:
+        - contactType: "DevOps Support"
+          channels:
+            - type: email
+              url: "mailto://support@example.com"
+      hoursAvailable:
+        - dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+          opens: "09:00"
+          closes: "17:00"
+          timezone: "Europe/Berlin"
