@@ -7,11 +7,12 @@
           <div class="vr d-none d-md-block bg-secondary"></div>
           <nav class="d-none d-md-flex gap-2">
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: currentView === 'terraform' }">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['terraform', 'bicep'].includes(currentView) }">
                 Transform
               </button>
               <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep (Azure)</a></li>
               </ul>
             </div>
              <div class="dropdown">
@@ -34,6 +35,7 @@
              <ul class="dropdown-menu">
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('editor')">Editor</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep</a></li>
                <li><hr class="dropdown-divider"></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help</a></li>
@@ -72,6 +74,10 @@
 
                   <ResponsiveWrapper title="GCP Monitoring" id="gcp-monitoring-editor" v-model="sla['x-gcp-monitoring']">
                     <GcpMonitoringEditor :gcp-monitoring="sla['x-gcp-monitoring']" :errors="validationErrorsMap" @update:gcp-monitoring="sla['x-gcp-monitoring'] = $event" />
+                  </ResponsiveWrapper>
+
+                  <ResponsiveWrapper title="Azure Monitoring" id="azure-monitoring-editor" v-model="sla['x-azure-monitoring']">
+                    <AzureMonitoringEditor :azure-monitoring="sla['x-azure-monitoring']" :errors="validationErrorsMap" @update:azure-monitoring="sla['x-azure-monitoring'] = $event" />
                   </ResponsiveWrapper>
                   
                   <ResponsiveWrapper title="Currencies" id="currency-editor" v-model="sla.customCurrencies">
@@ -165,6 +171,7 @@
       <HelpPage v-else-if="currentView === 'help'" @close="setView('editor')" />
       <TutorialPage v-else-if="currentView === 'tutorial'" @close="setView('editor')" />
       <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" @close="setView('editor')" />
+      <AzureBicepGenerator v-else-if="currentView === 'bicep'" :sla="sla" @close="setView('editor')" />
 
     </main>
   </div>
@@ -189,6 +196,7 @@ import supportMonFri from './assets/examples/support-mon-fri.yaml?raw';
 import availability1WeekDowntime from './assets/examples/availability-1-week-downtime.yaml?raw';
 import metrics100ConcurrentConnections from './assets/examples/metrics-100-concurrent-connections.yaml?raw';
 import gcpMonitoringComplex from './assets/examples/gcp-monitoring-complex.yaml?raw';
+import azureMonitoringSample from './assets/examples/azure-monitoring-sample.yaml?raw';
 import ContextEditor from './components/ContextEditor.vue';
 import CurrencyEditor from './components/CurrencyEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
@@ -198,7 +206,9 @@ import PolicyDescription from './components/PolicyDescription.vue';
 import HelpPage from './components/HelpPage.vue';
 import TutorialPage from './components/TutorialPage.vue';
 import GcpMonitoringEditor from './components/GcpMonitoringEditor.vue';
+import AzureMonitoringEditor from './components/AzureMonitoringEditor.vue';
 import TerraformGenerator from './components/TerraformGenerator.vue';
+import AzureBicepGenerator from './components/AzureBicepGenerator.vue';
 
 const Range = ace.require('ace/range').Range;
 
@@ -214,7 +224,9 @@ export default {
     HelpPage,
     TutorialPage,
     GcpMonitoringEditor,
+    AzureMonitoringEditor,
     TerraformGenerator,
+    AzureBicepGenerator,
   },
   setup() {
     const activeTab = ref('gui');
@@ -263,7 +275,8 @@ export default {
       metrics: {},
       plans: {},
       customCurrencies: [],
-      'x-gcp-monitoring': { projectId: '' }
+      'x-gcp-monitoring': { projectId: '' },
+      'x-azure-monitoring': { resourceId: '', location: '' }
     });
 
     const examples = {
@@ -271,6 +284,7 @@ export default {
       'availability-1-week-downtime': availability1WeekDowntime,
       'metrics-100-concurrent-connections': metrics100ConcurrentConnections,
       'gcp-monitoring-complex': gcpMonitoringComplex,
+      'azure-monitoring-sample': azureMonitoringSample,
     };
 
     const availableCurrencies = computed(() => {
@@ -374,6 +388,11 @@ export default {
              sla['x-gcp-monitoring'] = doc['x-gcp-monitoring'];
           } else {
              sla['x-gcp-monitoring'] = { projectId: '' };
+          }
+          if (doc['x-azure-monitoring']) {
+             sla['x-azure-monitoring'] = doc['x-azure-monitoring'];
+          } else {
+             sla['x-azure-monitoring'] = { resourceId: '', location: '' };
           }
           if (doc.sla) sla.sla = doc.sla;
         }

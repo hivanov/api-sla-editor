@@ -36,6 +36,13 @@
         "projectId": { "type": "string" }
       }
     },
+    "x-azure-monitoring": {
+      "type": "object",
+      "properties": {
+        "resourceId": { "type": "string", "description": "The Azure Resource ID to monitor" },
+        "location": { "type": "string", "description": "Azure region for the monitoring resources" }
+      }
+    },
     "customCurrencies": {
       "type": "array",
       "items": {
