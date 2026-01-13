@@ -53,6 +53,24 @@ export default {
         md += `\n---\n\n`;
       }
 
+      // Metrics Section
+      if (metrics && Object.keys(metrics).length > 0) {
+        md += `## Metrics Definitions\n\n`;
+        for (const [name, metric] of Object.entries(metrics)) {
+          md += `### ${name}\n`;
+          if (metric.description) {
+            md += `${metric.description}\n\n`;
+          }
+          if (metric.type) md += `- **Type:** ${metric.type}\n`;
+          if (metric.unit) md += `- **Unit:** ${metric.unit}\n`;
+          if (metric.monitoringId) md += `- **Monitoring ID:** \`${metric.monitoringId}\`\n`;
+          if (metric.resourceType) md += `- **Resource Type:** \`${metric.resourceType}\`\n`;
+          if (metric.metricKind) md += `- **Kind:** ${metric.metricKind}\n`;
+          md += `\n`;
+        }
+        md += `---\n\n`;
+      }
+
       // Plans Section
       if (plans && Object.keys(plans).length > 0) {
         md += `## Service Plans\n\n`;

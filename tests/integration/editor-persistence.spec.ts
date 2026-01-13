@@ -12,7 +12,8 @@ test.describe('Editor Persistence', () => {
     await expect(page.locator('.ace_editor')).toBeVisible();
 
     // 2. Go to Help
-    await page.click('button:has-text("Help")');
+    await page.click('button.dropdown-toggle:has-text("Help")');
+    await page.click('a.dropdown-item:has-text("Help Page")');
     await expect(page.locator('h2:has-text("SLA Editor Help")')).toBeVisible();
     await expect(page.locator('.ace_editor')).not.toBeVisible();
 
@@ -26,10 +27,10 @@ test.describe('Editor Persistence', () => {
     // 5. Verify it's still functional by typing something
     await page.evaluate(() => {
         const editor = ace.edit(document.querySelector('.ace_editor'));
-        editor.setValue('persistence-test: true', -1);
+        editor.setValue('sla: 1.0.0\ncontext:\n  id: persistence-test\n  type: plans\nmetrics: {}\nplans: {}', -1);
     });
     
-    await expect(page.locator('.ace_content')).toContainText('persistence-test: true');
+    await expect(page.locator('.ace_content')).toContainText('persistence-test');
   });
 
   test('should preserve source editor when returning from Tutorial', async ({ page }) => {
@@ -38,7 +39,8 @@ test.describe('Editor Persistence', () => {
     await expect(page.locator('.ace_editor')).toBeVisible();
 
     // 2. Go to Tutorial
-    await page.click('button:has-text("Tutorial")');
+    await page.click('button.dropdown-toggle:has-text("Help")');
+    await page.click('a.dropdown-item:has-text("Tutorial")');
     await expect(page.locator('h2:has-text("SLA Editor Tutorial")')).toBeVisible();
 
     // 3. Go back to Editor

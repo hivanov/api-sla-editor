@@ -82,14 +82,22 @@ test.describe('Main flow', () => {
     
     // Locate and fill the properties of the newly added metrics
     const rtCard = page.locator('.metrics-editor-component .card:has-text("response-time")');
-    await rtCard.locator('select').first().selectOption('number');
-    await rtCard.locator('select').last().selectOption('ms');
-    await rtCard.locator('textarea[placeholder="Description"]').fill('Average response time');
+    // Use more robust selectors based on labels
+    // The structure is roughly: 
+    // <div class="col-md-6"><label>Type</label><select>...
+    // <div class="col-md-6"><label>Unit</label><select>...
+    
+    // We can target the select that is a sibling or child of the label container
+    await rtCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
+    await rtCard.locator('.col-md-6:has(label:has-text("Unit")) select').selectOption('ms');
+    
+    // Description is now a markdown editor
+    await rtCard.locator('textarea[placeholder*="Markdown"]').fill('Average response time');
 
     const muCard = page.locator('.metrics-editor-component .card:has-text("max-users")');
-    await muCard.locator('select').first().selectOption('integer');
-    await muCard.locator('select').last().selectOption('items');
-    await muCard.locator('textarea[placeholder="Description"]').fill('Maximum concurrent users');
+    await muCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('integer');
+    await muCard.locator('.col-md-6:has(label:has-text("Unit")) select').selectOption('items');
+    await muCard.locator('textarea[placeholder*="Markdown"]').fill('Maximum concurrent users');
     
     await page.waitForLoadState('networkidle');
 

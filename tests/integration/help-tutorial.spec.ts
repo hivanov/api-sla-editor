@@ -6,8 +6,8 @@ test.describe('Help and Tutorial Pages', () => {
   });
 
   test('should display Help and Tutorial buttons in header', async ({ page }) => {
-    await expect(page.locator('button:has-text("Tutorial")')).toBeVisible();
-    await expect(page.locator('button:has-text("Help")')).toBeVisible();
+    // Both are under the "Help" dropdown
+    await expect(page.locator('button.dropdown-toggle:has-text("Help")')).toBeVisible();
   });
 
   test('should navigate to Tutorial page and back', async ({ page }) => {
@@ -15,8 +15,9 @@ test.describe('Help and Tutorial Pages', () => {
     await expect(page.locator('h1:has-text("SLA Editor")')).toBeVisible();
     await expect(page.locator('.card-header ul.nav-tabs')).toBeVisible(); // Tab navigation in editor
 
-    // Click Tutorial
-    await page.click('button:has-text("Tutorial")');
+    // Click Help dropdown then Tutorial
+    await page.click('button.dropdown-toggle:has-text("Help")');
+    await page.click('a.dropdown-item:has-text("Tutorial")');
 
     // Verify Tutorial content
     await expect(page.locator('h2:has-text("SLA Editor Tutorial")')).toBeVisible();
@@ -33,8 +34,9 @@ test.describe('Help and Tutorial Pages', () => {
   });
 
   test('should navigate to Help page and back', async ({ page }) => {
-    // Click Help
-    await page.click('button:has-text("Help")');
+    // Click Help dropdown then Help Page
+    await page.click('button.dropdown-toggle:has-text("Help")');
+    await page.click('a.dropdown-item:has-text("Help Page")');
 
     // Verify Help content
     await expect(page.locator('h2:has-text("SLA Editor Help")')).toBeVisible();
@@ -57,7 +59,8 @@ test.describe('Help and Tutorial Pages', () => {
   });
 
   test('should use title to navigate back to editor', async ({ page }) => {
-    await page.click('button:has-text("Help")');
+    await page.click('button.dropdown-toggle:has-text("Help")');
+    await page.click('a.dropdown-item:has-text("Help Page")');
     await expect(page.locator('h2:has-text("SLA Editor Help")')).toBeVisible();
 
     // Click the main title
