@@ -17,6 +17,7 @@
         <button class="btn btn-sm btn-light border" title="List" @click.prevent="applyFormatting('list')">List</button>
         <button class="btn btn-sm btn-light border" title="Code" @click.prevent="applyFormatting('code')">Code</button>
         <button class="btn btn-sm btn-light border" title="Link" @click.prevent="applyFormatting('link')">Link</button>
+        <button class="btn btn-sm btn-light border" title="Table" @click.prevent="applyFormatting('table')">Table</button>
       </div>
     </div>
     <div class="card-body p-0">
@@ -99,6 +100,10 @@ export default {
         case 'link':
           replacement = `[${selectedText || 'link text'}](https://)`;
           cursorOffset = selectedText ? replacement.length : 1;
+          break;
+        case 'table':
+          replacement = `\n\n| Header 1 | Header 2 |\n| -------- | -------- |\n| Cell 1   | Cell 2   |\n`;
+          cursorOffset = replacement.length;
           break;
       }
 

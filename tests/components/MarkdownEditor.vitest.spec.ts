@@ -85,4 +85,14 @@ describe('MarkdownEditor', () => {
     
     expect(wrapper.emitted('update:modelValue')[0]).toEqual(['hello *world*']);
   });
+
+  it('applies table formatting', async () => {
+    const wrapper = mount(MarkdownEditor, {
+      props: { modelValue: '' }
+    });
+    
+    await wrapper.find('button[title="Table"]').trigger('click');
+    
+    expect(wrapper.emitted('update:modelValue')[0][0]).toContain('| Header 1 | Header 2 |');
+  });
 });
