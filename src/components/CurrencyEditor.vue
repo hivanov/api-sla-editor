@@ -21,12 +21,13 @@
         
         <div class="col-md-8 mb-2">
           <label class="form-label">Description</label>
-          <input type="text" class="form-control" 
-                 :class="{'is-invalid': errors[path + '/' + index + '/description']}"
-                 placeholder="Description" 
-                 :value="currency.description" 
-                 @input="updateCurrency(index, 'description', $event.target.value)">
-          <div class="invalid-feedback" v-if="errors[path + '/' + index + '/description']">
+          <MarkdownEditor 
+            :model-value="currency.description" 
+            :invalid="!!errors[path + '/' + index + '/description']"
+            placeholder="Currency Description (Markdown supported)"
+            @update:modelValue="updateCurrency(index, 'description', $event)" 
+          />
+          <div class="invalid-feedback d-block" v-if="errors[path + '/' + index + '/description']">
             {{ errors[path + '/' + index + '/description'].join(', ') }}
           </div>
         </div>
@@ -71,10 +72,14 @@
 
 <script>
 import { computed } from 'vue';
+import MarkdownEditor from './MarkdownEditor.vue';
 import { currencies as standardCurrencies } from '../utils/currencies';
 
 export default {
   name: 'CurrencyEditor',
+  components: {
+    MarkdownEditor
+  },
   props: {
     customCurrencies: {
       type: Array,

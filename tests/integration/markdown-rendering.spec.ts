@@ -57,4 +57,21 @@ test.describe('Markdown Rendering in Description Tab', () => {
     // Exclusions are rendered as list items
     await expect(descriptionTab.locator('li:has-text("Exclusion with") strong:has-text("bold")')).toBeVisible();
   });
+
+  test('should render Markdown in Currency Description', async ({ page }) => {
+    // 1. Add a Custom Currency
+    await page.click('button:has-text("Add Custom Currency")');
+    const currencyCard = page.locator('.currency-editor-component .card').first();
+    await currencyCard.locator('input[placeholder="SKU"]').fill('TOKEN');
+    
+    const descEditor = currencyCard.locator('.markdown-editor').first();
+    await descEditor.locator('textarea').fill('Token used for **AI** services');
+
+    // 2. Verify in Description Tab
+    await page.click('a:has-text("Description")');
+    
+    const descriptionTab = page.locator('.policy-description');
+    await expect(descriptionTab.locator('h2:has-text("Currencies")')).toBeVisible();
+    await expect(descriptionTab.locator('li:has-text("TOKEN") strong:has-text("AI")')).toBeVisible();
+  });
 });

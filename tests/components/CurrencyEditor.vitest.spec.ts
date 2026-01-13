@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import CurrencyEditor from '../../src/components/CurrencyEditor.vue'
+import MarkdownEditor from '../../src/components/MarkdownEditor.vue'
 
 describe('CurrencyEditor', () => {
   it('renders correctly with custom currencies', () => {
@@ -11,7 +12,7 @@ describe('CurrencyEditor', () => {
     })
     expect(wrapper.text()).toContain('Custom Currency #1')
     expect(wrapper.find('input[placeholder="SKU"]').element.value).toBe('CPU')
-    expect(wrapper.find('input[placeholder="Description"]').element.value).toBe('Compute Units')
+    expect(wrapper.findComponent(MarkdownEditor).props('modelValue')).toBe('Compute Units')
   })
 
   it('adds a custom currency', async () => {

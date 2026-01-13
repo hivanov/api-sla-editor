@@ -44,7 +44,10 @@ export default {
       if (props.sla.customCurrencies && props.sla.customCurrencies.length > 0) {
         md += `## Currencies\n\n`;
         props.sla.customCurrencies.forEach(c => {
-          md += `- **${c.code}**: ${c.description}`;
+          md += `- **${c.code}**`;
+          if (c.description) {
+            md += `: ${c.description}`;
+          }
           if (c.conversion && c.conversion.rate !== undefined && c.conversion.baseCurrency) {
             md += ` (1 ${c.code} = ${c.conversion.rate} ${c.conversion.baseCurrency})`;
           }

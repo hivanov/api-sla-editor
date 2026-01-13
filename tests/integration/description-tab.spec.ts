@@ -11,7 +11,7 @@ test.describe('Description Tab', () => {
     // Add custom currency
     await page.click('text=Add Custom Currency');
     await page.locator('.currency-editor-component input[placeholder="SKU"]').fill('UNIT');
-    await page.locator('.currency-editor-component input[placeholder="Description"]').fill('Test Unit');
+    await page.locator('.currency-editor-component textarea[placeholder*="Markdown"]').fill('Test Unit');
     await page.locator('.currency-editor-component input[type="number"]').fill('5');
     await page.locator('.currency-editor-component input[placeholder="USD"]').fill('EUR');
 
