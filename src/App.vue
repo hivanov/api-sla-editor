@@ -3,7 +3,7 @@
     <header class="bg-dark text-light p-3 shadow-sm">
       <div class="container-xxl d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-3">
-          <h1 class="h3 mb-0" style="cursor: pointer;" @click="currentView = 'editor'">SLA Editor</h1>
+          <h1 class="h3 mb-0" style="cursor: pointer;" @click="setView('editor')">SLA Editor</h1>
           <div class="vr d-none d-md-block bg-secondary"></div>
           <nav class="d-none d-md-flex gap-2">
             <div class="dropdown">
@@ -11,7 +11,7 @@
                 Transform
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'terraform'">Generate Terraform (GCP)</a></li>
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
               </ul>
             </div>
              <div class="dropdown">
@@ -19,8 +19,8 @@
                 Help
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'tutorial'">Tutorial</a></li>
-                <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'help'">Help Page</a></li>
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help Page</a></li>
               </ul>
             </div>
           </nav>
@@ -32,11 +32,11 @@
                Menu
              </button>
              <ul class="dropdown-menu">
-               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'editor'">Editor</a></li>
-               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'terraform'">Generate Terraform</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('editor')">Editor</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform</a></li>
                <li><hr class="dropdown-divider"></li>
-               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'tutorial'">Tutorial</a></li>
-               <li><a class="dropdown-item" href="#" @click.prevent="currentView = 'help'">Help</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help</a></li>
              </ul>
           </div>
 
@@ -162,9 +162,9 @@
         </div>
       </div>
 
-      <HelpPage v-else-if="currentView === 'help'" @close="currentView = 'editor'" />
-      <TutorialPage v-else-if="currentView === 'tutorial'" @close="currentView = 'editor'" />
-      <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" @close="currentView = 'editor'" />
+      <HelpPage v-else-if="currentView === 'help'" @close="setView('editor')" />
+      <TutorialPage v-else-if="currentView === 'tutorial'" @close="setView('editor')" />
+      <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" @close="setView('editor')" />
 
     </main>
   </div>
@@ -222,6 +222,16 @@ export default {
     let editor = null;
     const validationErrors = ref([]);
     const markers = ref([]);
+
+    const setView = (view) => {
+      currentView.value = view;
+      // Force close any open Bootstrap dropdowns
+      document.querySelectorAll('.dropdown-menu.show').forEach(el => el.classList.remove('show'));
+      document.querySelectorAll('.dropdown-toggle.show').forEach(el => {
+        el.classList.remove('show');
+        el.setAttribute('aria-expanded', 'false');
+      });
+    };
 
     const validationErrorsMap = computed(() => {
       const map = {};
@@ -562,6 +572,7 @@ export default {
       loadExample,
       setYamlContent,
       jumpToError,
+      setView,
     };
   },
 };
