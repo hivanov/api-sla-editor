@@ -35,10 +35,15 @@ test.describe('Custom Currencies', () => {
     
     // Verify it's in the YAML
     await page.click('text=Source');
-    const aceEditor = page.locator('.ace_content');
-    await expect(aceEditor).toContainText('customCurrencies:');
-    await expect(aceEditor).toContainText('code: SKU');
-    await expect(aceEditor).toContainText('currency: SKU');
+    
+    const editorValue = await page.evaluate(() => {
+      const editor = ace.edit(document.querySelector('.ace_editor'));
+      return editor.getValue();
+    });
+
+    expect(editorValue).toContain('customCurrencies:');
+    expect(editorValue).toContain('code: SKU');
+    expect(editorValue).toContain('currency: SKU');
   });
 
   test('should allow custom conversion', async ({ page }) => {
@@ -55,10 +60,14 @@ test.describe('Custom Currencies', () => {
       await baseInput.fill('EUR');
 
       await page.click('text=Source');
-      const aceEditor = page.locator('.ace_content');
-      await expect(aceEditor).toContainText('conversion:');
-      await expect(aceEditor).toContainText('rate: 0.5');
-      await expect(aceEditor).toContainText('baseCurrency: EUR');
+      const editorValue = await page.evaluate(() => {
+        const editor = ace.edit(document.querySelector('.ace_editor'));
+        return editor.getValue();
+      });
+
+      expect(editorValue).toContain('conversion:');
+      expect(editorValue).toContain('rate: 0.5');
+      expect(editorValue).toContain('baseCurrency: EUR');
   });
 
   test('should show validation error for negative conversion rate', async ({ page }) => {
