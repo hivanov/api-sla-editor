@@ -6,11 +6,7 @@ test.describe('GCP Terraform Generator Comprehensive Validation', () => {
   });
 
   test('should generate a correctly-formed terraform file for google alerting', async ({ page }) => {
-    // 1. Configure GCP Project ID
-    await page.click('.card-header:has-text("GCP Monitoring")');
-    await page.fill('input[placeholder="e.g. my-gcp-project-id"]', 'complex-test-project');
-
-    // 2. Configure Metric with GCP mapping
+    // 1. Configure Metric with GCP mapping
     await page.click('.card-header:has-text("Metrics")');
     await page.fill('input[placeholder="New metric name"]', 'request_latency');
     await page.click('button:has-text("Add Metric")');
@@ -21,7 +17,7 @@ test.describe('GCP Terraform Generator Comprehensive Validation', () => {
     await metricCard.locator('input[placeholder*="gce_instance"]').fill('global');
     await metricCard.locator('textarea[placeholder*="Markdown"]').fill('Measures request latency');
 
-    // 3. Configure a Plan with Support Policy and SLOs
+    // 2. Configure a Plan with Support Policy and SLOs
     await page.click('.card-header:has-text("Plans")');
     await page.fill('input[placeholder="New plan name"]', 'Platinum');
     await page.click('button:has-text("Add Plan")');
@@ -48,13 +44,17 @@ test.describe('GCP Terraform Generator Comprehensive Validation', () => {
     await sloGuarantee.locator('select').nth(1).selectOption('<');
     await sloGuarantee.locator('input[placeholder="Value"]').fill('200');
 
-    // 4. Generate Terraform
+    // 3. Generate Terraform
     await page.click('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
     await page.evaluate(() => {
         const items = Array.from(document.querySelectorAll('.dropdown-item'));
         const gcpItem = items.find(el => el.textContent.includes('Generate Terraform (GCP)'));
         if (gcpItem) gcpItem.click();
     });
+
+    // Configure GCP Project ID in the generator view
+    await page.fill('input[placeholder="e.g. my-gcp-project-id"]', 'complex-test-project');
+
     await page.click('button:has-text("Generate")');
 
     // 5. Verify Entire Output

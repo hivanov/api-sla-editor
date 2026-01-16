@@ -31,6 +31,3 @@ plans:
             - type: email
               url: mailto://support@example.com
               description: Primary support email
-x-azure-monitoring:
-  resourceId: /subscriptions/12345678-1234-1234-1234-1234567890ab/resourceGroups/myRG/providers/Microsoft.Compute/virtualMachines/myVM
-  location: eastus

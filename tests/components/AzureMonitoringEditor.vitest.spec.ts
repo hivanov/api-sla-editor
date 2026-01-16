@@ -6,7 +6,7 @@ describe('AzureMonitoringEditor', () => {
   it('renders correctly', () => {
     const wrapper = mount(AzureMonitoringEditor, {
       props: {
-        azureMonitoring: { resourceId: '/sub/123', location: 'westus' },
+        modelValue: { resourceId: '/sub/123', location: 'westus' },
         errors: {}
       }
     });
@@ -17,19 +17,19 @@ describe('AzureMonitoringEditor', () => {
   it('updates fields', async () => {
     const wrapper = mount(AzureMonitoringEditor, {
       props: {
-        azureMonitoring: { resourceId: '', location: '' },
+        modelValue: { resourceId: '', location: '' },
         errors: {}
       }
     });
     
     await wrapper.find('input[placeholder*="/subscriptions/"]').setValue('/sub/new');
-    expect(wrapper.emitted('update:azureMonitoring')[0][0]).toEqual({
+    expect(wrapper.emitted('update:modelValue')[0][0]).toEqual({
       resourceId: '/sub/new',
       location: ''
     });
 
     await wrapper.find('input[placeholder*="eastus"]').setValue('ukwest');
-    expect(wrapper.emitted('update:azureMonitoring')[1][0]).toEqual({
+    expect(wrapper.emitted('update:modelValue')[1][0]).toEqual({
       resourceId: '',
       location: 'ukwest'
     });

@@ -3,24 +3,16 @@
     <div class="mb-3">
        <label class="form-label">Azure Resource ID</label>
        <input type="text" class="form-control" 
-          :class="{'is-invalid': errors['/x-azure-monitoring/resourceId']}"
-          :value="safeAzure.resourceId" 
-          @input="update('resourceId', $event.target.value)"
+          :value="resourceId" 
+          @input="resourceId = $event.target.value"
           placeholder="e.g. /subscriptions/.../resourceGroups/...">
-       <div class="invalid-feedback" v-if="errors['/x-azure-monitoring/resourceId']">
-          {{ errors['/x-azure-monitoring/resourceId'].join(', ') }}
-       </div>
     </div>
     <div class="mb-3">
        <label class="form-label">Location</label>
        <input type="text" class="form-control" 
-          :class="{'is-invalid': errors['/x-azure-monitoring/location']}"
-          :value="safeAzure.location" 
-          @input="update('location', $event.target.value)"
+          :value="location" 
+          @input="location = $event.target.value"
           placeholder="e.g. eastus">
-       <div class="invalid-feedback" v-if="errors['/x-azure-monitoring/location']">
-          {{ errors['/x-azure-monitoring/location'].join(', ') }}
-       </div>
     </div>
   </div>
 </template>
@@ -31,26 +23,30 @@ import { computed } from 'vue';
 export default {
   name: 'AzureMonitoringEditor',
   props: {
-    azureMonitoring: {
+    modelValue: {
       type: Object,
-      default: () => ({}),
+      default: () => ({ resourceId: '', location: '' }),
     },
     errors: {
       type: Object,
       default: () => ({}),
     },
   },
-  emits: ['update:azureMonitoring'],
+  emits: ['update:modelValue'],
   setup(props, { emit }) {
-    const safeAzure = computed(() => props.azureMonitoring || {});
+    const resourceId = computed({
+      get: () => props.modelValue?.resourceId || '',
+      set: (val) => emit('update:modelValue', { ...props.modelValue, resourceId: val })
+    });
 
-    const update = (key, value) => {
-      emit('update:azureMonitoring', { ...safeAzure.value, [key]: value });
-    };
+    const location = computed({
+      get: () => props.modelValue?.location || '',
+      set: (val) => emit('update:modelValue', { ...props.modelValue, location: val })
+    });
 
     return {
-      safeAzure,
-      update
+      resourceId,
+      location
     };
   },
 };

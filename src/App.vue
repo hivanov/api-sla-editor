@@ -72,14 +72,6 @@
                     <ContextEditor :context="sla.context" :errors="validationErrorsMap" @update:context="Object.assign(sla.context, $event)" />
                   </ResponsiveWrapper>
 
-                  <ResponsiveWrapper title="GCP Monitoring" id="gcp-monitoring-editor" v-model="sla['x-gcp-monitoring']">
-                    <GcpMonitoringEditor :gcp-monitoring="sla['x-gcp-monitoring']" :errors="validationErrorsMap" @update:gcp-monitoring="sla['x-gcp-monitoring'] = $event" />
-                  </ResponsiveWrapper>
-
-                  <ResponsiveWrapper title="Azure Monitoring" id="azure-monitoring-editor" v-model="sla['x-azure-monitoring']">
-                    <AzureMonitoringEditor :azure-monitoring="sla['x-azure-monitoring']" :errors="validationErrorsMap" @update:azure-monitoring="sla['x-azure-monitoring'] = $event" />
-                  </ResponsiveWrapper>
-                  
                   <ResponsiveWrapper title="Currencies" id="currency-editor" v-model="sla.customCurrencies">
                     <CurrencyEditor :custom-currencies="sla.customCurrencies" :errors="validationErrorsMap" @update:custom-currencies="sla.customCurrencies = $event" />
                   </ResponsiveWrapper>
@@ -205,8 +197,6 @@ import ResponsiveWrapper from './components/ResponsiveWrapper.vue';
 import PolicyDescription from './components/PolicyDescription.vue';
 import HelpPage from './components/HelpPage.vue';
 import TutorialPage from './components/TutorialPage.vue';
-import GcpMonitoringEditor from './components/GcpMonitoringEditor.vue';
-import AzureMonitoringEditor from './components/AzureMonitoringEditor.vue';
 import TerraformGenerator from './components/TerraformGenerator.vue';
 import AzureBicepGenerator from './components/AzureBicepGenerator.vue';
 
@@ -223,8 +213,6 @@ export default {
     PolicyDescription,
     HelpPage,
     TutorialPage,
-    GcpMonitoringEditor,
-    AzureMonitoringEditor,
     TerraformGenerator,
     AzureBicepGenerator,
   },
@@ -274,9 +262,7 @@ export default {
       context: { id: 'example-sla', type: 'plans' }, // Default structure for context editor
       metrics: {},
       plans: {},
-      customCurrencies: [],
-      'x-gcp-monitoring': { projectId: '' },
-      'x-azure-monitoring': { resourceId: '', location: '' }
+      customCurrencies: []
     });
 
     const examples = {
@@ -383,16 +369,6 @@ export default {
              sla.customCurrencies.splice(0, sla.customCurrencies.length, ...doc.customCurrencies);
           } else {
              sla.customCurrencies.splice(0, sla.customCurrencies.length);
-          }
-          if (doc['x-gcp-monitoring']) {
-             sla['x-gcp-monitoring'] = doc['x-gcp-monitoring'];
-          } else {
-             sla['x-gcp-monitoring'] = { projectId: '' };
-          }
-          if (doc['x-azure-monitoring']) {
-             sla['x-azure-monitoring'] = doc['x-azure-monitoring'];
-          } else {
-             sla['x-azure-monitoring'] = { resourceId: '', location: '' };
           }
           if (doc.sla) sla.sla = doc.sla;
         }

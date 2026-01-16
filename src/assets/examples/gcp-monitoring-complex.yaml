@@ -2,8 +2,6 @@ sla: 1.0.0
 context:
   id: gcp-infrastructure-services
   type: plans
-x-gcp-monitoring:
-  projectId: production-data-platform
 metrics:
   cpu_utilization:
     type: number

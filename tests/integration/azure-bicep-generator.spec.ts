@@ -5,26 +5,71 @@ test.describe('Azure Bicep Generator', () => {
     await page.goto('/');
   });
 
-  test('should show error when Resource ID is missing', async ({ page }) => {
+  test('should have Generate button disabled when configuration is missing', async ({ page }) => {
     // Navigate to Bicep Generator
     await page.click('button:has-text("Transform")');
     await page.click('a:has-text("Generate Bicep (Azure)")');
 
-    // Click Generate
-    await page.click('button:has-text("Generate")');
-
-    // Expect error
-    await expect(page.locator('.alert-warning')).toContainText('Azure Resource ID is not configured');
+    // Expect Generate button to be disabled initially
     await expect(page.locator('button:has-text("Generate")')).toBeDisabled();
   });
 
-  test('should generate bicep with valid configuration', async ({ page }) => {
+  test('should generate bicep when configuration is provided in the generator view', async ({ page }) => {
+    // 1. Configure a Metric and a Plan first (needed for alerts)
+    await page.click('.card-header:has-text("Metrics")');
+    await page.fill('input[placeholder="New metric name"]', 'cpu_util');
+    await page.click('button:has-text("Add Metric")');
+    const metricCard = page.locator('.metrics-editor-component .card').filter({ hasText: 'cpu_util' });
+    await metricCard.locator('input[placeholder*="compute.googleapis.com"]').fill('Percentage CPU');
+
+    await page.click('.card-header:has-text("Plans")');
+    await page.fill('input[placeholder="New plan name"]', 'Basic');
+    await page.click('button:has-text("Add Plan")');
+    const planCard = page.locator('.plans-editor-component .card').filter({ hasText: 'Basic' });
+    await planCard.getByRole('button', { name: 'Add Guarantee' }).click();
+    const guaranteeRow = planCard.locator('.guarantees-editor-component .card.mb-2').first();
+    await guaranteeRow.locator('label:has-text("Structured")').click();
+    await guaranteeRow.locator('select').first().selectOption('cpu_util');
+    await guaranteeRow.locator('input[type="text"]').last().fill('90');
+
+    // 2. Navigate to Bicep Generator
+    await page.click('button:has-text("Transform")');
+    await page.click('a:has-text("Generate Bicep (Azure)")');
+
+    // 3. Fill Azure configuration in the generator view
+    await page.fill('input[placeholder*="/subscriptions/"]', '/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm');
+    await page.fill('input[placeholder*="eastus"]', 'westeurope');
+
+    // 4. Click Generate
+    await page.click('button:has-text("Generate")');
+
+    // 5. Verify Output
+    const getEditorValue = async () => {
+        return await page.evaluate(() => {
+            const el = document.querySelector('.ace_editor');
+            if (!el) return '';
+            // @ts-ignore
+            const editor = ace.edit(el);
+            return editor.getValue();
+        });
+    };
+
+    const bicep = await getEditorValue();
+    expect(bicep).toContain("resource alert_basic_direct_0 'Microsoft.Insights/metricalerts@2018-03-01'");
+    expect(bicep).toContain("'/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm'");
+  });
+
+  test('should generate bicep with valid configuration from sample', async ({ page }) => {
     // 1. Load the Azure Monitoring Sample
     await page.selectOption('select', 'azure-monitoring-sample');
 
     // 2. Navigate to Bicep Generator
     await page.click('button:has-text("Transform")');
     await page.click('a:has-text("Generate Bicep (Azure)")');
+
+    // Fill configuration (now local state)
+    await page.fill('input[placeholder*="/subscriptions/"]', '/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm');
+    await page.fill('input[placeholder*="eastus"]', 'eastus');
 
     // 3. Click Generate
     await page.click('button:has-text("Generate")');

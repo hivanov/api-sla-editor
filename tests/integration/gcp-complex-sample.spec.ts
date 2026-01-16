@@ -9,18 +9,17 @@ test.describe('GCP Complex Sample Transformation', () => {
     // 1. Load the example
     await page.selectOption('select.form-select', 'gcp-monitoring-complex');
     
-    // Verify it's loaded by checking a value in the GUI
-    await page.click('.card-header:has-text("GCP Monitoring")');
-    const projectIdInput = page.locator('input[placeholder*="e.g. my-gcp-project-id"]');
-    await expect(projectIdInput).toHaveValue('production-data-platform');
-
-    // 2. Generate Terraform
+    // 2. Navigate to Terraform Generator
     await page.click('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
     await page.evaluate(() => {
         const items = Array.from(document.querySelectorAll('.dropdown-item'));
         const gcpItem = items.find(el => el.textContent.includes('Generate Terraform (GCP)'));
         if (gcpItem) gcpItem.click();
     });
+
+    // Fill project ID (now local state in generator)
+    await page.fill('input[placeholder*="e.g. my-gcp-project-id"]', 'production-data-platform');
+
     await page.click('button:has-text("Generate")');
 
     // 3. Verify Output

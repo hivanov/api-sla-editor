@@ -9,6 +9,11 @@
        </div>
     </div>
 
+    <div class="p-3 bg-white border-bottom">
+       <h5>GCP Configuration</h5>
+       <GcpMonitoringEditor v-model="gcpConfig" />
+    </div>
+
     <div v-if="localErrors.length > 0" class="alert alert-warning m-3">
        <strong>Missing Information:</strong>
        <ul class="mb-0">
@@ -23,13 +28,17 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-terraform';
 import 'ace-builds/src-noconflict/theme-monokai';
+import GcpMonitoringEditor from './GcpMonitoringEditor.vue';
 
 export default {
   name: 'TerraformGenerator',
+  components: {
+    GcpMonitoringEditor
+  },
   props: {
     sla: {
       type: Object,
@@ -41,9 +50,12 @@ export default {
     const generatedCode = ref('');
     const localErrors = ref([]);
     const editorContainer = ref(null);
+    const gcpConfig = ref({ projectId: '' });
     let editor = null;
 
-    const hasBlockingErrors = ref(false);
+    const hasBlockingErrors = computed(() => {
+       return !gcpConfig.value.projectId;
+    });
 
     onMounted(() => {
        editor = ace.edit(editorContainer.value);
@@ -73,13 +85,12 @@ export default {
 
     const generate = () => {
        localErrors.value = [];
-       hasBlockingErrors.value = false;
        const sla = props.sla;
-       const gcp = sla['x-gcp-monitoring'];
+       const gcp = gcpConfig.value;
 
        if (!gcp || !gcp.projectId) {
           localErrors.value.push("GCP Project ID is not configured.");
-          hasBlockingErrors.value = true;
+          return;
        }
 
        let tf = '';
@@ -290,7 +301,8 @@ export default {
        download,
        generatedCode,
        localErrors,
-       hasBlockingErrors
+       hasBlockingErrors,
+       gcpConfig
     };
   }
 };
