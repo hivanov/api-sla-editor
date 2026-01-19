@@ -41,10 +41,127 @@
 <script>
 import { ref, onMounted, watch, computed } from 'vue';
 import ace from 'ace-builds';
-// Using toml mode as it matches Bicep's property assignment better than javascript
-import 'ace-builds/src-noconflict/mode-toml'; 
 import 'ace-builds/src-noconflict/theme-monokai';
 import AzureMonitoringEditor from './AzureMonitoringEditor.vue';
+
+// Define Bicep mode for Ace
+ace.define('ace/mode/bicep_highlight_rules', function(require, exports, module) {
+    const oop = require("ace/lib/oop");
+    const TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+    const BicepHighlightRules = function() {
+        this.$rules = {
+            "start": [
+                {
+                    token: "comment",
+                    regex: "//.*$"
+                },
+                {
+                    token: "comment",
+                    regex: "/\\*",
+                    next: "comment"
+                },
+                {
+                    token: "string",           // single line string
+                    regex: "'",
+                    next: "string"
+                },
+                {
+                    token: "keyword",
+                    regex: "\\b(?:resource|targetScope|module|param|var|output|for|in|if|existing|metadata)\\b"
+                },
+                {
+                    token: "constant.language.boolean",
+                    regex: "\\b(?:true|false|null)\\b"
+                },
+                {
+                    token: "variable",
+                    regex: "[a-zA-Z_][a-zA-Z0-9_]*"
+                },
+                {
+                    token: "constant.numeric", // float/int
+                    regex: "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
+                },
+                {
+                    token: "paren.lparen",
+                    regex: "[[({]"
+                },
+                {
+                    token: "paren.rparen",
+                    regex: "[\\])}]"
+                },
+                {
+                    token: "keyword.operator",
+                    regex: "[=:?]"
+                },
+                {
+                    token: "text",
+                    regex: "\\s+"
+                }
+            ],
+            "comment": [
+                {
+                    token: "comment",
+                    regex: "\\*/",
+                    next: "start"
+                },
+                {
+                    defaultToken: "comment"
+                }
+            ],
+            "string": [
+                {
+                    token: "constant.character.escape",
+                    regex: "''"
+                },
+                {
+                    token: "constant.character.escape",
+                    regex: "\\${",
+                    push: "interpolation"
+                },
+                {
+                    token: "string",
+                    regex: "'",
+                    next: "start"
+                },
+                {
+                    defaultToken: "string"
+                }
+            ],
+            "interpolation": [
+                {
+                    token: "constant.character.escape",
+                    regex: "}",
+                    next: "pop"
+                },
+                {
+                    include: "start"
+                }
+            ]
+        };
+        this.normalizeRules();
+    };
+
+    oop.inherits(BicepHighlightRules, TextHighlightRules);
+    exports.BicepHighlightRules = BicepHighlightRules;
+});
+
+ace.define('ace/mode/bicep', function(require, exports, module) {
+    const oop = require("ace/lib/oop");
+    const TextMode = require("ace/mode/text").Mode;
+    const BicepHighlightRules = require("ace/mode/bicep_highlight_rules").BicepHighlightRules;
+
+    const Mode = function() {
+        this.HighlightRules = BicepHighlightRules;
+    };
+    oop.inherits(Mode, TextMode);
+
+    (function() {
+        this.$id = "ace/mode/bicep";
+    }).call(Mode.prototype);
+
+    exports.Mode = Mode;
+});
 
 export default {
   name: 'AzureBicepGenerator',
@@ -77,7 +194,7 @@ export default {
     onMounted(() => {
        editor = ace.edit(editorContainer.value);
        editor.setTheme('ace/theme/monokai');
-       editor.session.setMode('ace/mode/toml'); 
+       editor.session.setMode('ace/mode/bicep'); 
        editor.session.setUseWorker(false); // Disable worker to avoid syntax errors on Bicep
        editor.setReadOnly(true);
     });
