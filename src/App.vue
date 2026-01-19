@@ -189,6 +189,7 @@ import availability1WeekDowntime from './assets/examples/availability-1-week-dow
 import metrics100ConcurrentConnections from './assets/examples/metrics-100-concurrent-connections.yaml?raw';
 import gcpMonitoringComplex from './assets/examples/gcp-monitoring-complex.yaml?raw';
 import azureMonitoringSample from './assets/examples/azure-monitoring-sample.yaml?raw';
+import fourGoldenSignals from './assets/examples/four-golden-signals.yaml?raw';
 import ContextEditor from './components/ContextEditor.vue';
 import CurrencyEditor from './components/CurrencyEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
@@ -271,6 +272,7 @@ export default {
       'metrics-100-concurrent-connections': metrics100ConcurrentConnections,
       'gcp-monitoring-complex': gcpMonitoringComplex,
       'azure-monitoring-sample': azureMonitoringSample,
+      'four-golden-signals': fourGoldenSignals,
     };
 
     const availableCurrencies = computed(() => {

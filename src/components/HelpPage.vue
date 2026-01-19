@@ -73,6 +73,13 @@ export default {
     return {
       helpItems: [
         {
+          title: "Why this tool?",
+          brief: "Empowering teams through clear service contracts.",
+          detail: "This editor simplifies the creation of Service Level Agreements, shifting them from complex monitoring tools to comprehensive frameworks that protect service providers and inform consumers. It allows teams to define sustainable operational conditions while providing transparent guarantees.",
+          example: "Using the tool to define a clear support window (e.g., Mon-Fri 09:00-17:00) to manage expectations and ensure team sustainability.",
+          interpretation: "The tool is a strategic asset for resource advocacy and trust-building between service providers and consumers.",
+        },
+        {
           title: "Plan vs. Agreement",
           brief: "Templates vs. Specific Contracts.",
           detail: "A 'Plan' is a template or a product offering (e.g., 'Gold Tier', 'Free Tier') that applies to anyone who subscribes to it. An 'Agreement' is a specific instance of a plan tailored for a specific customer, often containing specific overrides or custom terms. In this tool, you primarily define 'Plans' which serve as the catalog of service levels you offer.",

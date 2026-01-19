@@ -1,0 +1,66 @@
+sla: 1.0.0
+context:
+  id: four-golden-signals-api
+  type: plans
+metrics:
+  latency:
+    type: number
+    unit: ms
+    description: "The time it takes to service a request."
+    monitoringId: "custom.googleapis.com/api/latency"
+    resourceType: "global"
+    metricKind: "GAUGE"
+  traffic:
+    type: integer
+    unit: "req/s"
+    description: "A measure of how much demand is being placed on your system."
+    monitoringId: "custom.googleapis.com/api/traffic"
+    resourceType: "global"
+    metricKind: "CUMULATIVE"
+  errors:
+    type: number
+    unit: percent
+    description: "The rate of requests that fail, either explicitly, implicitly, or by policy."
+    monitoringId: "custom.googleapis.com/api/error_rate"
+    resourceType: "global"
+    metricKind: "GAUGE"
+  saturation:
+    type: number
+    unit: percent
+    description: "How 'full' your service is. A measure of your system fraction, emphasizing the resources that are most constrained."
+    monitoringId: "compute.googleapis.com/instance/cpu/utilization"
+    resourceType: "gce_instance"
+    metricKind: "GAUGE"
+plans:
+  standard:
+    title: "Standard Plan"
+    description: "Base plan with 4 golden signals monitoring"
+    availability: "99.9%"
+    pricing:
+      cost: 0
+      currency: USD
+      period: P30D
+    guarantees:
+      - metric: latency
+        operator: "<"
+        value: "500"
+        period: PT1M
+      - metric: errors
+        operator: "<"
+        value: "1"
+        period: PT1M
+    serviceLevelObjectives:
+      - name: "Traffic Performance"
+        priority: "Medium"
+        guarantees:
+          - metric: traffic
+            operator: "<"
+            value: "1000"
+            period: PT1M
+      - name: "Saturation Warning"
+        priority: "High"
+        guarantees:
+          - metric: saturation
+            operator: "<"
+            value: "80"
+            period: PT5M
