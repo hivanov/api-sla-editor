@@ -102,9 +102,10 @@ export default {
                       }
 
                       if (typeof plan.availability === 'object' && plan.availability.expression) {
-
-                        md += `- **Condition:** \`${plan.availability.expression}\` must be true.\n`;
-
+                        const humanReadable = formatPrometheusMeasurement(plan.availability.expression);
+                        md += `- **Condition:** ${humanReadable}\n\n`;
+                        md += `The technical monitoring configuration for this availability requirement is:\n\n`;
+                        md += `> \`${plan.availability.expression}\`\n\n`;
                       }
 
                       md += `\n`;
@@ -136,7 +137,10 @@ export default {
             md += `#### 📊 Quotas\n`;
             for (const [metricKey, quota] of validQuotas) {
               if (typeof quota === 'string' && quota.includes('(')) {
-                md += `- ${formatPrometheusMeasurement(quota)}\n`;
+                const humanReadable = formatPrometheusMeasurement(quota);
+                md += `- **${humanReadable}**\n\n`;
+                md += `  The technical monitoring configuration for this quota is:\n\n`;
+                md += `  > \`${quota}\`\n\n`;
               } else {
                 const metric = metrics && metrics[metricKey];
                 const metricName = metric ? (metric.description || metricKey) : metricKey;
@@ -156,7 +160,10 @@ export default {
             md += `#### 🛡️ Guarantees\n`;
             validGuarantees.forEach(g => {
               if (g.measurement) {
-                md += `- ${formatPrometheusMeasurement(g.measurement)}\n`;
+                const humanReadable = formatPrometheusMeasurement(g.measurement);
+                md += `- **${humanReadable}**\n\n`;
+                md += `  The technical monitoring configuration for this guarantee is:\n\n`;
+                md += `  > \`${g.measurement}\`\n\n`;
               } else {
                 let guaranteeText = `- **${g.metric}:** `;
                 if (g.operator) {
@@ -177,6 +184,46 @@ export default {
                   guaranteeText += `${g.value}`;
                 }
                 md += `${guaranteeText}\n`;
+              }
+            });
+            md += `\n`;
+          }
+
+          // Plan-level Service Level Objectives
+          if (plan.serviceLevelObjectives && plan.serviceLevelObjectives.length > 0) {
+            md += `#### 🎯 Service Level Objectives (SLOs)\n`;
+            plan.serviceLevelObjectives.forEach(slo => {
+              const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => (g.metric && g.metric.trim() !== '') || (g.measurement && g.measurement.trim() !== '')) : [];
+              if (slo.name || slo.priority || validSloGuarantees.length > 0) {
+                md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
+                validSloGuarantees.forEach(g => {
+                  if (g.measurement) {
+                    const humanReadable = formatPrometheusMeasurement(g.measurement);
+                    md += `  - **${humanReadable}**\n\n`;
+                    md += `    The technical monitoring configuration for this objective is:\n\n`;
+                    md += `    > \`${g.measurement}\`\n\n`;
+                  } else {
+                    let guaranteeText = `  - ${g.metric}: `;
+                    if (g.operator) {
+                      if (g.operator === 'avg') {
+                        guaranteeText += `Average of ${g.value || '?'}`;
+                      } else if (g.operator === 'between') {
+                        guaranteeText += `Between ${g.value || '?'}`;
+                      } else {
+                        guaranteeText += `${g.operator} ${g.value || '?'}`;
+                      }
+                      
+                      if (g.period) {
+                        guaranteeText += ` per ${formatDuration(g.period)}`;
+                      }
+                    } else if (g.duration) {
+                      guaranteeText += `${formatDuration(g.duration)}`;
+                    } else if (g.value) {
+                      guaranteeText += `${g.value}`;
+                    }
+                    md += `${guaranteeText}\n`;
+                  }
+                });
               }
             });
             md += `\n`;
@@ -228,7 +275,10 @@ export default {
                                 md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
                                 validSloGuarantees.forEach(g => {
                                   if (g.measurement) {
-                                    md += `  - ${formatPrometheusMeasurement(g.measurement)}\n`;
+                                    const humanReadable = formatPrometheusMeasurement(g.measurement);
+                                    md += `  - **${humanReadable}**\n\n`;
+                                    md += `    The technical monitoring configuration for this objective is:\n\n`;
+                                    md += `    > \`${g.measurement}\`\n\n`;
                                   } else {
                                     let guaranteeText = `  - ${g.metric}: `;
                                     if (g.operator) {
@@ -316,13 +366,13 @@ export default {
             
             if (hasCreditsContent) {
               md += `#### 💸 Service Credits\n`;
-              if (credits.claimWindow) md += `- **Claim Window:** ${formatDuration(credits.claimWindow)}\n`;
+              if (credits.claimWindow) md += `- **Claim Window:** ${formatDuration(credits.claimWindow)}\n\n`;
               if (credits.tiers && credits.tiers.length > 0) {
                 md += `**Compensation Tiers:**\n`;
                 credits.tiers.forEach(t => {
                   if (t.condition && t.condition.metric) {
                     const val = formatDuration(t.condition.value);
-                    md += `- If ${t.condition.metric} ${t.condition.operator || 'is'} ${val}: **${t.compensation}${credits.currency || ''}** credit\n`;
+                    md += `  - If ${t.condition.metric} ${t.condition.operator || 'is'} ${val}: **${t.compensation}${credits.currency || ''}** credit\n`;
                   }
                 });
               }
@@ -354,7 +404,10 @@ export default {
               md += `#### 🚫 Exclusions\n`;
               validExclusions.forEach(e => {
                 if (e.includes('(') && e.includes(')')) {
-                  md += `- ${formatPrometheusMeasurement(e)}\n`;
+                  const humanReadable = formatPrometheusMeasurement(e);
+                  md += `- **${humanReadable}**\n\n`;
+                  md += `  The technical monitoring configuration for this exclusion is:\n\n`;
+                  md += `  > \`${e}\`\n\n`;
                 } else {
                   md += `- ${e}\n`;
                 }
