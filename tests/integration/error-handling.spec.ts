@@ -14,11 +14,11 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-
     // Check for squiggly marker
-    const marker = page.locator('.error-squiggly').first();
-    await expect(marker).toBeVisible();
+    await expect(async () => {
+        const marker = page.locator('.error-squiggly').first();
+        await expect(marker).toBeVisible();
+    }).toPass();
   });
 
   test('should display error list below editor', async ({ page }) => {
@@ -30,8 +30,6 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-
     const errorList = page.locator('.validation-card');
     await expect(errorList).toBeVisible();
     await expect(errorList).toContainText('Must be one of: plans, agreements');
@@ -46,8 +44,6 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-
     // Switch to GUI
     await page.click('a:has-text("GUI")');
     await expect(page.locator('input#context-id')).toBeVisible();
@@ -58,8 +54,11 @@ test.describe('Error Handling', () => {
     // Should have switched to Source tab
     await expect(page.locator('.ace_editor')).toBeVisible();
     
-    // Give it a moment to scroll and move cursor
-    await page.waitForTimeout(500);
+    // Verify cursor moved from the start
+    await expect(async () => {
+        const cursorPosition = await page.evaluate(() => ace.edit(document.querySelector('.ace_editor')).getCursorPosition());
+        expect(cursorPosition.row).toBeGreaterThan(0);
+    }).toPass();
   });
 
   test('should show error in GUI for ContextEditor', async ({ page }) => {
@@ -71,7 +70,6 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
     await page.click('a:has-text("GUI")');
 
     const idInput = page.locator('input#context-id');
@@ -87,7 +85,6 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
     await page.click('a:has-text("GUI")');
 
     const typeSelect = page.locator('.metrics-editor-component select').first();
@@ -105,7 +102,6 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
     await page.click('a:has-text("GUI")');
 
     const costInput = page.locator('.pricing-editor-component input[placeholder="Cost"]');

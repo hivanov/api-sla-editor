@@ -79,7 +79,9 @@ plans:
 
     // 5. Fix the error in GUI
     await typeSelect.selectOption('string');
-    await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible({ timeout: 15000 });
+    await expect(async () => {
+        await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    }).toPass();
 
     // 6. Switch back to Source and verify it's now valid
     await page.click('a:has-text("Source")');
@@ -127,6 +129,8 @@ plans:
     await pCard.locator('.availability-editor-component textarea').fill('valid_metric > 0');
 
     // Verify it's valid
-    await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible({ timeout: 15000 });
+    await expect(async () => {
+        await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    }).toPass();
   });
 });

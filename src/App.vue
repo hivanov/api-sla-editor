@@ -653,8 +653,9 @@ export default {
       }
     };
 
-    const jumpToError = (line) => {
+    const jumpToError = async (line) => {
       activeTab.value = 'source';
+      await nextTick();
       if (editor) {
         editor.gotoLine((line || 0) + 1, 0, true);
         editor.focus();

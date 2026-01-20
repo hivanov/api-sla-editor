@@ -1,14 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Editor Persistence', () => {
-  test.setTimeout(60000);
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
   test('should preserve source editor when returning from Help', async ({ page }) => {
     // 1. Go to Source tab
-    await page.click('a:has-text("Source")', { timeout: 30000 });
+    await page.click('a:has-text("Source")');
     await expect(page.locator('.ace_editor')).toBeVisible();
 
     // 2. Go to Help
@@ -35,7 +34,7 @@ test.describe('Editor Persistence', () => {
 
   test('should preserve source editor when returning from Tutorial', async ({ page }) => {
     // 1. Go to Source tab
-    await page.click('a:has-text("Source")', { timeout: 30000 });
+    await page.click('a:has-text("Source")');
     await expect(page.locator('.ace_editor')).toBeVisible();
 
     // 2. Go to Tutorial

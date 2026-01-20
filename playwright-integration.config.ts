@@ -6,7 +6,7 @@ export default defineConfig({
   /* The base directory, relative to the config file, for snapshot files created with toMatchSnapshot and toHaveScreenshot. */
   snapshotDir: './tests/__snapshots__',
   /* Maximum time one test can run for. */
-  timeout: 20 * 1000,
+  timeout: 10 * 1000,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -27,6 +27,12 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    actionTimeout: 200,
+  },
+
+  expect: {
+    timeout: 500,
   },
 
   /* Configure projects for major browsers */

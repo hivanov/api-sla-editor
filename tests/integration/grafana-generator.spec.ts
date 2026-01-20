@@ -69,11 +69,14 @@ test.describe('Grafana Dashboard Generator', () => {
 
     // 6. Switch to Alert Rules tab
     await page.click('a:has-text("Alert Rules & Contact Points (YAML)")');
-    await page.waitForTimeout(100); // Wait for tab switch and editor update
+
+    await expect(async () => {
+        const alertYaml = await getEditorValue();
+        expect(alertYaml).toContain('groups:');
+        expect(alertYaml).toContain('contactPoints:');
+    }).toPass();
 
     const alertYaml = await getEditorValue();
-    expect(alertYaml).toContain('groups:');
-    expect(alertYaml).toContain('contactPoints:');
     expect(alertYaml).toContain('name: DevOps Team (email)');
     expect(alertYaml).toContain('addresses: devops@example.com');
     // For availability alert, name is `SlaBreach_${planName}_Availability`

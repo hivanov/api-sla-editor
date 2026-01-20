@@ -58,9 +58,10 @@ test.describe('Main flow', () => {
       editor.setValue('invalid yaml');
       editor._emit('change');
     });
-    await page.waitForTimeout(500); // Give Vue time to react
 
-    await expect(page.locator('.validation-card table tbody tr').first()).toBeVisible();
+    await expect(async () => {
+        await expect(page.locator('.validation-card table tbody tr').first()).toBeVisible();
+    }).toPass();
   });
 
   test('should generate a valid SLA document from scratch via GUI', async ({ page }) => {
@@ -109,7 +110,9 @@ test.describe('Main flow', () => {
     await page.click('a:has-text("Source")');
 
     // 5. Verify validation success
-    await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible({ timeout: 20000 });
+    await expect(async () => {
+        await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    }).toPass();
 
     // 6. Verify generated YAML content
     const editorValue = await page.evaluate(() => {

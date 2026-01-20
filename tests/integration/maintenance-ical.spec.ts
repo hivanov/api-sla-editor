@@ -67,6 +67,6 @@ test.describe('Maintenance iCal Source', () => {
     // 5. Verify validation is still passing
     await expect(async () => {
       await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
-    }).toPass({ timeout: 5000 });
+    }).toPass();
   });
 });

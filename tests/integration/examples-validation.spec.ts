@@ -23,7 +23,7 @@ test.describe('Examples Validation', () => {
 
       // Check the validation badge in the header
       const validationBadge = page.locator('header .badge');
-      await expect(validationBadge).toHaveText('Valid', { timeout: 5000 });
+      await expect(validationBadge).toHaveText('Valid');
       await expect(validationBadge).toHaveClass(/bg-success/);
 
       // Also check the error list card at the bottom

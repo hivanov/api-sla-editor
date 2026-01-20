@@ -122,8 +122,9 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
 
   test('should navigate back to editor and preserve active tab', async ({ page }) => {
     const navigateToTerraform = async () => {
-      await page.waitForTimeout(300);
-      await page.click('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
+      const transformBtn = page.locator('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
+      await expect(transformBtn).toBeVisible();
+      await transformBtn.click();
       // Use evaluate to click the item directly in the browser
       await page.evaluate(() => {
         const items = Array.from(document.querySelectorAll('.dropdown-item'));

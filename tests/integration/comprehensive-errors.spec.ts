@@ -24,9 +24,10 @@ test.describe('Comprehensive Validation Errors', () => {
     const pricingPeriodInput = pricing.locator('.pricing-period-container .duration-editor input[placeholder="e.g. P1DT4H"]');
     await pricingPeriodInput.fill('invalid');
     await pricingPeriodInput.dispatchEvent('input');
-    await page.waitForTimeout(500);
     
-    await expect(pricingPeriodInput).toHaveClass(/is-invalid/);
+    await expect(async () => {
+        await expect(pricingPeriodInput).toHaveClass(/is-invalid/);
+    }).toPass();
   });
 
   test('should show validation errors in ServiceCreditsEditor', async ({ page }) => {
@@ -37,9 +38,10 @@ test.describe('Comprehensive Validation Errors', () => {
     const claimWindowInput = credits.locator('.duration-editor input[placeholder="e.g. P1DT4H"]');
     await claimWindowInput.fill('invalid');
     await claimWindowInput.dispatchEvent('input');
-    await page.waitForTimeout(500);
     
-    await expect(claimWindowInput).toHaveClass(/is-invalid/);
+    await expect(async () => {
+        await expect(claimWindowInput).toHaveClass(/is-invalid/);
+    }).toPass();
   });
 
   test('should show validation errors in MaintenancePolicyEditor', async ({ page }) => {
@@ -50,9 +52,10 @@ test.describe('Comprehensive Validation Errors', () => {
     const standardNoticeInput = maintenance.locator('.duration-editor input[placeholder="e.g. P1DT4H"]').first();
     await standardNoticeInput.fill('invalid');
     await standardNoticeInput.dispatchEvent('input');
-    await page.waitForTimeout(500);
     
-    await expect(standardNoticeInput).toHaveClass(/is-invalid/);
+    await expect(async () => {
+        await expect(standardNoticeInput).toHaveClass(/is-invalid/);
+    }).toPass();
   });
 
   test('should show validation errors in LifecyclePolicyEditor', async ({ page }) => {
@@ -63,9 +66,10 @@ test.describe('Comprehensive Validation Errors', () => {
     const noticePeriodInput = lifecycle.locator('.duration-editor input[placeholder="e.g. P1DT4H"]').nth(1);
     await noticePeriodInput.fill('invalid');
     await noticePeriodInput.dispatchEvent('input');
-    await page.waitForTimeout(500);
     
-    await expect(noticePeriodInput).toHaveClass(/is-invalid/);
+    await expect(async () => {
+        await expect(noticePeriodInput).toHaveClass(/is-invalid/);
+    }).toPass();
   });
 
   test('should show validation errors in GuaranteesEditor', async ({ page }) => {
@@ -81,9 +85,10 @@ test.describe('Comprehensive Validation Errors', () => {
     const limitInput = guarantees.locator('.duration-editor input[placeholder="e.g. P1DT4H"]');
     await limitInput.fill('invalid');
     await limitInput.dispatchEvent('input');
-    await page.waitForTimeout(500);
     
-    await expect(limitInput).toHaveClass(/is-invalid/);
+    await expect(async () => {
+        await expect(limitInput).toHaveClass(/is-invalid/);
+    }).toPass();
   });
 
   test('should show validation errors in SLO Guarantees', async ({ page }) => {
@@ -100,8 +105,9 @@ test.describe('Comprehensive Validation Errors', () => {
     const sloDurationInput = slo.locator('.duration-editor input[placeholder="e.g. P1DT4H"]');
     await sloDurationInput.fill('invalid');
     await sloDurationInput.dispatchEvent('input');
-    await page.waitForTimeout(500);
     
-    await expect(sloDurationInput).toHaveClass(/is-invalid/);
+    await expect(async () => {
+        await expect(sloDurationInput).toHaveClass(/is-invalid/);
+    }).toPass();
   });
 });

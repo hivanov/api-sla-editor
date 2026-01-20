@@ -22,21 +22,13 @@ test.describe('Azure Bicep Generator', () => {
     // 6. Press "Generate" button
     await page.click('button:has-text("Generate")');
 
-    // Wait for editor to update
-    await page.waitForTimeout(1000);
-    
     // 7. Check for errors in Ace Editor
     // Ace editor errors are usually shown as markers in the gutter
-    // or we can check the session's annotations if we can access them.
-    // In a black-box test, we can look for the error icons in the gutter.
-    const errorGutterIcon = page.locator('.ace_gutter-cell.ace_error');
-    
-    // Give it a moment for the worker to run
-    await page.waitForTimeout(2000);
-
-    const count = await errorGutterIcon.count();
-    
-    expect(count).toBe(0);
+    // We use toPass to wait for the background worker to finish validation
+    await expect(async () => {
+        const errorGutterIcon = page.locator('.ace_gutter-cell.ace_error');
+        expect(await errorGutterIcon.count()).toBe(0);
+    }).toPass();
 
     // 8. Check for syntax highlighting (spans with ace_ keyword/string classes)
     const keywordSpan = page.locator('.ace_keyword');
@@ -55,9 +47,6 @@ test.describe('Azure Bicep Generator', () => {
     await page.fill('label:has-text("Azure Resource ID") + input', '/subscriptions/x');
     await page.fill('label:has-text("Location") + input', 'eastus');
     await page.click('button:has-text("Generate")');
-
-    // Wait for generation
-    await page.waitForTimeout(1000);
 
     // We can't easily "break" the generator code from the UI without modifying source,
     // but we can check if the validator is present in the DOM.
@@ -79,7 +68,8 @@ test.describe('Azure Bicep Generator', () => {
     await page.fill('label:has-text("Location") + input', 'eastus');
     await page.click('button:has-text("Generate")');
 
-    await page.waitForTimeout(1000);
+    // Wait for content to appear
+    await expect(page.locator('.ace_line', { hasText: 'resource alert_' }).first()).toBeVisible();
 
     const allLines = page.locator('.ace_line');
     const lineCount = await allLines.count();
@@ -114,12 +104,6 @@ test.describe('Azure Bicep Generator', () => {
     await page.fill('label:has-text("Location") + input', 'eastus');
     await page.click('button:has-text("Generate")');
 
-    await page.waitForTimeout(2000);
-
-    // Ace editor might lazy-render lines. Let's ensure we see the numbers (thresholds)
-    // which are usually at the bottom of the resource block.
-    // We'll use the editor's scroll to bottom if needed or just wait.
-    
     // 1. Comments
     await expect(page.locator('.ace_comment').first()).toBeVisible();
     
@@ -149,8 +133,7 @@ test.describe('Azure Bicep Generator', () => {
             if (editor) editor.gotoLine(editor.session.getLength());
         }
     });
-    await page.waitForTimeout(5000); // Wait for rendering after scroll
-
+    
     await expect(page.locator('.ace_constant.ace_numeric').first()).toBeVisible();
   });
 
@@ -163,8 +146,6 @@ test.describe('Azure Bicep Generator', () => {
     await page.fill('label:has-text("Location") + input', 'eastus');
     await page.click('button:has-text("Generate")');
 
-    await page.waitForTimeout(1000);
-
     // Inject some complex strings into the editor via page.evaluate
     await page.evaluate(() => {
         const el = document.querySelector('.ace-editor-container');
@@ -176,8 +157,6 @@ test.describe('Azure Bicep Generator', () => {
             }
         }
     });
-
-    await page.waitForTimeout(1000);
 
     // Check for interpolation highlighting
     // "${" and "}" should be highlighted as constant.character.escape

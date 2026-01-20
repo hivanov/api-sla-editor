@@ -35,8 +35,10 @@ plans:
 
     // 2. Verify errors in Result Table at the bottom
     const validationTable = page.locator('.validation-card table tbody');
-    await expect(validationTable).toContainText('Invalid PromQL: Metric "undefined_metric" is not defined', { timeout: 10000 });
-    await expect(validationTable).toContainText('mismatched input', { timeout: 10000 });
+    await expect(async () => {
+        await expect(validationTable).toContainText('Invalid PromQL: Metric "undefined_metric" is not defined');
+        await expect(validationTable).toContainText('mismatched input');
+    }).toPass();
 
     // 3. Verify errors in GUI
     await page.click('a:has-text("GUI")');
@@ -76,7 +78,7 @@ plans:
         if (annotations.length < 2) {
              throw new Error(`Expected at least 2 annotations, found ${annotations.length}`);
         }
-    }).toPass({ timeout: 10000 });
+    }).toPass({ timeout: 500 });
   });
 
   test('should clear errors when PromQL is fixed', async ({ page }) => {
