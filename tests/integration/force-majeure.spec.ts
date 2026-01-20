@@ -23,7 +23,7 @@ test.describe('Force Majeure Integration', () => {
     // 2b. Make the plan valid (fill required fields)
     const availEditor = planCard.locator('.availability-editor-component');
     await availEditor.locator('select').first().selectOption('uptime');
-    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    const rawSwitch = availEditor.locator('#raw-promql-toggle');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }

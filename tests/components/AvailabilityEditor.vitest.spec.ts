@@ -29,7 +29,9 @@ describe('AvailabilityEditor', () => {
     const emitted = wrapper.emitted('update:availability');
     expect(emitted).toBeTruthy();
     const lastEmit = emitted[emitted.length - 1][0];
-    expect(lastEmit).toEqual({ target: '99.5%', metric: 'uptime', expression: '' });
+    expect(lastEmit.target).toBe('99.5%');
+    expect(lastEmit.metric).toBe('uptime');
+    expect(lastEmit.expression).toContain('uptime');
   })
 
   it('updates metric when metric selector changes', async () => {
@@ -43,7 +45,9 @@ describe('AvailabilityEditor', () => {
     const emitted = wrapper.emitted('update:availability');
     expect(emitted).toBeTruthy();
     const lastEmit = emitted[emitted.length - 1][0];
-    expect(lastEmit).toEqual({ target: '99.9%', metric: 'latency', expression: '' });
+    expect(lastEmit.target).toBe('99.9%');
+    expect(lastEmit.metric).toBe('latency');
+    expect(lastEmit.expression).toContain('latency');
   });
 
   it('updates expression when expression input changes', async () => {
@@ -162,7 +166,8 @@ describe('AvailabilityEditor', () => {
     })
     
     await wrapper.find('.tier-select').setValue('99.9')
-    expect(wrapper.emitted('update:availability')[0][0].target).toBe('99.9%')
+    const emitted = wrapper.emitted('update:availability');
+    expect(emitted[emitted.length - 1][0].target).toBe('99.9%')
   })
 
   it('syncs availability metric to PrometheusMeasurementEditor and disables its selector', async () => {

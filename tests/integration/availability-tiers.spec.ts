@@ -21,7 +21,7 @@ test.describe('Availability Tiers', () => {
     // Select metric first
     await availEditor.locator('select').first().selectOption('uptime');
     // Ensure Raw PromQL is selected
-    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    const rawSwitch = availEditor.locator('#raw-promql-toggle');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
@@ -69,7 +69,7 @@ test.describe('Availability Tiers', () => {
 
     // Select metric and expression
     await availEditor.locator('select').first().selectOption('uptime');
-    const rawSwitch3 = availEditor.locator('#expressionModeSwitch');
+    const rawSwitch3 = availEditor.locator('#raw-promql-toggle');
     if (!(await rawSwitch3.isChecked())) {
         await rawSwitch3.click();
     }
@@ -104,7 +104,7 @@ test.describe('Availability Tiers', () => {
     const availEditor = planCard.locator('.availability-editor-component');
     // Select metric and expression
     await availEditor.locator('select').first().selectOption('uptime');
-    const rawSwitch2 = availEditor.locator('#expressionModeSwitch');
+    const rawSwitch2 = availEditor.locator('#raw-promql-toggle');
     if (!(await rawSwitch2.isChecked())) {
         await rawSwitch2.click();
     }

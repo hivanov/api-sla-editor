@@ -19,37 +19,16 @@
 
       <!-- Availability Condition Input -->
       <div class="mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <label class="form-label small fw-bold mb-0">Availability Condition (PromQL)</label>
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input" type="checkbox" id="expressionModeSwitch" v-model="isRawExpression">
-            <label class="form-check-label extra-small" for="expressionModeSwitch">Raw PromQL</label>
-          </div>
-        </div>
+        <label class="form-label small fw-bold mb-1">Availability Condition (PromQL)</label>
 
-        <div v-if="isRawExpression">
-          <textarea 
-            class="form-control form-control-sm" 
-            :class="{'is-invalid': errors[path + '/expression']}"
-            v-model="expression" 
-            @input="emitUpdate"
-            rows="2"
-            placeholder="e.g. up == 1 or response_time < 200"
-          ></textarea>
-          <div class="invalid-feedback d-block" v-if="errors[path + '/expression']">
-            {{ errors[path + '/expression'].join(', ') }}
-          </div>
-        </div>
-        <div v-else>
-          <PrometheusMeasurementEditor 
-            :model-value="expression"
-            :metrics="metrics"
-            :errors="errors"
-            :path="path + '/expression'"
-            :fixed-metric="selectedMetric"
-            @update:model-value="onExpressionUpdate"
-          />
-        </div>
+        <PrometheusMeasurementEditor 
+          :model-value="expression"
+          :metrics="metrics"
+          :errors="errors"
+          :path="path + '/expression'"
+          :fixed-metric="selectedMetric"
+          @update:model-value="onExpressionUpdate"
+        />
 
         <div class="form-text extra-small mt-2">
           Provide a boolean PromQL condition. The SLA is met if this condition is true for at least {{ percentageDisplay }}% of the time.
@@ -290,7 +269,6 @@ export default {
     
     const selectedMetric = ref(initialMetric);
     const expression = ref(initialExpression);
-    const isRawExpression = ref(!initialExpression || (!initialExpression.includes('_over_time(') && !initialExpression.includes('histogram_quantile(')));
 
     const parsePercentage = (val) => {
       if (!val) return 100;
@@ -472,7 +450,6 @@ export default {
       currentTier,
       selectedMetric,
       expression,
-      isRawExpression,
       onExpressionUpdate,
       emitUpdate,
       onPercentageInput,

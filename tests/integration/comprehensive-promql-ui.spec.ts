@@ -50,7 +50,7 @@ plans:
     // Check availability expression error
     const availEditor = goldPlan.locator('.availability-editor-component');
     // We need to make sure the availability editor is in expression mode to see the error
-    const toggle = availEditor.locator('input#expressionModeSwitch');
+    const toggle = availEditor.locator('input#raw-promql-toggle');
     if (!(await toggle.isChecked())) {
         await toggle.click();
     }
@@ -154,7 +154,7 @@ plans:
     const availEditor = goldPlan.locator('.availability-editor-component');
     
     // Switch to Raw PromQL to see the expression
-    const toggle = availEditor.locator('input#expressionModeSwitch');
+    const toggle = availEditor.locator('input#raw-promql-toggle');
     if (!(await toggle.isChecked())) {
         await toggle.click();
     }

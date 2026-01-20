@@ -126,6 +126,11 @@ plans:
     await page.click('.plans-editor-component button:has-text("Add Plan")');
     const pCard = page.locator('.plans-editor-component .plan-item:has-text("P")');
     await pCard.locator('.availability-editor-component select.metric-selector').selectOption('valid_metric');
+    
+    // Toggle raw mode
+    const rawSwitch = pCard.locator('.availability-editor-component #raw-promql-toggle');
+    await rawSwitch.click();
+    
     await pCard.locator('.availability-editor-component textarea').fill('valid_metric > 0');
 
     // Verify it's valid

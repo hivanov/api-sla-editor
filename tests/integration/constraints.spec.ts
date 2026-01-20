@@ -64,7 +64,7 @@ test.describe('Numeric Constraints', () => {
     test('should not allow negative downtime in AvailabilityEditor', async ({ page }) => {
     const planCard = page.locator('.plan-item:has-text("Constraint Plan")');
     const availEditor = planCard.locator('.availability-editor-component');
-    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    const rawSwitch = availEditor.locator('#raw-promql-toggle');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }

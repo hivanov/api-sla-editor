@@ -20,7 +20,7 @@ test.describe('Maintenance iCal Source', () => {
     // Satisfy required availability
     const availEditor = page.locator('.availability-editor-component');
     await availEditor.locator('select').first().selectOption('uptime');
-    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    const rawSwitch = availEditor.locator('#raw-promql-toggle');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }

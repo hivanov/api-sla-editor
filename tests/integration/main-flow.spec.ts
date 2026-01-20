@@ -100,7 +100,7 @@ test.describe('Main flow', () => {
     await availEditor.locator('input.manual-percentage-input').fill('99.9');
 
     // Set expression manually in raw mode
-    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    const rawSwitch = availEditor.locator('#raw-promql-toggle');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
