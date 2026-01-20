@@ -5,6 +5,53 @@
       <span class="badge bg-primary">{{ percentageDisplay }}%</span>
     </div>
     <div class="card-body">
+      <!-- Metric Selector -->
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Availability Metric</label>
+        <select class="form-select form-select-sm metric-selector" v-model="selectedMetric" @change="emitUpdate">
+          <option value="" disabled>Select a metric...</option>
+          <option v-for="(metric, key) in metrics" :key="key" :value="key">
+            {{ metric.description || key }} ({{ key }})
+          </option>
+        </select>
+        <div v-if="!selectedMetric" class="text-danger small">Please select a metric to track availability.</div>
+      </div>
+
+      <!-- Availability Condition Input -->
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label small fw-bold mb-0">Availability Condition (PromQL)</label>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="expressionModeSwitch" v-model="isRawExpression">
+            <label class="form-check-label extra-small" for="expressionModeSwitch">Raw PromQL</label>
+          </div>
+        </div>
+
+        <div v-if="isRawExpression">
+          <textarea 
+            class="form-control form-control-sm" 
+            v-model="expression" 
+            @input="emitUpdate"
+            rows="2"
+            placeholder="e.g. up == 1 or response_time < 200"
+          ></textarea>
+        </div>
+        <div v-else>
+          <PrometheusMeasurementEditor 
+            :model-value="expression"
+            :metrics="metrics"
+            :errors="errors"
+            :path="path + '/expression'"
+            :fixed-metric="selectedMetric"
+            @update:model-value="onExpressionUpdate"
+          />
+        </div>
+
+        <div class="form-text extra-small mt-2">
+          Provide a boolean PromQL condition. The SLA is met if this condition is true for at least {{ percentageDisplay }}% of the time.
+        </div>
+      </div>
+
       <!-- Mode Switcher -->
       <ul class="nav nav-pills nav-fill mb-3 bg-light p-1 rounded border">
         <li class="nav-item" v-for="mode in modes" :key="mode.id">
@@ -36,7 +83,7 @@
         <div class="input-group">
           <input 
             type="number" 
-            class="form-control" 
+            class="form-control manual-percentage-input" 
             :class="{'is-invalid': errors[path]}"
             step="0.000000001" 
             min="0" 
@@ -72,23 +119,23 @@
         <div class="row g-2">
           <div class="col">
             <label class="form-label extra-small">Days</label>
-            <input type="number" class="form-control form-control-sm" v-model.number="downtime.days" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-days" v-model.number="downtime.days" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Hours</label>
-            <input type="number" class="form-control form-control-sm" v-model.number="downtime.hours" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-hours" v-model.number="downtime.hours" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Mins</label>
-            <input type="number" class="form-control form-control-sm" v-model.number="downtime.mins" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-mins" v-model.number="downtime.mins" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Secs</label>
-            <input type="number" class="form-control form-control-sm" v-model.number="downtime.secs" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-secs" v-model.number="downtime.secs" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Ms</label>
-            <input type="number" class="form-control form-control-sm" v-model.number="downtime.ms" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-ms" v-model.number="downtime.ms" @input="onDowntimeInput" min="0">
           </div>
         </div>
         <div class="form-text small mt-2">
@@ -104,7 +151,7 @@
           <div class="col-md-6">
             <label class="form-label extra-small">Deployments</label>
             <div class="input-group input-group-sm">
-              <input type="number" class="form-control" v-model.number="deployment.count" @input="onDeploymentInput" min="0">
+              <input type="number" class="form-control deployment-count" v-model.number="deployment.count" @input="onDeploymentInput" min="0">
               <span class="input-group-text">per</span>
             </div>
           </div>
@@ -155,6 +202,7 @@
 
 <script>
 import { ref, computed, watch, reactive } from 'vue';
+import PrometheusMeasurementEditor from './PrometheusMeasurementEditor.vue';
 
 const PERIODS = {
   day: 24 * 60 * 60 * 1000,
@@ -166,10 +214,17 @@ const PERIODS = {
 
 export default {
   name: 'AvailabilityEditor',
+  components: {
+    PrometheusMeasurementEditor
+  },
   props: {
     availability: {
-      type: String,
+      type: [String, Object],
       default: '100%',
+    },
+    metrics: {
+      type: Object,
+      default: () => ({}),
     },
     errors: {
       type: Object,
@@ -212,13 +267,34 @@ export default {
       }
     });
 
+    // Helper to extract target string and metric name
+    const parseAvailabilityProp = (val) => {
+      let target = '100%';
+      let metric = '';
+      let expression = '';
+      if (typeof val === 'string') {
+        target = val;
+      } else if (val && typeof val === 'object') {
+        target = val.target || '100%';
+        metric = val.metric || '';
+        expression = val.expression || '';
+      }
+      return { target, metric, expression };
+    };
+
+    const { target: initialTarget, metric: initialMetric, expression: initialExpression } = parseAvailabilityProp(props.availability);
+    
+    const selectedMetric = ref(initialMetric);
+    const expression = ref(initialExpression);
+    const isRawExpression = ref(!initialExpression || (!initialExpression.includes('_over_time(') && !initialExpression.includes('histogram_quantile(')));
+
     const parsePercentage = (val) => {
       if (!val) return 100;
       const numeric = parseFloat(val.replace('%', ''));
       return isNaN(numeric) ? 100 : numeric;
     };
 
-    const percentageValue = ref(parsePercentage(props.availability));
+    const percentageValue = ref(parsePercentage(initialTarget));
 
     const commonTiers = [
       { label: '90%', value: 90 },
@@ -242,6 +318,14 @@ export default {
       return match ? match.value : '';
     });
 
+    const emitUpdate = () => {
+        emit('update:availability', {
+            target: percentageDisplay.value + '%',
+            metric: selectedMetric.value,
+            expression: expression.value
+        });
+    };
+
     const updateAvailability = (val) => {
       let num = parseFloat(val);
       if (isNaN(num)) {
@@ -255,7 +339,8 @@ export default {
       error.value = '';
       // Round to 9 decimal places to ensure consistency with emitted value and 1ms precision
       percentageValue.value = Number(num.toFixed(9));
-      emit('update:availability', percentageDisplay.value + '%');
+      
+      emitUpdate();
     };
 
     const onPercentageInput = (val) => {
@@ -352,12 +437,23 @@ export default {
     recalculateDowntime();
 
     watch(() => props.availability, (newVal) => {
-      const parsed = parsePercentage(newVal);
-      if (Math.abs(parsed - percentageValue.value) > 1e-10) {
-        percentageValue.value = parsed;
+      const { target, metric, expression: newExpr } = parseAvailabilityProp(newVal);
+      if (Math.abs(parsePercentage(target) - percentageValue.value) > 1e-10) {
+        percentageValue.value = parsePercentage(target);
         recalculateDowntime();
       }
-    });
+      if (metric !== selectedMetric.value) {
+          selectedMetric.value = metric;
+      }
+      if (newExpr !== expression.value) {
+          expression.value = newExpr;
+      }
+    }, { deep: true });
+
+    const onExpressionUpdate = (val) => {
+        expression.value = val;
+        emitUpdate();
+    };
 
     return {
       error,
@@ -370,6 +466,11 @@ export default {
       percentageDisplay,
       commonTiers,
       currentTier,
+      selectedMetric,
+      expression,
+      isRawExpression,
+      onExpressionUpdate,
+      emitUpdate,
       onPercentageInput,
       onTierSelect,
       onDowntimeInput,

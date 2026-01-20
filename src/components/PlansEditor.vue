@@ -27,7 +27,7 @@
         </div>
         
         <!-- Availability Editor -->
-        <AvailabilityEditor :availability="plan.availability" :errors="errors" :path="'/plans/' + name + '/availability'" @update:availability="updatePlan(name, 'availability', $event)" />
+        <AvailabilityEditor :availability="plan.availability" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/availability'" @update:availability="updatePlan(name, 'availability', $event)" />
 
         <!-- Pricing Editor -->
         <PricingEditor :pricing="plan.pricing" :errors="errors" :path="'/plans/' + name + '/pricing'" @update:pricing="updatePlanSubObject(name, 'pricing', $event)" />
@@ -131,16 +131,7 @@ export default {
         newPlans[newPlanName.value] = {
           title: '',
           description: '',
-          availability: '',
-          guarantees: [],
-          serviceLevelObjectives: [],
-          pricing: {},
-          quotas: {},
-          'x-support-policy': {},
-          'x-service-credits': {},
-          'x-maintenance-policy': {},
-          'x-sla-exclusions': [],
-          'x-lifecycle-policy': {},
+          availability: { target: '100%', metric: '', expression: '' }
         };
         emit('update:plans', newPlans);
         newPlanName.value = '';

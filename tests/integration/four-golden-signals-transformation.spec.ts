@@ -54,7 +54,7 @@ test.describe('Four Golden Signals Transformation', () => {
     expect(tfCode).toContain('resource "google_monitoring_metric_descriptor" "metric_errors"');
     
     expect(tfCode).toContain('resource "google_monitoring_alert_policy" "alert_standard_direct_0"');
-    expect(tfCode).toContain('type = "custom.googleapis.com/api/latency"');
+    expect(tfCode).toContain('type = "custom_googleapis_com_api_latency"');
   });
 
   test('should transform to valid Azure Bicep', async ({ page }) => {
@@ -89,6 +89,6 @@ test.describe('Four Golden Signals Transformation', () => {
 
     // Verify it contains the metrics
     expect(bicepCode).toContain('resource alert_standard_direct_0 \'Microsoft.Insights/metricalerts@2018-03-01\'');
-    expect(bicepCode).toContain("metricName: 'custom.googleapis.com/api/latency'");
+    expect(bicepCode).toContain("metricName: 'custom_googleapis_com_api_latency'");
   });
 });

@@ -1,6 +1,10 @@
 <template>
-  <div class="prometheus-measurement-editor border p-3 rounded bg-light" :class="{'border-danger': hasError}">
-    <div class="row g-3">
+  <div class="prometheus-measurement-editor border p-3 rounded bg-light" :class="{'border-danger': hasError || promqlError}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="small fw-bold text-secondary">Prometheus Expression</span>
+    </div>
+
+    <div v-if="!isRawMode" class="row g-3">
       <div class="col-md-4">
         <label class="form-label small fw-bold">Function</label>
         <select class="form-select form-select-sm" :value="state.func" @change="updateField('func', $event.target.value)">
@@ -15,7 +19,7 @@
 
       <div class="col-md-6" :class="{'col-md-4': showQuantile}">
         <label class="form-label small fw-bold">Metric</label>
-        <select class="form-select form-select-sm" :value="state.metric" @change="updateField('metric', $event.target.value)">
+        <select class="form-select form-select-sm metric-select" :value="state.metric" @change="updateField('metric', $event.target.value)" :disabled="!!fixedMetric">
           <option value="" disabled>Select metric</option>
           <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
         </select>
@@ -41,28 +45,52 @@
           <option value="<=">&lt;=</option>
           <option value=">">&gt;</option>
           <option value=">=">&gt;=</option>
-          <option value="=">=</option>
+          <option value="==">==</option>
           <option value="!=">!=</option>
-          <option value="between">between</option>
         </select>
       </div>
 
       <div class="col-md-6">
         <label class="form-label small fw-bold">Value</label>
-        <input type="text" class="form-control form-control-sm" :class="{'is-invalid': hasError}" :placeholder="state.operator === 'between' ? 'e.g. 15 and 28' : 'e.g. 15'" :value="state.value" @input="updateField('value', $event.target.value)">
+        <input type="text" class="form-control form-control-sm" :class="{'is-invalid': hasError}" placeholder="e.g. 15" :value="state.value" @input="updateField('value', $event.target.value)">
         <div class="invalid-feedback" v-if="hasError">
           {{ getErrors.join(', ') }}
         </div>
       </div>
     </div>
-    <div class="mt-2 text-muted x-small">
-      Preview: <code>{{ preview }}</code>
+    
+    <div v-else class="row g-3">
+      <div class="col-12">
+        <label class="form-label small fw-bold">Raw Expression</label>
+        <textarea 
+          class="form-control form-control-sm font-monospace" 
+          rows="2" 
+          :value="modelValue" 
+          @input="emit('update:modelValue', $event.target.value)"
+          :class="{'is-invalid': promqlError}"
+        ></textarea>
+        <div class="invalid-feedback" v-if="promqlError">
+          {{ promqlError }}
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-2 text-muted x-small d-flex justify-content-between align-items-center">
+      <span>Preview: <code>{{ preview }}</code></span>
+      <div class="d-flex align-items-center gap-2">
+        <span v-if="!promqlError && modelValue" class="text-success me-2"><i class="bi bi-check-circle-fill"></i> Valid PromQL</span>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="raw-promql-toggle" v-model="isRawMode">
+          <label class="form-check-label x-small" for="raw-promql-toggle">Raw PromQL</label>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { reactive, computed, watch } from 'vue';
+import { reactive, computed, watch, ref } from 'vue';
+import { validatePromQL } from '../utils/formatters';
 
 export default {
   name: 'PrometheusMeasurementEditor',
@@ -83,9 +111,14 @@ export default {
       type: String,
       default: '',
     },
+    fixedMetric: {
+      type: String,
+      default: null,
+    }
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
+    const isRawMode = ref(false);
     const prometheusFunctions = [
       { value: 'avg_over_time', label: 'Average' },
       { value: 'min_over_time', label: 'Minimum' },
@@ -120,6 +153,12 @@ export default {
       return variations.some(v => props.errors[v] && props.errors[v].length > 0);
     });
 
+    const promqlError = computed(() => {
+      if (!props.modelValue) return null;
+      const result = validatePromQL(props.modelValue, props.metrics);
+      return result.valid ? null : result.error;
+    });
+
     const getErrors = computed(() => {
       if (!hasError.value) return [];
       const p = props.path;
@@ -130,45 +169,81 @@ export default {
       return [];
     });
 
-    // Simple parser for the Prometheus-like string
+    // AST-based representability check and parser
+    const isRepresentable = (ast) => {
+      if (!ast) return false;
+      
+      if (ast.type !== 'BinaryExpr') return false;
+      
+      const left = ast.left;
+      if (!left) return false;
+
+      const supportedFuncs = prometheusFunctions.map(f => f.value);
+      const op = left.type === 'AggregateExpr' ? left.op : (left.type === 'Call' ? left.func : null);
+      
+      if (!op || !supportedFuncs.includes(op)) return false;
+      
+      return true;
+    };
+
+    const parseAST = (ast) => {
+      if (!ast) return;
+
+      try {
+        if (ast.type === 'BinaryExpr') {
+          state.operator = ast.op;
+          state.value = ast.right.value.toString();
+        }
+
+        const left = ast.left;
+        state.func = left.type === 'AggregateExpr' ? left.op : left.func;
+
+        let matrix;
+        if (left.type === 'Call') {
+            if (state.func === 'quantile_over_time' || state.func === 'histogram_quantile') {
+                state.quantile = left.args[0].value.toString();
+                matrix = left.args[1];
+            } else {
+                matrix = left.args[0];
+            }
+        } else {
+            matrix = left.expr;
+        }
+
+        // histogram_quantile often has sum by (le) (rate(metric[5m]))
+        if (state.func === 'histogram_quantile' && matrix.type === 'AggregateExpr') {
+            const innerRate = matrix.expr;
+            if (innerRate.type === 'Call' && innerRate.func === 'rate') {
+                matrix = innerRate.args[0];
+            }
+        }
+
+        if (matrix.type === 'MatrixSelector') {
+          state.metric = matrix.vectorSelector.name || '';
+          const matchVal = matrix.range.match(/\d+/);
+          const matchUnit = matrix.range.match(/[smhdw]/);
+          state.windowValue = matchVal ? matchVal[0] : '5';
+          state.windowUnit = matchUnit ? matchUnit[0] : 'm';
+        }
+        
+        isRawMode.value = false;
+      } catch (e) {
+        console.error('Failed to map AST to UI', e);
+        isRawMode.value = true;
+      }
+    };
+
     const parse = (str) => {
       if (!str) return;
-      
       try {
-        const funcMatch = str.match(/^([a-z_]+)\((.*)\)\s+([<>=!]+|between)\s+(.*)$/);
-        if (funcMatch) {
-          state.func = funcMatch[1];
-          const args = funcMatch[2];
-          state.operator = funcMatch[3];
-          state.value = funcMatch[4];
-          
-          if (state.func === 'quantile_over_time') {
-            const qMatch = args.match(/^([^,]+),\s*(.*)\[(\d+)([smhd])\]$/);
-            if (qMatch) {
-              state.quantile = qMatch[1].trim();
-              state.metric = qMatch[2].trim();
-              state.windowValue = qMatch[3];
-              state.windowUnit = qMatch[4];
-            }
-          } else if (state.func === 'histogram_quantile') {
-             const hMatch = args.match(/^([^,]+),\s*sum by \(le\) \(rate\((.*)\[(\d+)([smhd])\]\)\)$/);
-             if (hMatch) {
-               state.quantile = hMatch[1].trim();
-               state.metric = hMatch[2].trim();
-               state.windowValue = hMatch[3];
-               state.windowUnit = hMatch[4];
-             }
-          } else {
-            const mMatch = args.match(/^(.*)\[(\d+)([smhd])\]$/);
-            if (mMatch) {
-              state.metric = mMatch[1].trim();
-              state.windowValue = mMatch[2];
-              state.windowUnit = mMatch[3];
-            }
-          }
+        const result = validatePromQL(str);
+        if (result.valid && isRepresentable(result.ast)) {
+          parseAST(result.ast);
+        } else {
+          isRawMode.value = true;
         }
       } catch (e) {
-        console.error('Failed to parse prometheus-like string', e);
+        isRawMode.value = true;
       }
     };
 
@@ -185,11 +260,20 @@ export default {
       return `${state.func}(${args}) ${state.operator} ${state.value}`;
     };
 
-    const preview = computed(() => format());
+    const preview = computed(() => isRawMode.value ? props.modelValue : format());
 
     watch(() => props.modelValue, (newVal) => {
-      if (newVal !== preview.value) {
+      if (!isRawMode.value && newVal !== format()) {
         parse(newVal);
+      }
+    }, { immediate: true });
+
+    watch(() => props.fixedMetric, (newMetric) => {
+      if (newMetric && state.metric !== newMetric) {
+        state.metric = newMetric;
+        if (!isRawMode.value) {
+          emit('update:modelValue', format());
+        }
       }
     }, { immediate: true });
 
@@ -205,7 +289,10 @@ export default {
       preview,
       updateField,
       hasError,
-      getErrors
+      getErrors,
+      isRawMode,
+      promqlError,
+      emit
     };
   }
 };

@@ -85,11 +85,31 @@ export default {
             md += `${plan.description}\n\n`;
           }
 
-          // Availability
-          if (plan.availability) {
-            md += `#### 🟢 Availability\n`;
-            md += `Guaranteed uptime: **${plan.availability}**\n\n`;
-          }
+                    // Availability
+
+                    if (plan.availability) {
+
+                      md += `#### 🟢 Availability\n`;
+
+                      const target = typeof plan.availability === 'object' ? plan.availability.target : plan.availability;
+
+                      md += `Service must be available **${target}** of the time.\n`;
+
+                      if (typeof plan.availability === 'object' && plan.availability.metric) {
+
+                        md += `- **Metric:** ${plan.availability.metric}\n`;
+
+                      }
+
+                      if (typeof plan.availability === 'object' && plan.availability.expression) {
+
+                        md += `- **Condition:** \`${plan.availability.expression}\` must be true.\n`;
+
+                      }
+
+                      md += `\n`;
+
+                    }
 
           // Pricing
           if (plan.pricing && plan.pricing.cost !== undefined) {

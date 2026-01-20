@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:parser": "antlr4ts -visitor src/utils/promql/PromQL.g4 && sed -i '' 's/from \"antlr4ts\"/from \"antlr4ts\\/index.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from 'antlr4ts'/from 'antlr4ts\\/index.js'/g\" src/utils/promql/*.ts && sed -i '' 's/from \"antlr4ts\\/\\([^.\"]*\\)\"/from \"antlr4ts\\/\\1.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from 'antlr4ts\\/\\([^.']*\\)'/from 'antlr4ts\\/\\1.js'/g\" src/utils/promql/*.ts && sed -i '' 's/from \"\\.\\/\\([^.\"]*\\)\"/from \".\\/\\1.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from '\\.\\/\\([^.']*\\)'/from '.\\/\\1.js'/g\" src/utils/promql/*.ts",
+    "build": "npm run build:parser && vite build",
     "preview": "vite preview",
     "test:unit": "vitest run",
     "test:integration": "playwright test -c playwright-integration.config.ts",
@@ -33,7 +34,10 @@
     "@types/node": "^25.0.3",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vue/test-utils": "^2.4.6",
+    "antlr4ts": "^0.5.0-alpha.4",
+    "antlr4ts-cli": "^0.5.0-alpha.4",
     "jsdom": "^27.4.0",
+    "testcontainers": "^11.11.0",
     "vite": "^7.3.0",
     "vite-plugin-vue-devtools": "^8.0.5",
     "vitest": "^4.0.16"

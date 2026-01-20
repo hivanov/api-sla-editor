@@ -90,7 +90,8 @@ export default {
 
     const isPromQL = (str) => {
       if (!str) return true; // Default empty to metric to preserve old behavior
-      return /^[a-z_]+\(.*\)\s+([<>=!]+|between)\s+.*$/.test(str);
+      // Robust PromQL detection: has function call or comparison operators
+      return /[a-z_]+\(.*\)/.test(str) || /[<>!=]=?/.test(str);
     };
 
     const getExclusionType = (index, exclusion) => {

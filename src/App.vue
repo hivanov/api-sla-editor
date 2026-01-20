@@ -7,12 +7,13 @@
           <div class="vr d-none d-md-block bg-secondary"></div>
           <nav class="d-none d-md-flex gap-2">
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['terraform', 'bicep'].includes(currentView) }">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['terraform', 'bicep', 'grafana'].includes(currentView) }">
                 Transform
               </button>
               <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
                 <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep (Azure)</a></li>
+                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('grafana')">Generate Grafana (Prometheus)</a></li>
               </ul>
             </div>
              <div class="dropdown">
@@ -36,6 +37,7 @@
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('editor')">Editor</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('grafana')">Generate Grafana</a></li>
                <li><hr class="dropdown-divider"></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help</a></li>
@@ -164,6 +166,7 @@
       <TutorialPage v-else-if="currentView === 'tutorial'" @close="setView('editor')" />
       <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" @close="setView('editor')" />
       <AzureBicepGenerator v-else-if="currentView === 'bicep'" :sla="sla" @close="setView('editor')" />
+      <GrafanaDashboardGenerator v-else-if="currentView === 'grafana'" :sla="sla" @close="setView('editor')" />
 
     </main>
   </div>
@@ -173,6 +176,7 @@
 import { ref, onMounted, onUnmounted, watch, reactive, computed, provide, nextTick } from 'vue';
 import { currencies } from './utils/currencies';
 import { getAllHolidayCalendars, getGoogleHolidayCalendarUrl } from './utils/holidays';
+import { validatePromQL } from './utils/formatters';
 import 'bootstrap/dist/css/bootstrap.css';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -190,6 +194,7 @@ import metrics100ConcurrentConnections from './assets/examples/metrics-100-concu
 import gcpMonitoringComplex from './assets/examples/gcp-monitoring-complex.yaml?raw';
 import azureMonitoringSample from './assets/examples/azure-monitoring-sample.yaml?raw';
 import fourGoldenSignals from './assets/examples/four-golden-signals.yaml?raw';
+import grafanaPrometheusSample from './assets/examples/grafana-prometheus-sample.yaml?raw';
 import ContextEditor from './components/ContextEditor.vue';
 import CurrencyEditor from './components/CurrencyEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
@@ -200,6 +205,7 @@ import HelpPage from './components/HelpPage.vue';
 import TutorialPage from './components/TutorialPage.vue';
 import TerraformGenerator from './components/TerraformGenerator.vue';
 import AzureBicepGenerator from './components/AzureBicepGenerator.vue';
+import GrafanaDashboardGenerator from './components/GrafanaDashboardGenerator.vue';
 
 const Range = ace.require('ace/range').Range;
 
@@ -216,6 +222,7 @@ export default {
     TutorialPage,
     TerraformGenerator,
     AzureBicepGenerator,
+    GrafanaDashboardGenerator,
   },
   setup() {
     const activeTab = ref('gui');
@@ -273,6 +280,7 @@ export default {
       'gcp-monitoring-complex': gcpMonitoringComplex,
       'azure-monitoring-sample': azureMonitoringSample,
       'four-golden-signals': fourGoldenSignals,
+      'grafana-prometheus-sample': grafanaPrometheusSample,
     };
 
     const availableCurrencies = computed(() => {
@@ -416,6 +424,36 @@ export default {
 
           validationErrors.value = errorsWithLines;
           
+          // Custom PromQL Validation
+          if (doc && doc.plans) {
+            Object.entries(doc.plans).forEach(([planName, plan]) => {
+              if (plan.availability && plan.availability.expression) {
+                const res = validatePromQL(plan.availability.expression, doc.metrics);
+                if (!res.valid) {
+                  validationErrors.value.push({
+                    instancePath: `/plans/${planName}/availability/expression`,
+                    message: `Invalid PromQL: ${res.error}`,
+                    keyword: 'promql'
+                  });
+                }
+              }
+              if (plan.guarantees) {
+                plan.guarantees.forEach((g, idx) => {
+                  if (g.measurement) {
+                    const res = validatePromQL(g.measurement, doc.metrics);
+                    if (!res.valid) {
+                      validationErrors.value.push({
+                        instancePath: `/plans/${planName}/guarantees/${idx}/measurement`,
+                        message: `Invalid PromQL: ${res.error}`,
+                        keyword: 'promql'
+                      });
+                    }
+                  }
+                });
+              }
+            });
+          }
+
           if (editor) {
             const annotations = [];
             errorsWithLines.forEach(err => {

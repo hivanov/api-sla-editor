@@ -20,7 +20,7 @@ test.describe('Azure Bicep Generator', () => {
     await page.fill('input[placeholder="New metric name"]', 'cpu_util');
     await page.click('button:has-text("Add Metric")');
     const metricCard = page.locator('.metrics-editor-component .card').filter({ hasText: 'cpu_util' });
-    await metricCard.locator('input[placeholder*="compute.googleapis.com"]').fill('Percentage CPU');
+    await metricCard.locator('input[placeholder*="compute.googleapis.com"]').fill('percentage_cpu');
 
     await page.click('.card-header:has-text("Plans")');
     await page.fill('input[placeholder="New plan name"]', 'Basic');
@@ -91,7 +91,7 @@ test.describe('Azure Bicep Generator', () => {
     expect(bicep).toContain("resource ag_Support_Team 'Microsoft.Insights/actionGroups@2023-01-01'");
     expect(bicep).toContain("emailAddress: 'support@example.com'");
     expect(bicep).toContain("resource alert_gold_direct_0 'Microsoft.Insights/metricalerts@2018-03-01'");
-    expect(bicep).toContain("metricName: 'Percentage CPU'");
+    expect(bicep).toContain("metricName: 'percentage_cpu'");
     expect(bicep).toContain("operator: 'GreaterThanOrEqual'");
     expect(bicep).toContain("threshold: 80");
     expect(bicep).toContain("actionGroupId: ag_Support_Team.id");

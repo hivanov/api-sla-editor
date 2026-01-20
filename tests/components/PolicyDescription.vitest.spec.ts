@@ -26,7 +26,7 @@ describe('PolicyDescription.vue', () => {
         basic: {
           title: 'Basic Plan',
           description: 'A simple plan',
-          availability: '99%'
+          availability: { target: '99%', metric: 'uptime', expression: 'up == 1' }
         }
       }
     };
@@ -36,7 +36,7 @@ describe('PolicyDescription.vue', () => {
     
     expect(wrapper.text()).toContain('Basic Plan');
     expect(wrapper.text()).toContain('A simple plan');
-    expect(wrapper.text()).toContain('Guaranteed uptime: 99%');
+    expect(wrapper.text()).toContain('Service must be available 99% of the time');
   });
 
   it('handles empty plans gracefully', () => {
@@ -57,8 +57,8 @@ describe('PolicyDescription.vue', () => {
       sla: '1.0.0',
       context: { id: 'test-id', type: 'plans' },
       plans: {
-        '': { availability: '99%' },
-        'valid': { availability: '95%' }
+        '': { availability: { target: '99%', metric: 'uptime', expression: 'up == 1' } },
+        'valid': { availability: { target: '95%', metric: 'uptime', expression: 'up == 1' } }
       }
     };
     const wrapper = mount(PolicyDescription, {
@@ -80,7 +80,7 @@ describe('PolicyDescription.vue', () => {
         premium: {
           title: 'Premium Plan',
           pricing: { cost: 10, currency: 'CPU' },
-          availability: '99.9%'
+          availability: { target: '99.9%', metric: 'uptime', expression: 'up == 1' }
         }
       }
     };

@@ -4,7 +4,7 @@ import { devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/integration',
   snapshotDir: './tests/__snapshots__',
-  timeout: 120 * 1000,
+  timeout: 20 * 1000,
   fullyParallel: true,
   forbidOnly: true,
   workers: 1,

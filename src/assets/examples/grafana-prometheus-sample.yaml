@@ -1,0 +1,72 @@
+sla: 1.0.0
+context:
+  id: grafana-demo
+  name: Grafana Prometheus Demo
+  provider: My Company
+  consumer: Customer
+  type: plans
+metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime"
+    monitoringId: "avg_over_time(up{job='my-service'}[1m]) * 100"
+  latency:
+    type: number
+    unit: ms
+    description: "95th Percentile Latency"
+    monitoringId: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000"
+  errors:
+    type: number
+    unit: percent
+    description: "Error Rate"
+    monitoringId: "sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m])) * 100"
+plans:
+  standard:
+    title: Standard Plan
+    availability:
+      metric: uptime
+      target: "99.9%"
+      expression: "up{job='my-service'} == 1"
+    guarantees:
+      - metric: uptime
+        operator: ">="
+        value: "99.9"
+        period: P30D
+      - metric: latency
+        operator: "<"
+        value: "200"
+        period: PT1M
+      - metric: errors
+        operator: "<"
+        value: "1"
+        period: PT5M
+    x-support-policy:
+      contactPoints:
+        - contactType: "DevOps Team"
+          channels:
+            - type: email
+              url: "mailto://devops@example.com"
+            - type: email
+              url: "mailto://oncall@example.com"
+    x-service-credits:
+      currency: USD
+      claimWindow: P30D
+      tiers:
+        - condition:
+            metric: uptime
+            operator: "<"
+            value: "99.9"
+            floor: "99.0"
+          compensation: 10
+        - condition:
+            metric: uptime
+            operator: "<"
+            value: "99.0"
+            floor: "95.0"
+          compensation: 25
+        - condition:
+            metric: uptime
+            operator: "<"
+            value: "95.0"
+          compensation: 100

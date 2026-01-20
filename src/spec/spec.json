@@ -60,7 +60,7 @@
   "definitions": {
     "iso8601Duration": {
       "type": "string",
-      "pattern": "^P((\\d+D(T(\\d+H)?(\\d+M)?(\\d+S)?)?)|(T(\\d+H)?(\\d+M)?(\\d+S)?))$"
+      "pattern": "^P(((\\d+D(T(\\d+H)?(\\d+M)?(\\d+S)?)?)|(T(\\d+H)?(\\d+M)?(\\d+S)?)))$"
     },
     "plan": {
       "type": "object",
@@ -69,8 +69,21 @@
         "title": { "type": "string" },
         "description": { "type": "string" },
         "availability": {
-          "type": "string",
-          "pattern": "^\\d+(\\.\\d+)?%$"
+          "type": "object",
+          "required": ["target", "metric", "expression"],
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            },
+            "metric": {
+              "type": "string"
+            },
+            "expression": {
+              "type": "string",
+              "description": "PromQL condition (evaluates to 0 or 1) that must be true for the target percentage of time"
+            }
+          }
         },
         "pricing": {
           "type": "object",

@@ -15,7 +15,10 @@ context:
   type: plans
 plans:
   premium:
-    availability: 99.9%
+    availability:
+      metric: uptime
+      target: 99.9%
+      expression: up == 1
     pricing:
       cost: 100
       currency: USD
@@ -53,7 +56,10 @@ context:
   type: plans
 plans:
   test:
-    availability: 99%
+    availability:
+      metric: uptime
+      target: 99%
+      expression: up == 1
     pricing:
       cost: 0
       currency: USD
@@ -80,7 +86,10 @@ context:
   type: plans
 plans:
   standard:
-    availability: 99%
+    availability:
+      metric: uptime
+      target: 99%
+      expression: up == 1
     guarantees:
       - metric: response-time
         limit: PT10S

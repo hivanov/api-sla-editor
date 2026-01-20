@@ -107,6 +107,12 @@ test.describe('Main flow', () => {
     
     // Interact with AvailabilityEditor
     const availEditor = basicPlanCard.locator('.availability-editor-component');
+    await availEditor.locator('select').first().selectOption('response-time');
+    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    if (!(await rawSwitch.isChecked())) {
+        await rawSwitch.click();
+    }
+    await availEditor.locator('textarea').fill('up == 1');
     await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
     await availEditor.locator('input[type="number"]').first().fill('99.9');
 
@@ -190,7 +196,10 @@ test.describe('Main flow', () => {
     expect(editorValue).toContain('id: test-sla-id');
     expect(editorValue).toContain('response-time');
     expect(editorValue).toContain('title: Basic Plan');
-    expect(editorValue).toContain('availability: 99.9%');
+    expect(editorValue).toContain('availability:');
+    expect(editorValue).toContain('target: 99.9%');
+    expect(editorValue).toContain('metric: response-time');
+    expect(editorValue).toContain('expression: up == 1');
     expect(editorValue).toContain('period: P0DT0H5M0S');
     expect(editorValue).toContain('cost: 120');
     expect(editorValue).toContain('currency: EUR');

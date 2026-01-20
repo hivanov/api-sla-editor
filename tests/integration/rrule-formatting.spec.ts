@@ -15,7 +15,10 @@ context:
   type: plans
 plans:
   standard:
-    availability: 99.9%
+    availability:
+      metric: uptime
+      target: 99.9%
+      expression: up == 1
     x-maintenance-policy:
       windows:
         - type: weekly-patch

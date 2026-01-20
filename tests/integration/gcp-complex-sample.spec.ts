@@ -42,7 +42,7 @@ test.describe('GCP Complex Sample Transformation', () => {
 resource "google_monitoring_metric_descriptor" "metric_request_latency" {
   description = "Ninetieth percentile response time for API requests"
   display_name = "request_latency"
-  type = "custom.googleapis.com/api/request_latency"
+  type = "custom_googleapis_com_api_request_latency"
   metric_kind = "GAUGE"
   value_type = "DOUBLE"
   unit = "ms"
@@ -51,7 +51,7 @@ resource "google_monitoring_metric_descriptor" "metric_request_latency" {
 resource "google_monitoring_metric_descriptor" "metric_error_rate" {
   description = "Rate of 5xx responses"
   display_name = "error_rate"
-  type = "custom.googleapis.com/api/error_rate"
+  type = "custom_googleapis_com_api_error_rate"
   metric_kind = "GAUGE"
   value_type = "DOUBLE"
   unit = "percent"
@@ -87,7 +87,7 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
   conditions {
     display_name = "cpu_utilization breach"
     condition_threshold {
-      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
+      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute_googleapis_com_instance_cpu_utilization\\""
       duration   = "300s"
       comparison = "COMPARISON_GT"
       threshold_value = 80
@@ -110,7 +110,7 @@ resource "google_monitoring_alert_policy" "alert_gold_slo_latency_performance_0_
   conditions {
     display_name = "request_latency breach"
     condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/request_latency\\""
+      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom_googleapis_com_api_request_latency\\""
       duration   = "60s"
       comparison = "COMPARISON_GT"
       threshold_value = 200
@@ -133,7 +133,7 @@ resource "google_monitoring_alert_policy" "alert_gold_support_slo_incident_respo
   conditions {
     display_name = "error_rate breach"
     condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/error_rate\\""
+      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom_googleapis_com_api_error_rate\\""
       duration   = "60s"
       comparison = "COMPARISON_GT"
       threshold_value = 0.1
@@ -156,7 +156,7 @@ resource "google_monitoring_alert_policy" "alert_silver_direct_0" {
   conditions {
     display_name = "cpu_utilization breach"
     condition_threshold {
-      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
+      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute_googleapis_com_instance_cpu_utilization\\""
       duration   = "900s"
       comparison = "COMPARISON_GT"
       threshold_value = 90
@@ -179,7 +179,7 @@ resource "google_monitoring_alert_policy" "alert_silver_slo_latency_performance_
   conditions {
     display_name = "request_latency breach"
     condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/request_latency\\""
+      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom_googleapis_com_api_request_latency\\""
       duration   = "300s"
       comparison = "COMPARISON_GT"
       threshold_value = 500

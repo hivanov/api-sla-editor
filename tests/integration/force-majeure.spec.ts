@@ -3,6 +3,11 @@ import { test, expect } from '@playwright/test';
 test.describe('Force Majeure Integration', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Add a metric
+    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'uptime');
+    await page.click('.metrics-editor-component button:has-text("Add Metric")');
+    const metricCard = page.locator('.metrics-editor-component .card:has-text("uptime")');
+    await metricCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
   });
 
   test('should add standard force majeure exclusions and reflect in Source/Description', async ({ page }) => {
@@ -17,6 +22,12 @@ test.describe('Force Majeure Integration', () => {
 
     // 2b. Make the plan valid (fill required fields)
     const availEditor = planCard.locator('.availability-editor-component');
+    await availEditor.locator('select').first().selectOption('uptime');
+    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    if (!(await rawSwitch.isChecked())) {
+        await rawSwitch.click();
+    }
+    await availEditor.locator('textarea').fill('up == 1');
     await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
     await availEditor.locator('input[type="number"]').first().fill('99.9');
 

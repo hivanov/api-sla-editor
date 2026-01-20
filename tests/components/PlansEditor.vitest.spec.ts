@@ -20,7 +20,7 @@ describe('PlansEditor', () => {
           enterprise: {
             title: 'Gold Enterprise Tier',
             description: 'Mission critical support',
-            availability: '99.95%',
+            availability: { target: '99.95%', metric: 'uptime', expression: 'up == 1' },
             guarantees: [],
             pricing: { cost: 100, currency: 'USD', period: 'P1M' },
             quotas: { 'max-users': '100' },
@@ -65,16 +65,7 @@ describe('PlansEditor', () => {
             'new-plan': {
               title: '',
               description: '',
-              availability: '',
-              guarantees: [],
-              serviceLevelObjectives: [],
-              pricing: {},
-              quotas: {},
-              'x-support-policy': {},
-              'x-service-credits': {},
-              'x-maintenance-policy': {},
-              'x-sla-exclusions': [],
-              'x-lifecycle-policy': {},
+              availability: { target: '100%', metric: '', expression: '' }
             }
       ,
     })
@@ -84,7 +75,7 @@ describe('PlansEditor', () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {
-          basic: { title: 'Basic Plan', description: 'Desc', availability: '99%', guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
+          basic: { title: 'Basic Plan', description: 'Desc', availability: { target: '99%', metric: 'uptime', expression: 'up == 1' }, guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
         },
       },
     })
@@ -92,13 +83,14 @@ describe('PlansEditor', () => {
     // Update title
     await wrapper.find('input[placeholder="Plan Title"]').setValue('Updated Basic Plan')
     let expectedPlans = {
-      basic: { title: 'Updated Basic Plan', description: 'Desc', availability: '99%', guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
+      basic: { title: 'Updated Basic Plan', description: 'Desc', availability: { target: '99%', metric: 'uptime', expression: 'up == 1' }, guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
     }
     expect(wrapper.emitted('update:plans')[0][0]).toEqual(expectedPlans)
 
     // Update availability
-    await wrapper.findComponent(AvailabilityEditor).vm.$emit('update:availability', '99.99%')
-    expect(wrapper.emitted('update:plans')[1][0].basic.availability).toBe('99.99%')
+    const newAvail = { target: '99.99%', metric: 'uptime', expression: 'up == 1' };
+    await wrapper.findComponent(AvailabilityEditor).vm.$emit('update:availability', newAvail)
+    expect(wrapper.emitted('update:plans')[1][0].basic.availability).toEqual(newAvail)
   })
 
   it('emits update:plans when sub-editors update', async () => {

@@ -9,12 +9,24 @@ test.describe('Maintenance iCal Source', () => {
     await page.click('a:has-text("GUI")');
 
     // 1. Add a plan first to reveal maintenance policy editor
+    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'uptime');
+    await page.click('.metrics-editor-component button:has-text("Add Metric")');
+    const metricCard = page.locator('.metrics-editor-component .card:has-text("uptime")');
+    await metricCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
+
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'Test Plan');
     await page.click('.plans-editor-component button:has-text("Add Plan")');
     
     // Satisfy required availability
-    await page.locator('.availability-editor-component .nav-link:has-text("Manual Entry")').click();
-    await page.locator('.availability-editor-component input[type="number"]').first().fill('100');
+    const availEditor = page.locator('.availability-editor-component');
+    await availEditor.locator('select').first().selectOption('uptime');
+    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    if (!(await rawSwitch.isChecked())) {
+        await rawSwitch.click();
+    }
+    await availEditor.locator('textarea').fill('up == 1');
+    await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
+    await availEditor.locator('input[type="number"]').first().fill('100');
     
     const maintenanceEditor = page.locator('.maintenance-policy-editor-component');
     

@@ -3,39 +3,46 @@ context:
   id: four-golden-signals-api
   type: plans
 metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime percentage"
   latency:
     type: number
     unit: ms
     description: "The time it takes to service a request."
-    monitoringId: "custom.googleapis.com/api/latency"
+    monitoringId: "custom_googleapis_com_api_latency"
     resourceType: "global"
     metricKind: "GAUGE"
   traffic:
     type: integer
     unit: "req/s"
     description: "A measure of how much demand is being placed on your system."
-    monitoringId: "custom.googleapis.com/api/traffic"
+    monitoringId: "custom_googleapis_com_api_traffic"
     resourceType: "global"
     metricKind: "CUMULATIVE"
   errors:
     type: number
     unit: percent
     description: "The rate of requests that fail, either explicitly, implicitly, or by policy."
-    monitoringId: "custom.googleapis.com/api/error_rate"
+    monitoringId: "custom_googleapis_com_api_error_rate"
     resourceType: "global"
     metricKind: "GAUGE"
   saturation:
     type: number
     unit: percent
     description: "How 'full' your service is. A measure of your system fraction, emphasizing the resources that are most constrained."
-    monitoringId: "compute.googleapis.com/instance/cpu/utilization"
+    monitoringId: "compute_googleapis_com_instance_cpu_utilization"
     resourceType: "gce_instance"
     metricKind: "GAUGE"
 plans:
   standard:
     title: "Standard Plan"
     description: "Base plan with 4 golden signals monitoring"
-    availability: "99.9%"
+    availability:
+      metric: uptime
+      target: "99.9%"
+      expression: "up == 1"
     pricing:
       cost: 0
       currency: USD

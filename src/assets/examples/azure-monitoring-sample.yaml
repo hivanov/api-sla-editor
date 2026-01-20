@@ -3,22 +3,29 @@ context:
   id: azure-sample
   type: plans
 metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime percentage"
   cpu_utilization:
     type: number
     unit: percentage
     description: CPU utilization of the VM
-    monitoringId: Percentage CPU
+    monitoringId: "percentage_cpu"
     resourceType: Microsoft.Compute/virtualMachines
   memory_utilization:
     type: number
     unit: percentage
     description: Memory utilization of the VM
-    monitoringId: Available Memory Bytes
+    monitoringId: "available_memory_bytes"
     resourceType: Microsoft.Compute/virtualMachines
 plans:
   gold:
     title: Gold Plan
-    availability: 99.9%
+    availability:
+      metric: uptime
+      target: "99.9%"
+      expression: "up == 1"
     guarantees:
       - metric: cpu_utilization
         operator: <

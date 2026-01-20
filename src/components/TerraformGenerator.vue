@@ -106,8 +106,8 @@ export default {
              if (metricDef.monitoringId && metricDef.resourceType) {
                 // Only generate if it's a custom metric (optional heuristic, but let's generate for all configured)
                 // Actually GCP monitoringId might be a standard one. 
-                // If it starts with custom.googleapis.com, it definitely needs a descriptor if we want to manage it.
-                if (metricDef.monitoringId.includes('custom.googleapis.com')) {
+                // If it starts with custom.googleapis.com (or its PromQL-friendly version), it definitely needs a descriptor if we want to manage it.
+                if (metricDef.monitoringId.includes('custom.googleapis.com') || metricDef.monitoringId.includes('custom_googleapis_com')) {
                    const resourceName = `metric_${metricId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
                    tf += `resource "google_monitoring_metric_descriptor" "${resourceName}" {\n`;
                    tf += `  description = "${metricDef.description || metricId}"\n`;

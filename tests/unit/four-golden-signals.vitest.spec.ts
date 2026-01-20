@@ -28,10 +28,10 @@ describe('Four Golden Signals SLA Validation', () => {
   });
 
   it('should have correct monitoring IDs for GCP', () => {
-    expect(slaData.metrics.latency.monitoringId).toBe('custom.googleapis.com/api/latency');
-    expect(slaData.metrics.traffic.monitoringId).toBe('custom.googleapis.com/api/traffic');
-    expect(slaData.metrics.errors.monitoringId).toBe('custom.googleapis.com/api/error_rate');
-    expect(slaData.metrics.saturation.monitoringId).toBe('compute.googleapis.com/instance/cpu/utilization');
+    expect(slaData.metrics.latency.monitoringId).toBe('custom_googleapis_com_api_latency');
+    expect(slaData.metrics.traffic.monitoringId).toBe('custom_googleapis_com_api_traffic');
+    expect(slaData.metrics.errors.monitoringId).toBe('custom_googleapis_com_api_error_rate');
+    expect(slaData.metrics.saturation.monitoringId).toBe('compute_googleapis_com_instance_cpu_utilization');
   });
 
   it('should fail validation if a required field is missing', () => {

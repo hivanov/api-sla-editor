@@ -15,15 +15,18 @@ context:
   type: plans
 plans:
   standard:
-    availability: 99.9%
+    availability:
+      metric: uptime
+      target: 99.9%
+      expression: up == 1
     guarantees:
       - metric: requests-count
         operator: ">"
         value: "5"
         period: PT1H
       - metric: error-rate
-        operator: "between"
-        value: "6 and 12"
+        operator: "<="
+        value: "12"
         period: P1D
       - metric: latency
         operator: "avg"
@@ -39,7 +42,7 @@ plans:
     
     const description = page.locator('.policy-description');
     await expect(description).toContainText('requests-count: > 5 per 1 hour');
-    await expect(description).toContainText('error-rate: Between 6 and 12 per 1 day');
+    await expect(description).toContainText('error-rate: <= 12 per 1 day');
     await expect(description).toContainText('latency: Average of 200ms per 1 minute');
   });
 
@@ -53,7 +56,10 @@ context:
   type: plans
 plans:
   standard:
-    availability: 99.9%
+    availability:
+      metric: uptime
+      target: 99.9%
+      expression: up == 1
     guarantees:
       - metric: secure-connection
         operator: "="
@@ -80,7 +86,10 @@ context:
   type: plans
 plans:
   standard:
-    availability: 99.9%
+    availability:
+      metric: uptime
+      target: 99.9%
+      expression: up == 1
     x-support-policy:
       serviceLevelObjectives:
         - name: Incident Response

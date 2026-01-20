@@ -94,4 +94,23 @@ describe('PrometheusMeasurementEditor', () => {
     expect(lastEmitted).toContain('sum_over_time(requests[15m])');
     expect(lastEmitted).toContain('1000');
   });
+
+  it('locks and disables metric selector when fixedMetric is provided', async () => {
+    const wrapper = mount(PrometheusMeasurementEditor, {
+      props: {
+        modelValue: '',
+        metrics,
+        fixedMetric: 'latency'
+      }
+    });
+
+    const metricSelect = wrapper.find('.metric-select');
+    expect(metricSelect.element.value).toBe('latency');
+    expect(metricSelect.element.disabled).toBe(true);
+
+    // Should emit initial update with fixed metric
+    const emitted = wrapper.emitted('update:modelValue');
+    expect(emitted).toBeTruthy();
+    expect(emitted[0][0]).toContain('latency');
+  });
 });

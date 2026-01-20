@@ -60,6 +60,7 @@ test.describe('Description Tab', () => {
   });
 
   test('should reflect human-readable prometheus measurements in description', async ({ page }) => {
+    test.setTimeout(30000);
     await page.click('text=GUI');
     
     // 1. Define a metric
@@ -87,18 +88,20 @@ test.describe('Description Tab', () => {
     await goldPlan.locator('.exclusions-editor-component .d-flex.align-items-center select').last().selectOption('metric');
 
     const exclEditor = goldPlan.locator('.exclusions-editor-component .prometheus-measurement-editor');
-    await exclEditor.locator('select').nth(1).selectOption('latency');
-    await exclEditor.locator('input[type="number"]').first().fill('10');
-    await exclEditor.locator('select').nth(3).selectOption('between');
-    await exclEditor.locator('input[type="text"]').fill('5 and 10');
+    const rawSwitch = exclEditor.locator('#raw-promql-toggle');
+    if (!(await rawSwitch.isChecked())) {
+        await rawSwitch.click();
+    }
 
-    // 5. Go to Description tab
-    await page.click('text=Description');
+    await exclEditor.locator('textarea').fill('avg_over_time(latency[10m]) < 10');
     
+    // 5. Switch to Description tab
+    await page.click('.nav-link:has-text("Description")');
     const description = page.locator('.policy-description');
-    // Verify Quota rendering
+    
+    // Verify Guarantee rendering
     await expect(description).toContainText('The 99th percentile of latency over 5 minutes is less than 15');
     // Verify Exclusion rendering
-    await expect(description).toContainText('The average of latency over 10 minutes is between 5 and 10');
+    await expect(description).toContainText('The average of latency over 10 minutes is less than 10');
   });
 });

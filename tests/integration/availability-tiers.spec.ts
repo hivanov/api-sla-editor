@@ -3,6 +3,11 @@ import { test, expect } from '@playwright/test';
 test.describe('Availability Tiers', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Add a metric so it can be selected in AvailabilityEditor
+    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'uptime');
+    await page.click('.metrics-editor-component button:has-text("Add Metric")');
+    const metricCard = page.locator('.metrics-editor-component .card:has-text("uptime")');
+    await metricCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
   });
 
   test('should update availability percentage and downtime when a common tier is selected', async ({ page }) => {
@@ -12,6 +17,16 @@ test.describe('Availability Tiers', () => {
     
     const basicPlanCard = page.locator('.plans-editor-component .plan-item:has-text("Test Plan")');
     const availEditor = basicPlanCard.locator('.availability-editor-component');
+
+    // Select metric first
+    await availEditor.locator('select').first().selectOption('uptime');
+    // Ensure Raw PromQL is selected
+    const rawSwitch = availEditor.locator('#expressionModeSwitch');
+    if (!(await rawSwitch.isChecked())) {
+        await rawSwitch.click();
+    }
+    // Fill expression
+    await availEditor.locator('textarea').fill('up == 1');
     
     // 2. Select a tier (99.9%) - this is the default mode
     const tierSelect = availEditor.locator('.tier-select');
@@ -51,6 +66,14 @@ test.describe('Availability Tiers', () => {
     
     const basicPlanCard = page.locator('.plans-editor-component .plan-item:has-text("Test Plan")');
     const availEditor = basicPlanCard.locator('.availability-editor-component');
+
+    // Select metric and expression
+    await availEditor.locator('select').first().selectOption('uptime');
+    const rawSwitch3 = availEditor.locator('#expressionModeSwitch');
+    if (!(await rawSwitch3.isChecked())) {
+        await rawSwitch3.click();
+    }
+    await availEditor.locator('textarea').fill('up == 1');
     
     // Switch to Manual mode
     await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
@@ -79,6 +102,13 @@ test.describe('Availability Tiers', () => {
     
     const planCard = page.locator('.plans-editor-component .plan-item:has-text("Deployment Plan")');
     const availEditor = planCard.locator('.availability-editor-component');
+    // Select metric and expression
+    await availEditor.locator('select').first().selectOption('uptime');
+    const rawSwitch2 = availEditor.locator('#expressionModeSwitch');
+    if (!(await rawSwitch2.isChecked())) {
+        await rawSwitch2.click();
+    }
+    await availEditor.locator('textarea').fill('up == 1');
     
     // Switch to Deployments mode
     await availEditor.locator('.nav-link:has-text("Deployment Calculator")').click();
