@@ -113,4 +113,18 @@ describe('PrometheusMeasurementEditor', () => {
     expect(emitted).toBeTruthy();
     expect(emitted[0][0]).toContain('latency');
   });
+
+  it('displays promql validation errors when in raw mode', async () => {
+    const wrapper = mount(PrometheusMeasurementEditor, {
+      props: {
+        modelValue: 'invalid promql (((',
+        metrics: {}
+      }
+    });
+
+    // It should automatically switch to raw mode if it cannot be parsed or mapped
+    expect(wrapper.vm.isRawMode).toBe(true);
+    expect(wrapper.find('.invalid-feedback').exists()).toBe(true);
+    expect(wrapper.find('.invalid-feedback').text()).toContain('mismatched input');
+  });
 });

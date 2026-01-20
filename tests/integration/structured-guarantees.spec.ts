@@ -13,6 +13,9 @@ sla: 1.0.0
 context:
   id: complex-guarantees-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   standard:
     availability:
@@ -54,6 +57,9 @@ sla: 1.0.0
 context:
   id: boolean-guarantees-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   standard:
     availability:
@@ -84,6 +90,9 @@ sla: 1.0.0
 context:
   id: slo-guarantees-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   standard:
     availability:

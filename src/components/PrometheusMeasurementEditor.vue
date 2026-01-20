@@ -67,10 +67,11 @@
           rows="2" 
           :value="modelValue" 
           @input="emit('update:modelValue', $event.target.value)"
-          :class="{'is-invalid': promqlError}"
+          :class="{'is-invalid': promqlError || hasError}"
         ></textarea>
-        <div class="invalid-feedback" v-if="promqlError">
-          {{ promqlError }}
+        <div class="invalid-feedback d-block" v-if="promqlError || hasError">
+          <div v-if="promqlError">{{ promqlError }}</div>
+          <div v-if="hasError">{{ getErrors.join(', ') }}</div>
         </div>
       </div>
     </div>

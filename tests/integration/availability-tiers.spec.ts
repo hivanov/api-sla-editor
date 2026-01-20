@@ -26,7 +26,7 @@ test.describe('Availability Tiers', () => {
         await rawSwitch.click();
     }
     // Fill expression
-    await availEditor.locator('textarea').fill('up == 1');
+    await availEditor.locator('textarea').fill('uptime == 1');
     
     // 2. Select a tier (99.9%) - this is the default mode
     const tierSelect = availEditor.locator('.tier-select');
@@ -73,7 +73,7 @@ test.describe('Availability Tiers', () => {
     if (!(await rawSwitch3.isChecked())) {
         await rawSwitch3.click();
     }
-    await availEditor.locator('textarea').fill('up == 1');
+    await availEditor.locator('textarea').fill('uptime == 1');
     
     // Switch to Manual mode
     await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
@@ -108,7 +108,7 @@ test.describe('Availability Tiers', () => {
     if (!(await rawSwitch2.isChecked())) {
         await rawSwitch2.click();
     }
-    await availEditor.locator('textarea').fill('up == 1');
+    await availEditor.locator('textarea').fill('uptime == 1');
     
     // Switch to Deployments mode
     await availEditor.locator('.nav-link:has-text("Deployment Calculator")').click();

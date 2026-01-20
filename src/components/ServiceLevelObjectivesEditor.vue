@@ -62,12 +62,6 @@
               :path="path + '/' + index + '/guarantees/' + gIndex + '/measurement'"
               @update:model-value="updateSloGuarantee(index, gIndex, 'measurement', $event)"
             />
-            <div class="invalid-feedback d-block" v-if="errors[path + '/' + index + '/guarantees/' + gIndex]">
-              {{ errors[path + '/' + index + '/guarantees/' + gIndex].join(', ') }}
-            </div>
-            <div class="invalid-feedback d-block" v-if="errors[path + '/' + index + '/guarantees/' + gIndex + '/measurement']">
-              {{ errors[path + '/' + index + '/guarantees/' + gIndex + '/measurement'].join(', ') }}
-            </div>
           </template>
 
           <template v-else>

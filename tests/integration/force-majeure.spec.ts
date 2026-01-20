@@ -27,7 +27,7 @@ test.describe('Force Majeure Integration', () => {
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
-    await availEditor.locator('textarea').fill('up == 1');
+    await availEditor.locator('textarea').fill('uptime == 1');
     await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
     await availEditor.locator('input[type="number"]').first().fill('99.9');
 

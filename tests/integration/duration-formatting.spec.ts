@@ -13,6 +13,9 @@ sla: 1.0.0
 context:
   id: duration-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   premium:
     availability:
@@ -54,6 +57,9 @@ sla: 1.0.0
 context:
   id: complex-duration-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   test:
     availability:
@@ -84,6 +90,9 @@ sla: 1.0.0
 context:
   id: guarantees-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   standard:
     availability:

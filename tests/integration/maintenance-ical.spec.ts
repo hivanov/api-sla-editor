@@ -24,7 +24,7 @@ test.describe('Maintenance iCal Source', () => {
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
-    await availEditor.locator('textarea').fill('up == 1');
+    await availEditor.locator('textarea').fill('uptime == 1');
     await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
     await availEditor.locator('input[type="number"]').first().fill('100');
     

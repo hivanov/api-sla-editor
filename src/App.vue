@@ -387,91 +387,97 @@ export default {
         if (!valid) console.log('DEBUG VALIDATION:', JSON.stringify(validate.errors, null, 2));
         clearMarkers();
 
-        if (valid) {
-          validationErrors.value = [];
-        } else {
-          // Map errors to line numbers
-          const parsedYaml = YAML.parseDocument(content);
-          const errorsWithLines = validate.errors.map(err => {
-            const path = err.instancePath.split('/').filter(p => p !== '');
-            let node = parsedYaml.getIn(path, true);
-            
-            // If node not found, try parents
-            let currentPath = [...path];
-            while (!node && currentPath.length > 0) {
-              currentPath.pop();
-              node = parsedYaml.getIn(currentPath, true);
-            }
+        const allErrors = [];
+        const parsedYaml = YAML.parseDocument(content);
 
-            let line = 0;
-            let range = null;
-            if (node) {
-              const rangeArray = node.range || (node.value && node.value.range);
-              
-              if (rangeArray) {
-                const before = content.substring(0, rangeArray[0]);
-                line = before.split('\n').length - 1;
-                
-                const nodeText = content.substring(rangeArray[0], rangeArray[1]);
-                const nodeLines = nodeText.split('\n');
-                const endLine = line + nodeLines.length - 1;
-                const endColumn = nodeLines[nodeLines.length - 1].length;
-                range = { startLine: line, startColumn: 0, endLine, endColumn };
-              }
-            }
-            return { ...err, line, range, message: getFriendlyErrorMessage(err) };
-          });
-
-          validationErrors.value = errorsWithLines;
+        const getErrorWithLine = (err) => {
+          const path = err.instancePath.split('/').filter(p => p !== '');
+          let node = parsedYaml.getIn(path, true);
           
-          // Custom PromQL Validation
-          if (doc && doc.plans) {
-            Object.entries(doc.plans).forEach(([planName, plan]) => {
-              if (plan.availability && plan.availability.expression) {
-                const res = validatePromQL(plan.availability.expression, doc.metrics);
-                if (!res.valid) {
-                  validationErrors.value.push({
-                    instancePath: `/plans/${planName}/availability/expression`,
-                    message: `Invalid PromQL: ${res.error}`,
-                    keyword: 'promql'
-                  });
-                }
+          // If node not found, try parents
+          let currentPath = [...path];
+          while (!node && currentPath.length > 0) {
+            currentPath.pop();
+            node = parsedYaml.getIn(currentPath, true);
+          }
+
+          let line = 0;
+          let range = null;
+          if (node) {
+            const rangeArray = node.range || (node.value && node.value.range);
+            
+            if (rangeArray) {
+              const before = content.substring(0, rangeArray[0]);
+              line = before.split('\n').length - 1;
+              
+              const nodeText = content.substring(rangeArray[0], rangeArray[1]);
+              const nodeLines = nodeText.split('\n');
+              const endLine = line + nodeLines.length - 1;
+              const endColumn = nodeLines[nodeLines.length - 1].length;
+              range = { startLine: line, startColumn: 0, endLine, endColumn };
+            }
+          }
+          return { ...err, line, range, message: err.message || getFriendlyErrorMessage(err) };
+        };
+
+        if (!valid) {
+          validate.errors.forEach(err => {
+            allErrors.push(getErrorWithLine({
+              ...err,
+              message: getFriendlyErrorMessage(err)
+            }));
+          });
+        }
+        
+        // Custom PromQL Validation
+        if (doc && doc.plans) {
+          Object.entries(doc.plans).forEach(([planName, plan]) => {
+            if (plan.availability && plan.availability.expression) {
+              const res = validatePromQL(plan.availability.expression, doc.metrics);
+              if (!res.valid) {
+                allErrors.push(getErrorWithLine({
+                  instancePath: `/plans/${planName}/availability/expression`,
+                  message: `Invalid PromQL: ${res.error}`,
+                  keyword: 'promql'
+                }));
               }
-              if (plan.guarantees) {
-                plan.guarantees.forEach((g, idx) => {
-                  if (g.measurement) {
-                    const res = validatePromQL(g.measurement, doc.metrics);
-                    if (!res.valid) {
-                      validationErrors.value.push({
-                        instancePath: `/plans/${planName}/guarantees/${idx}/measurement`,
-                        message: `Invalid PromQL: ${res.error}`,
-                        keyword: 'promql'
-                      });
-                    }
+            }
+            if (plan.guarantees) {
+              plan.guarantees.forEach((g, idx) => {
+                if (g.measurement) {
+                  const res = validatePromQL(g.measurement, doc.metrics);
+                  if (!res.valid) {
+                    allErrors.push(getErrorWithLine({
+                      instancePath: `/plans/${planName}/guarantees/${idx}/measurement`,
+                      message: `Invalid PromQL: ${res.error}`,
+                      keyword: 'promql'
+                    }));
                   }
-                });
-              }
-            });
-          }
-
-          if (editor) {
-            const annotations = [];
-            errorsWithLines.forEach(err => {
-              annotations.push({
-                row: err.line,
-                column: 0,
-                text: err.message,
-                type: "error"
+                }
               });
+            }
+          });
+        }
 
-              if (err.range) {
-                const markerRange = new Range(err.range.startLine, 0, err.range.endLine, err.range.endColumn || 100);
-                const markerId = editor.session.addMarker(markerRange, "error-squiggly", "text", true);
-                markers.value.push(markerId);
-              }
+        validationErrors.value = allErrors;
+
+        if (editor) {
+          const annotations = [];
+          allErrors.forEach(err => {
+            annotations.push({
+              row: err.line,
+              column: 0,
+              text: err.message,
+              type: "error"
             });
-            editor.session.setAnnotations(annotations);
-          }
+
+            if (err.range) {
+              const markerRange = new Range(err.range.startLine, 0, err.range.endLine, err.range.endColumn || 100);
+              const markerId = editor.session.addMarker(markerRange, "error-squiggly", "text", true);
+              markers.value.push(markerId);
+            }
+          });
+          editor.session.setAnnotations(annotations);
         }
       } catch (e) {
         let line = 0;
@@ -509,6 +515,7 @@ export default {
       editor.on('change', () => {
         if (isProgrammaticChange) return;
         yamlContent.value = editor.getValue();
+        validateYaml(yamlContent.value);
       });
 
       // Initial value set
@@ -518,6 +525,10 @@ export default {
 
       validateYaml(yamlContent.value);
     };
+
+    watch(yamlContent, (newVal) => {
+      validateYaml(newVal);
+    });
 
     onMounted(() => {
       window.addEventListener('resize', handleResize);
@@ -543,6 +554,8 @@ export default {
       if (newTab === 'source' && editor) {
         isProgrammaticChange = true;
         editor.setValue(yamlContent.value, -1);
+        isProgrammaticChange = false;
+        validateYaml(yamlContent.value);
         // Delay resize slightly to ensure DOM is updated if v-show/v-if was used
         setTimeout(() => {
           editor.resize();

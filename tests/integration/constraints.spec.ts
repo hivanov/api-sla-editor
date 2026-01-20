@@ -68,7 +68,7 @@ test.describe('Numeric Constraints', () => {
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
-    await availEditor.locator('textarea').fill('up == 1');
+    await availEditor.locator('textarea').fill('uptime == 1');
       
       // Switch to Downtime Duration mode
       await availEditor.locator('.nav-link:has-text("Downtime Duration")').click();

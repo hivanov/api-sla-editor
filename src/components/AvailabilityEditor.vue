@@ -30,11 +30,15 @@
         <div v-if="isRawExpression">
           <textarea 
             class="form-control form-control-sm" 
+            :class="{'is-invalid': errors[path + '/expression']}"
             v-model="expression" 
             @input="emitUpdate"
             rows="2"
             placeholder="e.g. up == 1 or response_time < 200"
           ></textarea>
+          <div class="invalid-feedback d-block" v-if="errors[path + '/expression']">
+            {{ errors[path + '/expression'].join(', ') }}
+          </div>
         </div>
         <div v-else>
           <PrometheusMeasurementEditor 

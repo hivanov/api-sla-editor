@@ -13,6 +13,9 @@ sla: 1.0.0
 context:
   id: rrule-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   standard:
     availability:
