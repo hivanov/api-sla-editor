@@ -127,4 +127,29 @@ describe('PrometheusMeasurementEditor', () => {
     expect(wrapper.find('.invalid-feedback').exists()).toBe(true);
     expect(wrapper.find('.invalid-feedback').text()).toContain('mismatched input');
   });
+
+  it('identifies incomplete expressions as invalid', async () => {
+    const wrapper = mount(PrometheusMeasurementEditor, {
+      props: {
+        modelValue: '',
+        metrics
+      }
+    });
+
+    // In UI mode (default), set metric but leave value empty
+    const selects = wrapper.findAll('select');
+    await selects[1].setValue('requests');
+    
+    await wrapper.find('input[placeholder*="e.g. 15"]').setValue('');
+
+    const emitted = wrapper.emitted('update:modelValue');
+    const lastEmitted = emitted[emitted.length - 1][0];
+    
+    // Set the prop back to simulate parent updating it
+    await wrapper.setProps({ modelValue: lastEmitted });
+    
+    expect(wrapper.vm.promqlError).not.toBeNull();
+    const validLabel = wrapper.find('.text-success');
+    expect(validLabel.exists()).toBe(false);
+  });
 });

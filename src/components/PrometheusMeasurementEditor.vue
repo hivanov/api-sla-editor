@@ -79,10 +79,13 @@
     <div class="mt-2 text-muted x-small d-flex justify-content-between align-items-center">
       <span>Preview: <code>{{ preview }}</code></span>
       <div class="d-flex align-items-center gap-2">
-        <span v-if="!promqlError && modelValue" class="text-success me-2"><i class="bi bi-check-circle-fill"></i> Valid PromQL</span>
+        <span v-if="!promqlError && preview" class="text-success me-2"><i class="bi bi-check-circle-fill"></i> Valid PromQL</span>
         <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="raw-promql-toggle" v-model="isRawMode">
+          <input class="form-check-input" type="checkbox" id="raw-promql-toggle" v-model="isRawMode" :disabled="!canSwitchToEditor && isRawMode">
           <label class="form-check-label x-small" for="raw-promql-toggle">Raw PromQL</label>
+        </div>
+        <div v-if="!canSwitchToEditor && isRawMode" class="badge bg-light text-secondary border x-small">
+          Raw Mode Only
         </div>
       </div>
     </div>
@@ -154,12 +157,6 @@ export default {
       return variations.some(v => props.errors[v] && props.errors[v].length > 0);
     });
 
-    const promqlError = computed(() => {
-      if (!props.modelValue) return null;
-      const result = validatePromQL(props.modelValue, props.metrics);
-      return result.valid ? null : result.error;
-    });
-
     const getErrors = computed(() => {
       if (!hasError.value) return [];
       const p = props.path;
@@ -170,12 +167,15 @@ export default {
       return [];
     });
 
-    // AST-based representability check and parser
-    const isRepresentable = (ast) => {
+    // AST-based representability check
+    const checkRepresentability = (ast) => {
       if (!ast) return false;
       
       if (ast.type !== 'BinaryExpr') return false;
       
+      // Right side must be a number literal for our simple GUI
+      if (!ast.right || ast.right.type !== 'NumberLiteral') return false;
+
       const left = ast.left;
       if (!left) return false;
 
@@ -202,9 +202,11 @@ export default {
         let matrix;
         if (left.type === 'Call') {
             if (state.func === 'quantile_over_time' || state.func === 'histogram_quantile') {
+                if (left.args.length < 2) throw new Error('Missing arguments');
                 state.quantile = left.args[0].value.toString();
                 matrix = left.args[1];
             } else {
+                if (left.args.length < 1) throw new Error('Missing arguments');
                 matrix = left.args[0];
             }
         } else {
@@ -225,49 +227,80 @@ export default {
           const matchUnit = matrix.range.match(/[smhdw]/);
           state.windowValue = matchVal ? matchVal[0] : '5';
           state.windowUnit = matchUnit ? matchUnit[0] : 'm';
+        } else if (matrix.type === 'VectorSelector') {
+          state.metric = matrix.name || '';
+          state.windowValue = '';
+          state.windowUnit = 'm';
         }
-        
-        isRawMode.value = false;
       } catch (e) {
         console.error('Failed to map AST to UI', e);
-        isRawMode.value = true;
+        throw e;
       }
     };
 
     const parse = (str) => {
-      if (!str) return;
+      if (!str) return false;
       try {
         const result = validatePromQL(str);
-        if (result.valid && isRepresentable(result.ast)) {
+        if (result.valid && checkRepresentability(result.ast)) {
           parseAST(result.ast);
-        } else {
-          isRawMode.value = true;
+          return true;
         }
       } catch (e) {
-        isRawMode.value = true;
+        console.error('Parse error', e);
       }
+      return false;
     };
 
     const format = () => {
       let args = '';
+      const windowStr = state.windowValue ? `[${state.windowValue}${state.windowUnit}]` : '';
       if (state.func === 'quantile_over_time') {
-        args = `${state.quantile}, ${state.metric}[${state.windowValue}${state.windowUnit}]`;
+        args = `${state.quantile}, ${state.metric}${windowStr}`;
       } else if (state.func === 'histogram_quantile') {
-        args = `${state.quantile}, sum by (le) (rate(${state.metric}[${state.windowValue}${state.windowUnit}]))`;
+        args = `${state.quantile}, sum by (le) (rate(${state.metric}${windowStr}))`;
       } else {
-        args = `${state.metric}[${state.windowValue}${state.windowUnit}]`;
+        args = `${state.metric}${windowStr}`;
       }
       
-      return `${state.func}(${args}) ${state.operator} ${state.value}`;
+      const opPart = state.value !== '' ? ` ${state.operator} ${state.value}` : ` ${state.operator}`;
+      return `${state.func}(${args})${opPart}`;
     };
 
     const preview = computed(() => isRawMode.value ? props.modelValue : format());
 
+    const promqlError = computed(() => {
+      const val = preview.value;
+      if (!val) return null;
+      const result = validatePromQL(val, props.metrics);
+      return result.valid ? null : result.error;
+    });
+
+    const canSwitchToEditor = computed(() => {
+      if (!props.modelValue) return true;
+      try {
+        const result = validatePromQL(props.modelValue);
+        return result.valid && checkRepresentability(result.ast);
+      } catch (e) {
+        return false;
+      }
+    });
+
     watch(() => props.modelValue, (newVal) => {
       if (!isRawMode.value && newVal !== format()) {
-        parse(newVal);
+        const success = parse(newVal);
+        if (!success && newVal) {
+          isRawMode.value = true;
+        }
       }
     }, { immediate: true });
+
+    watch(isRawMode, (newVal) => {
+      if (!newVal) {
+        // Switching back to editor mode
+        parse(props.modelValue);
+      }
+    });
 
     watch(() => props.fixedMetric, (newMetric) => {
       if (newMetric && state.metric !== newMetric) {
@@ -292,6 +325,7 @@ export default {
       hasError,
       getErrors,
       isRawMode,
+      canSwitchToEditor,
       promqlError,
       emit
     };
