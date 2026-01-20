@@ -27,16 +27,10 @@ plans:
     availability:
       metric: uptime
       target: "99.9%"
-      expression: "uptime > 0.999"
+      expression: "avg_over_time(uptime[1m]) > 0.999"
     guarantees:
-      - metric: cpu_utilization
-        operator: <
-        value: "80"
-        period: PT5M
-      - metric: memory_utilization
-        operator: <
-        value: "90"
-        period: PT5M
+      - measurement: "avg_over_time(cpu_utilization[5m]) < 80"
+      - measurement: "avg_over_time(memory_utilization[5m]) < 90"
     x-support-policy:
       contactPoints:
         - contactType: Support Team

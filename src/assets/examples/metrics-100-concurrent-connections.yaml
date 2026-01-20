@@ -16,7 +16,9 @@ plans:
     availability:
       metric: uptime
       target: "99.9%"
-      expression: "uptime > 0.999"
+      expression: "avg_over_time(uptime[1m]) > 0.999"
     quotas:
       concurrent_connections:
         max: 100
+    guarantees:
+      - measurement: "max_over_time(concurrent_connections[1m]) <= 100"
