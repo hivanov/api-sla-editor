@@ -73,22 +73,26 @@ test.describe('Comprehensive Validation Errors', () => {
   });
 
   test('should show validation errors in GuaranteesEditor', async ({ page }) => {
-    const plan = page.locator(`.plan-item:has-text("${planName}")`);
+    await page.click('.card-header:has-text("Plans")');
+    const plan = page.locator('.plan-item:has-text("ErrorPlan")');
     const guarantees = plan.locator('.guarantees-editor-component');
     
     await guarantees.locator('button:has-text("Add Guarantee")').click();
     
-    // Switch to legacy mode
-    await guarantees.locator('label', { hasText: 'Simple Limit (Legacy)' }).click();
+    // Invalid measurement (empty)
+    await expect(guarantees.locator('.invalid-feedback')).not.toBeVisible();
     
-    // Invalid limit
-    const limitInput = guarantees.locator('.duration-editor input[placeholder="e.g. P1DT4H"]');
-    await limitInput.fill('invalid');
-    await limitInput.dispatchEvent('input');
+    // Trigger error by entering invalid promql
+    const measurementTextArea = guarantees.locator('textarea');
+    // If it is in GUI mode, we might need to toggle to raw or just leave it empty if there's a required check.
+    // The PrometheusMeasurementEditor has validation for PromQL.
     
-    await expect(async () => {
-        await expect(limitInput).toHaveClass(/is-invalid/);
-    }).toPass();
+    const toggle = guarantees.locator('input#raw-promql-toggle');
+    await toggle.click();
+    await guarantees.locator('textarea').fill('invalid promql (((');
+    
+    await expect(guarantees.locator('.invalid-feedback')).toBeVisible();
+    await expect(guarantees.locator('.invalid-feedback')).toContainText('mismatched input');
   });
 
   test('should show validation errors in SLO Guarantees', async ({ page }) => {

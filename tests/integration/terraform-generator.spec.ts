@@ -40,12 +40,10 @@ test.describe('Terraform Generator', () => {
     // 3. Configure Guarantee using this metric
     await planCard.getByRole('button', { name: 'Add Guarantee' }).click();
     const guaranteeRow = planCard.locator('.guarantees-editor-component .card.mb-2').first();
-    // Switch to Structured mode first
-    await guaranteeRow.locator('label:has-text("Structured")').click();
     
-    await guaranteeRow.locator('select').first().selectOption('cpu_load'); // Select Metric
-    await guaranteeRow.locator('select').nth(1).selectOption('<'); // Operator
-    await guaranteeRow.locator('input[type="text"]').last().fill('80'); // Value
+    await guaranteeRow.locator('select.metric-select').selectOption('cpu_load'); // Select Metric
+    await guaranteeRow.locator('select').nth(3).selectOption('<'); // Operator
+    await guaranteeRow.locator('input[placeholder="e.g. 15"]').fill('0.8'); // Value
 
     // 4. Configure Support Policy (Contact Points) for Notification Channels
     await planCard.getByRole('button', { name: 'Add Contact Point' }).click();
@@ -101,7 +99,7 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
       filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
       duration   = "0s"
       comparison = "COMPARISON_GT"
-      threshold_value = 0
+      threshold_value = 0.8
       aggregations {
         alignment_period   = "60s"
         per_series_aligner = "ALIGN_MEAN"

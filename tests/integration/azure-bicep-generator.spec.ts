@@ -28,9 +28,9 @@ test.describe('Azure Bicep Generator', () => {
     const planCard = page.locator('.plans-editor-component .card').filter({ hasText: 'Basic' });
     await planCard.getByRole('button', { name: 'Add Guarantee' }).click();
     const guaranteeRow = planCard.locator('.guarantees-editor-component .card.mb-2').first();
-    await guaranteeRow.locator('label:has-text("Structured")').click();
-    await guaranteeRow.locator('select').first().selectOption('cpu_util');
-    await guaranteeRow.locator('input[type="text"]').last().fill('90');
+    // It's already in measurement mode (PromQL) by default
+    await guaranteeRow.locator('select.metric-select').selectOption('cpu_util');
+    await guaranteeRow.locator('input[placeholder="e.g. 15"]').fill('90');
 
     // 2. Navigate to Bicep Generator
     await page.click('button:has-text("Transform")');

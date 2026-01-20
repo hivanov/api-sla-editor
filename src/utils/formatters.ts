@@ -297,6 +297,43 @@ export const ensurePromQLBoolean = (str: string) => {
   }
 };
 
+export const extractStructuredGuarantee = (promql: string) => {
+  if (!promql) return null;
+  try {
+    const res = validatePromQL(promql);
+    if (!res.valid || !res.ast || res.ast.type !== 'BinaryExpr') return null;
+
+    const ast = res.ast;
+    const structured: any = {
+      operator: ast.op,
+      value: ast.right.type === 'NumberLiteral' ? ast.right.value.toString() : null
+    };
+
+    // Try to find the metric and period in the left side
+    const findMetricAndPeriod = (node: any) => {
+      if (!node) return;
+      if (node.type === 'VectorSelector') {
+        structured.metric = node.name;
+      } else if (node.type === 'MatrixSelector') {
+        structured.period = node.range;
+        if (node.vectorSelector) structured.metric = node.vectorSelector.name;
+      } else if (node.type === 'Call' || node.type === 'AggregateExpr') {
+        const args = node.args || [node.expr];
+        args.forEach(findMetricAndPeriod);
+      } else if (node.type === 'ParenExpr') {
+        findMetricAndPeriod(node.expr);
+      }
+    };
+
+    findMetricAndPeriod(ast.left);
+    
+    if (structured.metric && structured.operator && structured.value) {
+      return structured;
+    }
+  } catch (e) {}
+  return null;
+};
+
 export const hasContent = (obj: any) => {
   if (!obj) return false;
   if (Array.isArray(obj)) return obj.length > 0;

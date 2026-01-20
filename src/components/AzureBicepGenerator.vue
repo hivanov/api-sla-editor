@@ -43,6 +43,7 @@ import { ref, onMounted, watch, computed } from 'vue';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/theme-monokai';
 import AzureMonitoringEditor from './AzureMonitoringEditor.vue';
+import { extractStructuredGuarantee } from '../utils/formatters';
 
 // Define Bicep mode for Ace
 ace.define('ace/mode/bicep_highlight_rules', function(require, exports, module) {
@@ -377,7 +378,25 @@ export default {
 
        // Generate Metric Alerts
        allGuarantees.forEach(({ planName, guarantee, index, source }) => {
-          const metricName = guarantee.metric;
+          let metricName = guarantee.metric;
+          let operator = guarantee.operator;
+          let value = guarantee.value;
+          let period = guarantee.period || guarantee.duration;
+
+          if (!metricName && guarantee.measurement) {
+             const extracted = extractStructuredGuarantee(guarantee.measurement);
+             if (extracted) {
+                metricName = extracted.metric;
+                operator = extracted.operator;
+                value = extracted.value;
+                if (!period) period = extracted.period;
+             }
+          }
+
+          if (!metricName) {
+             return;
+          }
+
           const metricDef = (sla.metrics && sla.metrics[metricName]) || {};
           
           if (!metricDef.monitoringId) {
@@ -386,7 +405,7 @@ export default {
           }
 
           const alertResourceName = `alert_${planName}_${source}_${index}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
-          const period = guarantee.period || guarantee.duration || 'PT5M';
+          const finalPeriod = period || 'PT5M';
 
           bicep += `resource ${alertResourceName} 'Microsoft.Insights/metricalerts@2018-03-01' = {\n`;
           bicep += `  name: 'SLA Breach: ${planName} - ${source} - ${metricName}'\n`;
@@ -398,16 +417,16 @@ export default {
           bicep += `    scopes: [\n`;
           bicep += `      '${resourceId}'\n`;
           bicep += `    ]\n`;
-          bicep += `    evaluationFrequency: '${period}'\n`;
-          bicep += `    windowSize: '${period}'\n`;
+          bicep += `    evaluationFrequency: '${finalPeriod}'\n`;
+          bicep += `    windowSize: '${finalPeriod}'\n`;
           bicep += `    criteria: {\n`;
           bicep += `      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'\n`;
           bicep += `      allOf: [\n`;
           bicep += `        {\n`;
           bicep += `          name: 'Metric1'\n`;
           bicep += `          metricName: '${metricDef.monitoringId}'\n`;
-          bicep += `          operator: '${getAzureOperator(guarantee.operator)}'\n`;
-          bicep += `          threshold: ${parseFloat(guarantee.value) || 0}\n`;
+          bicep += `          operator: '${getAzureOperator(operator)}'\n`;
+          bicep += `          threshold: ${parseFloat(value) || 0}\n`;
           bicep += `          timeAggregation: 'Average'\n`;
           bicep += `          criterionType: 'StaticThresholdCriterion'\n`;
           bicep += `        }\n`;

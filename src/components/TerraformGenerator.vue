@@ -33,6 +33,7 @@ import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-terraform';
 import 'ace-builds/src-noconflict/theme-monokai';
 import GcpMonitoringEditor from './GcpMonitoringEditor.vue';
+import { extractStructuredGuarantee } from '../utils/formatters';
 
 export default {
   name: 'TerraformGenerator',
@@ -208,7 +209,26 @@ export default {
 
        // Generate Alert Policies
        allGuarantees.forEach(({ planName, guarantee, index, source }) => {
-          const metricName = guarantee.metric;
+          let metricName = guarantee.metric;
+          let operator = guarantee.operator;
+          let value = guarantee.value;
+          let period = guarantee.period || guarantee.duration;
+
+          if (!metricName && guarantee.measurement) {
+             const extracted = extractStructuredGuarantee(guarantee.measurement);
+             if (extracted) {
+                metricName = extracted.metric;
+                operator = extracted.operator;
+                value = extracted.value;
+                if (!period) period = extracted.period;
+             }
+          }
+
+          if (!metricName) {
+             // If we still don't have a metric name, we can't generate a GCP alert easily without more complex parsing
+             return;
+          }
+
           const metricDef = sla.metrics[metricName];
           
           if (!metricDef) {
@@ -230,10 +250,10 @@ export default {
           tf += `    display_name = "${metricName} breach"\n`;
           tf += `    condition_threshold {\n`;
           tf += `      filter     = "resource.type = \\"${metricDef.resourceType}\\" AND metric.type = \\"${metricDef.monitoringId}\\""\n`;
-          tf += `      duration   = "${guarantee.period ? parseDurationToSeconds(guarantee.period) + 's' : (guarantee.duration ? parseDurationToSeconds(guarantee.duration) + 's' : '60s')}"\n`;
-          tf += `      comparison = "${getComparison(guarantee.operator)}"\n`;
+          tf += `      duration   = "${period ? parseDurationToSeconds(period) + 's' : '60s'}"\n`;
+          tf += `      comparison = "${getComparison(operator)}"\n`;
           
-          let thresholdValue = parseFloat(guarantee.value); 
+          let thresholdValue = parseFloat(value); 
           if (isNaN(thresholdValue)) thresholdValue = 0;
 
           tf += `      threshold_value = ${thresholdValue}\n`;
