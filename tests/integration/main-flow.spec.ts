@@ -76,6 +76,9 @@ test.describe('Main flow', () => {
 
     await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'max-users');
     await page.click('.metrics-editor-component button:has-text("Add Metric")');
+
+    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'up');
+    await page.click('.metrics-editor-component button:has-text("Add Metric")');
     
     // Locate and fill the properties of the newly added metrics
     const rtCard = page.locator('.metrics-editor-component .card:has-text("response-time")');
@@ -95,6 +98,10 @@ test.describe('Main flow', () => {
     await muCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('integer');
     await muCard.locator('.col-md-6:has(label:has-text("Unit")) select').selectOption('items');
     await muCard.locator('textarea[placeholder*="Markdown"]').fill('Maximum concurrent users');
+
+    const upCard = page.locator('.metrics-editor-component .card:has-text("up")');
+    await upCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('integer');
+    await upCard.locator('textarea[placeholder*="Markdown"]').fill('Service status');
 
     // 4. Fill in PlansEditor data
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'Basic Plan');

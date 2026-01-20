@@ -61,10 +61,14 @@ describe('PromQL Generation Utilities', () => {
       expect(validatePromQL('rate(http_requests_total[5m])', metrics).valid).toBe(true);
     });
 
-    it('detects undefined metrics', () => {
+    it('detects undefined metrics including previously common ones like "up"', () => {
       const res = validatePromQL('unknown_metric == 1', metrics);
       expect(res.valid).toBe(false);
       expect(res.error).toContain('Metric "unknown_metric" is not defined');
+
+      const resUp = validatePromQL('up == 1', { cpu_usage: {} });
+      expect(resUp.valid).toBe(false);
+      expect(resUp.error).toContain('Metric "up" is not defined');
     });
 
     it('detects unbalanced characters', () => {

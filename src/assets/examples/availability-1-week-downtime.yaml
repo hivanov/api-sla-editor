@@ -3,6 +3,9 @@ context:
   id: "availability-1-week-downtime"
   type: "plans"
 metrics:
+  up:
+    type: number
+    description: "Service status"
   uptime:
     type: number
     unit: percent

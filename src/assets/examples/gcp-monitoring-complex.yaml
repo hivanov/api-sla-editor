@@ -3,6 +3,10 @@ context:
   id: gcp-infrastructure-services
   type: plans
 metrics:
+  up:
+    type: number
+    unit: boolean
+    description: "Binary signal indicating if the service is up (1) or down (0)"
   uptime:
     type: number
     unit: percent

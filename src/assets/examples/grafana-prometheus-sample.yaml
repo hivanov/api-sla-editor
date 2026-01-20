@@ -6,6 +6,9 @@ context:
   consumer: Customer
   type: plans
 metrics:
+  up:
+    type: number
+    description: "Service status"
   uptime:
     type: number
     unit: percent

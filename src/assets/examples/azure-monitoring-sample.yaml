@@ -3,6 +3,9 @@ context:
   id: azure-sample
   type: plans
 metrics:
+  up:
+    type: number
+    description: "Service availability"
   uptime:
     type: number
     unit: percent

@@ -123,6 +123,13 @@ The application has been updated to be more responsive. Key changes include:
 *   **Full-File Test Validation:** Piecewise string assertion (`toContainText`) in integration tests can be brittle and miss regressions in other parts of the generated file. Prefer capturing the entire editor content via `page.evaluate` and comparing against a normalized "expected" baseline.
 *   **Custom Resource Generation:** Heuristics can be used to decide when to generate supporting resources (like `google_monitoring_metric_descriptor`). For example, any metric with `custom.googleapis.com` in its ID should likely have its own descriptor generated.
 
+### Lessons Learned (Session: PromQL Metric Validation)
+
+*   **Strict Metric Definition:** PromQL expressions must only reference metrics that are explicitly defined in the `metrics` section of the SLA document. This ensures that the SLA is self-contained and all referenced data points have associated metadata (type, unit, description).
+*   **Implicit Metric Removal:** Previously "common" metrics (like `up`, `node_exporter_build_info`) are no longer implicitly allowed. If an SLA uses `up == 1`, the `up` metric must be added to the `metrics` section.
+*   **Recursive AST Validation:** Validation of referenced metrics must be performed by walking the entire PromQL AST (VectorSelectors) to ensure that even nested metrics in complex expressions (e.g., `sum(rate(my_metric[5m]))`) are checked against the specification.
+*   **Integration Test Coverage:** When tightening validation rules, all example files and main flow integration tests must be updated to include the required metric definitions (e.g., adding `up` to `metrics`) to maintain a "green" build.
+
 ### Lessons Learned (Session: PromQL Parser & Grafana Dashboard Generator)
 
 *   **Strict Grammar Compliance:** When implementing a parser for a third-party DSL (like PromQL), strictly adhere to the official grammar specifications (e.g., Prometheus's `generated_parser.y`). Avoid "lenient" extensions (like custom operators or `=` for `==`) unless explicitly required, as they break compatibility with standard tools and complicate the AST logic.

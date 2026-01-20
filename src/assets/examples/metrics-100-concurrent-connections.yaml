@@ -3,6 +3,9 @@ context:
   id: "metrics-100-concurrent-connections"
   type: "plans"
 metrics:
+  up:
+    type: number
+    description: "Service status"
   uptime:
     type: number
     unit: percent

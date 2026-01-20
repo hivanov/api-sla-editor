@@ -218,10 +218,9 @@ export const validatePromQL = (expr: string, availableMetrics: any = null) => {
   };
   walk(ast);
 
-  const commonMetrics = ['up', 'node_exporter_build_info', 'http_request_duration_seconds_bucket', 'http_requests_total'];
   if (availableMetrics) {
     for (const m of metricsInExpr) {
-      if (!availableMetrics[m] && !commonMetrics.includes(m)) {
+      if (!availableMetrics[m]) {
         return { valid: false, error: `Metric "${m}" is not defined in the metrics section`, metrics: metricsInExpr };
       }
     }

@@ -3,6 +3,9 @@ context:
   id: four-golden-signals-api
   type: plans
 metrics:
+  up:
+    type: number
+    description: "Service status"
   uptime:
     type: number
     unit: percent

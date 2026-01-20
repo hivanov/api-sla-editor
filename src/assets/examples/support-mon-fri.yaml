@@ -3,6 +3,9 @@ context:
   id: "support-mon-fri"
   type: "plans"
 metrics:
+  up:
+    type: number
+    description: "Service status"
   uptime:
     type: number
     unit: percent
