@@ -31,3 +31,13 @@ playwright/.cache/
 .DS_Store
 .gemini/
 gha-creds-*.json
+
+# Generated PromQL parser files
+src/utils/promql/PromQL.interp
+src/utils/promql/PromQL.tokens
+src/utils/promql/PromQLLexer.interp
+src/utils/promql/PromQLLexer.tokens
+src/utils/promql/PromQLLexer.ts
+src/utils/promql/PromQLListener.ts
+src/utils/promql/PromQLParser.ts
+src/utils/promql/PromQLVisitor.ts
