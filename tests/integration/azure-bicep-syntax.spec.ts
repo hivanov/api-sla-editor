@@ -35,10 +35,6 @@ test.describe('Azure Bicep Generator', () => {
     await page.waitForTimeout(2000);
 
     const count = await errorGutterIcon.count();
-    if (count > 0) {
-        const title = await errorGutterIcon.first().getAttribute('title');
-        console.log('Found error in gutter:', title);
-    }
     
     expect(count).toBe(0);
 
@@ -198,7 +194,6 @@ test.describe('Azure Bicep Generator', () => {
     const nameSpan = page.locator('span').filter({ hasText: /^name$/ }).first();
     await expect(nameSpan).toBeVisible();
     const classes = await nameSpan.evaluate(el => el.className);
-    console.log('Classes for "name":', classes);
     
     // It should NOT be ace_string
     expect(classes).not.toContain('ace_string');

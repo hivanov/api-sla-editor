@@ -1,6 +1,6 @@
 <template>
   <div class="plans-editor-content plans-editor-component">
-    <div v-for="(plan, name) in plans" :key="name" class="card mb-4 plan-item shadow-sm">
+    <div v-for="(plan, name) in plans" :key="name" class="card mb-4 plan-item shadow-sm" :data-plan-name="name">
       <div class="card-header d-flex justify-content-between align-items-center bg-light">
         <h5 class="mb-0">{{ name }}</h5>
         <button class="btn btn-outline-danger btn-sm" @click="removePlan(name)">Remove</button>

@@ -3,9 +3,6 @@ context:
   id: "availability-1-week-downtime"
   type: "plans"
 metrics:
-  up:
-    type: number
-    description: "Service status"
   uptime:
     type: number
     unit: percent
@@ -15,4 +12,4 @@ plans:
     availability:
       metric: uptime
       target: "98.08%"
-      expression: "up == 1"
+      expression: "uptime > 0.9808"

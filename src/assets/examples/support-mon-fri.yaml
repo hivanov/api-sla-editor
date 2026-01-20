@@ -3,9 +3,6 @@ context:
   id: "support-mon-fri"
   type: "plans"
 metrics:
-  up:
-    type: number
-    description: "Service status"
   uptime:
     type: number
     unit: percent
@@ -15,7 +12,7 @@ plans:
     availability:
       metric: uptime
       target: "99.9%"
-      expression: "up == 1"
+      expression: "uptime > 0.999"
     x-support-policy:
       hoursAvailable:
         - dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]

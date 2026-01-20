@@ -3,13 +3,12 @@ context:
   id: azure-sample
   type: plans
 metrics:
-  up:
-    type: number
-    description: "Service availability"
   uptime:
     type: number
     unit: percent
     description: "Service Uptime percentage"
+    monitoringId: "availability"
+    resourceType: Microsoft.Compute/virtualMachines
   cpu_utilization:
     type: number
     unit: percentage
@@ -28,11 +27,15 @@ plans:
     availability:
       metric: uptime
       target: "99.9%"
-      expression: "up == 1"
+      expression: "uptime > 0.999"
     guarantees:
       - metric: cpu_utilization
         operator: <
         value: "80"
+        period: PT5M
+      - metric: memory_utilization
+        operator: <
+        value: "90"
         period: PT5M
     x-support-policy:
       contactPoints:

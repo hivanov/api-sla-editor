@@ -3,33 +3,32 @@ context:
   id: gcp-infrastructure-services
   type: plans
 metrics:
-  up:
-    type: number
-    unit: boolean
-    description: "Binary signal indicating if the service is up (1) or down (0)"
   uptime:
     type: number
     unit: percent
     description: "Service Uptime percentage"
+    monitoringId: "custom.googleapis.com/api/uptime"
+    resourceType: "global"
+    metricKind: "GAUGE"
   cpu_utilization:
     type: number
     unit: percent
     description: "Average CPU utilization across the cluster"
-    monitoringId: "compute_googleapis_com_instance_cpu_utilization"
+    monitoringId: "compute.googleapis.com/instance/cpu/utilization"
     resourceType: "gce_instance"
     metricKind: "GAUGE"
   request_latency:
     type: number
     unit: ms
     description: "Ninetieth percentile response time for API requests"
-    monitoringId: "custom_googleapis_com_api_request_latency"
+    monitoringId: "custom.googleapis.com/api/request_latency"
     resourceType: "global"
     metricKind: "GAUGE"
   error_rate:
     type: number
     unit: percent
     description: "Rate of 5xx responses"
-    monitoringId: "custom_googleapis_com_api_error_rate"
+    monitoringId: "custom.googleapis.com/api/error_rate"
     resourceType: "global"
     metricKind: "GAUGE"
 plans:
@@ -39,7 +38,7 @@ plans:
     availability:
       metric: uptime
       target: "99.99%"
-      expression: "up == 1"
+      expression: "uptime > 0.9999"
     pricing:
       cost: 5000
       currency: USD
@@ -86,7 +85,7 @@ plans:
     availability:
       metric: uptime
       target: "99.9%"
-      expression: "up == 1"
+      expression: "uptime > 0.999"
     pricing:
       cost: 1500
       currency: USD

@@ -3,74 +3,109 @@ context:
   id: four-golden-signals-api
   type: plans
 metrics:
-  up:
-    type: number
-    description: "Service status"
   uptime:
     type: number
     unit: percent
     description: "Service Uptime percentage"
+    monitoringId: "custom.googleapis.com/api/uptime"
+    resourceType: "global"
+    metricKind: "GAUGE"
   latency:
     type: number
     unit: ms
-    description: "The time it takes to service a request."
-    monitoringId: "custom_googleapis_com_api_latency"
+    description: "The time it takes to service a request (p95)."
+    monitoringId: "custom.googleapis.com/api/latency"
     resourceType: "global"
     metricKind: "GAUGE"
   traffic:
     type: integer
     unit: "req/s"
     description: "A measure of how much demand is being placed on your system."
-    monitoringId: "custom_googleapis_com_api_traffic"
+    monitoringId: "custom.googleapis.com/api/traffic"
     resourceType: "global"
     metricKind: "CUMULATIVE"
   errors:
     type: number
     unit: percent
     description: "The rate of requests that fail, either explicitly, implicitly, or by policy."
-    monitoringId: "custom_googleapis_com_api_error_rate"
+    monitoringId: "custom.googleapis.com/api/error_rate"
     resourceType: "global"
     metricKind: "GAUGE"
   saturation:
     type: number
     unit: percent
     description: "How 'full' your service is. A measure of your system fraction, emphasizing the resources that are most constrained."
-    monitoringId: "compute_googleapis_com_instance_cpu_utilization"
+    monitoringId: "compute.googleapis.com/instance/cpu/utilization"
     resourceType: "gce_instance"
     metricKind: "GAUGE"
 plans:
   standard:
     title: "Standard Plan"
-    description: "Base plan with 4 golden signals monitoring"
+    description: "Base plan with basic golden signals monitoring"
     availability:
       metric: uptime
-      target: "99.9%"
-      expression: "up == 1"
+      target: "99.0%"
+      expression: "uptime > 0.99"
     pricing:
       cost: 0
       currency: USD
       period: P30D
+    quotas:
+      traffic:
+        max: 100
     guarantees:
       - metric: latency
         operator: "<"
-        value: "500"
+        value: "1000"
         period: PT1M
       - metric: errors
         operator: "<"
-        value: "1"
+        value: "5"
         period: PT1M
     serviceLevelObjectives:
-      - name: "Traffic Performance"
-        priority: "Medium"
-        guarantees:
-          - metric: traffic
-            operator: "<"
-            value: "1000"
-            period: PT1M
       - name: "Saturation Warning"
-        priority: "High"
+        priority: "Medium"
         guarantees:
           - metric: saturation
             operator: "<"
-            value: "80"
+            value: "90"
             period: PT5M
+  premium:
+    title: "Premium Plan"
+    description: "Production-grade plan with strict golden signal guarantees"
+    availability:
+      metric: uptime
+      target: "99.99%"
+      expression: "uptime > 0.9999"
+    pricing:
+      cost: 100
+      currency: USD
+      period: P30D
+    quotas:
+      traffic:
+        max: 5000
+    guarantees:
+      - metric: latency
+        operator: "<"
+        value: "200"
+        period: PT1M
+      - metric: errors
+        operator: "<"
+        value: "0.1"
+        period: PT1M
+      - metric: traffic
+        operator: "<"
+        value: "4500"
+        period: PT1M
+      - metric: saturation
+        operator: "<"
+        value: "70"
+        period: PT1M
+    serviceLevelObjectives:
+      - name: "High Performance Latency"
+        priority: "High"
+        guarantees:
+          - metric: latency
+            operator: "<"
+            value: "100"
+            period: PT10S

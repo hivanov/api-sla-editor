@@ -1,6 +1,6 @@
 <template>
   <div class="metrics-editor-content metrics-editor-component">
-    <div v-for="(metric, name) in safeMetrics" :key="name" class="card mb-3">
+    <div v-for="(metric, name) in safeMetrics" :key="name" class="card mb-3" :data-metric-name="name">
       <div class="card-header d-flex justify-content-between align-items-center bg-light">
         <h5 class="mb-0">{{ name }}</h5>
         <button class="btn btn-outline-danger btn-sm" @click="removeMetric(name)">Remove</button>

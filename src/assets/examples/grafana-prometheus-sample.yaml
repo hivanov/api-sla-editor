@@ -6,43 +6,31 @@ context:
   consumer: Customer
   type: plans
 metrics:
+  http_requests_total:
+    type: integer
+    unit: requests
+    description: "Total HTTP requests"
+    monitoringId: "http_requests_total"
+  http_request_duration_seconds_bucket:
+    type: number
+    unit: s
+    description: "HTTP request duration buckets"
+    monitoringId: "http_request_duration_seconds_bucket"
   up:
     type: number
-    description: "Service status"
-  uptime:
-    type: number
-    unit: percent
-    description: "Service Uptime"
-    monitoringId: "avg_over_time(up{job='my-service'}[1m]) * 100"
-  latency:
-    type: number
-    unit: ms
-    description: "95th Percentile Latency"
-    monitoringId: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000"
-  errors:
-    type: number
-    unit: percent
-    description: "Error Rate"
-    monitoringId: "sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m])) * 100"
+    description: "Binary service status (1 for up, 0 for down)"
+    monitoringId: "up"
 plans:
   standard:
     title: Standard Plan
     availability:
-      metric: uptime
+      metric: up
       target: "99.9%"
-      expression: "up{job='my-service'} == 1"
+      expression: "avg_over_time(up{job='my-service'}[1m]) > 0.99"
     guarantees:
-      - metric: uptime
-        operator: ">="
-        value: "99.9"
-        period: P30D
-      - metric: latency
-        operator: "<"
-        value: "200"
+      - measurement: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) < 0.2"
         period: PT1M
-      - metric: errors
-        operator: "<"
-        value: "1"
+      - measurement: "sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m])) < 0.01"
         period: PT5M
     x-support-policy:
       contactPoints:
@@ -57,19 +45,19 @@ plans:
       claimWindow: P30D
       tiers:
         - condition:
-            metric: uptime
+            metric: up
             operator: "<"
-            value: "99.9"
-            floor: "99.0"
+            value: "0.999"
+            floor: "0.99"
           compensation: 10
         - condition:
-            metric: uptime
+            metric: up
             operator: "<"
-            value: "99.0"
-            floor: "95.0"
+            value: "0.99"
+            floor: "0.95"
           compensation: 25
         - condition:
-            metric: uptime
+            metric: up
             operator: "<"
-            value: "95.0"
+            value: "0.95"
           compensation: 100

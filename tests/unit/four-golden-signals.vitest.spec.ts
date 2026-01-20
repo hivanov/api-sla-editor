@@ -28,10 +28,30 @@ describe('Four Golden Signals SLA Validation', () => {
   });
 
   it('should have correct monitoring IDs for GCP', () => {
-    expect(slaData.metrics.latency.monitoringId).toBe('custom_googleapis_com_api_latency');
-    expect(slaData.metrics.traffic.monitoringId).toBe('custom_googleapis_com_api_traffic');
-    expect(slaData.metrics.errors.monitoringId).toBe('custom_googleapis_com_api_error_rate');
-    expect(slaData.metrics.saturation.monitoringId).toBe('compute_googleapis_com_instance_cpu_utilization');
+    expect(slaData.metrics.latency.monitoringId).toBe('custom.googleapis.com/api/latency');
+    expect(slaData.metrics.traffic.monitoringId).toBe('custom.googleapis.com/api/traffic');
+    expect(slaData.metrics.errors.monitoringId).toBe('custom.googleapis.com/api/error_rate');
+    expect(slaData.metrics.saturation.monitoringId).toBe('compute.googleapis.com/instance/cpu/utilization');
+  });
+
+  it('should contain SLA conditions for all golden signals across plans', () => {
+    // Check Standard Plan
+    const standardPlan = slaData.plans.standard;
+    expect(standardPlan.quotas.traffic.max).toBe(100);
+    expect(standardPlan.guarantees.some(g => g.metric === 'latency')).toBe(true);
+    expect(standardPlan.guarantees.some(g => g.metric === 'errors')).toBe(true);
+    expect(standardPlan.serviceLevelObjectives.some(slo => slo.guarantees.some(g => g.metric === 'saturation'))).toBe(true);
+
+    // Check Premium Plan
+    const premiumPlan = slaData.plans.premium;
+    expect(premiumPlan.pricing.cost).toBe(100);
+    expect(premiumPlan.quotas.traffic.max).toBe(5000);
+    
+    const premiumGuarantees = premiumPlan.guarantees;
+    expect(premiumGuarantees.some(g => g.metric === 'latency')).toBe(true);
+    expect(premiumGuarantees.some(g => g.metric === 'errors')).toBe(true);
+    expect(premiumGuarantees.some(g => g.metric === 'traffic')).toBe(true);
+    expect(premiumGuarantees.some(g => g.metric === 'saturation')).toBe(true);
   });
 
   it('should fail validation if a required field is missing', () => {

@@ -229,7 +229,7 @@ export default {
           tf += `  conditions {\n`;
           tf += `    display_name = "${metricName} breach"\n`;
           tf += `    condition_threshold {\n`;
-          tf += `      filter     = "resource.type = \\\"${metricDef.resourceType}\\\" AND metric.type = \\\"${metricDef.monitoringId}\\\""\n`;
+          tf += `      filter     = "resource.type = \\"${metricDef.resourceType}\\" AND metric.type = \\"${metricDef.monitoringId}\\""\n`;
           tf += `      duration   = "${guarantee.period ? parseDurationToSeconds(guarantee.period) + 's' : (guarantee.duration ? parseDurationToSeconds(guarantee.duration) + 's' : '60s')}"\n`;
           tf += `      comparison = "${getComparison(guarantee.operator)}"\n`;
           

@@ -384,48 +384,54 @@ export default {
         }
 
         const valid = validate(doc);
-        if (!valid) console.log('DEBUG VALIDATION:', JSON.stringify(validate.errors, null, 2));
         clearMarkers();
 
         const allErrors = [];
-        const parsedYaml = YAML.parseDocument(content);
+        let parsedYaml;
+        try {
+          parsedYaml = YAML.parseDocument(content);
+        } catch (e) {
+          // Silent catch, parsedYaml will be null
+        }
 
         const getErrorWithLine = (err) => {
-          const path = err.instancePath.split('/').filter(p => p !== '');
-          let node = parsedYaml.getIn(path, true);
-          
-          // If node not found, try parents
-          let currentPath = [...path];
-          while (!node && currentPath.length > 0) {
-            currentPath.pop();
-            node = parsedYaml.getIn(currentPath, true);
-          }
-
-          let line = 0;
-          let range = null;
-          if (node) {
-            const rangeArray = node.range || (node.value && node.value.range);
+          try {
+            const path = err.instancePath.split('/').filter(p => p !== '');
+            let node = parsedYaml ? parsedYaml.getIn(path, true) : null;
             
-            if (rangeArray) {
-              const before = content.substring(0, rangeArray[0]);
-              line = before.split('\n').length - 1;
-              
-              const nodeText = content.substring(rangeArray[0], rangeArray[1]);
-              const nodeLines = nodeText.split('\n');
-              const endLine = line + nodeLines.length - 1;
-              const endColumn = nodeLines[nodeLines.length - 1].length;
-              range = { startLine: line, startColumn: 0, endLine, endColumn };
+            // If node not found, try parents
+            let currentPath = [...path];
+            while (!node && currentPath.length > 0) {
+              currentPath.pop();
+              node = parsedYaml.getIn(currentPath, true);
             }
+
+            let line = 0;
+            let range = null;
+            if (node) {
+              const rangeArray = node.range || (node.value && node.value.range);
+              
+              if (rangeArray) {
+                const before = content.substring(0, rangeArray[0]);
+                line = before.split('\n').length - 1;
+                
+                const nodeText = content.substring(rangeArray[0], rangeArray[1]);
+                const nodeLines = nodeText.split('\n');
+                const endLine = line + nodeLines.length - 1;
+                const endColumn = nodeLines[nodeLines.length - 1].length;
+                range = { startLine: line, startColumn: 0, endLine, endColumn };
+              }
+            }
+            const message = getFriendlyErrorMessage(err);
+            return { ...err, line, range, message };
+          } catch (e) {
+            return { ...err, line: 0, message: getFriendlyErrorMessage(err) };
           }
-          return { ...err, line, range, message: err.message || getFriendlyErrorMessage(err) };
         };
 
-        if (!valid) {
+        if (!valid && validate.errors) {
           validate.errors.forEach(err => {
-            allErrors.push(getErrorWithLine({
-              ...err,
-              message: getFriendlyErrorMessage(err)
-            }));
+            allErrors.push(getErrorWithLine(err));
           });
         }
         
@@ -455,6 +461,55 @@ export default {
                   }
                 }
               });
+            }
+          });
+        }
+
+        // Custom Validation: All defined metrics should be referenced at least once
+        if (doc && doc.metrics && typeof doc.metrics === 'object') {
+          const definedMetrics = Object.keys(doc.metrics);
+          const referencedMetrics = new Set();
+
+          const collectReferencedMetrics = (node) => {
+            if (!node || typeof node !== 'object') return;
+            
+            // 1. Direct metric references
+            if (node.metric && typeof node.metric === 'string') {
+              referencedMetrics.add(node.metric);
+            }
+
+            // 2. PromQL expressions
+            const promqlFields = ['expression', 'measurement'];
+            promqlFields.forEach(field => {
+              if (node[field] && typeof node[field] === 'string') {
+                const res = validatePromQL(node[field]);
+                if (res.valid && res.metrics) {
+                  res.metrics.forEach(m => referencedMetrics.add(m));
+                }
+              }
+            });
+
+            // 3. Quotas (the keys are the metric names)
+            if (node.quotas && typeof node.quotas === 'object') {
+              Object.keys(node.quotas).forEach(m => referencedMetrics.add(m));
+            }
+
+            // Recursive traversal
+            Object.values(node).forEach(v => {
+              if (Array.isArray(v)) v.forEach(collectReferencedMetrics);
+              else if (typeof v === 'object') collectReferencedMetrics(v);
+            });
+          };
+
+          if (doc.plans) collectReferencedMetrics(doc.plans);
+
+          definedMetrics.forEach(metric => {
+            if (!referencedMetrics.has(metric)) {
+              allErrors.push(getErrorWithLine({
+                instancePath: `/metrics/${metric}`,
+                message: `Metric '${metric}' is defined but not referenced anywhere in the specification.`,
+                keyword: 'unused-metric'
+              }));
             }
           });
         }
@@ -532,6 +587,7 @@ export default {
 
     onMounted(() => {
       window.addEventListener('resize', handleResize);
+      window.setYamlContent = setYamlContent; // Expose for testing
       initEditor();
     });
 

@@ -94,3 +94,52 @@ npm test
 ```
 
 **Note:** Playwright tests are configured to run with a default viewport of `1280x720` (as defined in `playwright-integration.config.ts`) to ensure consistent testing of the desktop layout.
+
+## Lessons Learned
+
+*Always update this section with lessons learned after every finished task.*
+
+### Component & State Management
+*   **Component Extraction:** When refactoring complex logic into reusable components (e.g., `ServiceLevelObjectivesEditor`), ensure all reactive state management and event emitters are fully ported.
+*   **Dependency Injection in Tests:** When using Vue's `provide/inject` pattern, Vitest `mount` calls must include `global: { provide: { ... } }`.
+*   **Datalist Searchability:** Using `<datalist>` with a text input is an effective way to provide "search-as-you-type" functionality without external libraries.
+
+### Testing (Vitest & Playwright)
+*   **Playwright Selector Robustness:** Use specific parent classes or unique attributes (e.g., `.guarantees-editor-component select`, `.metric-selector`) to avoid "strict mode violations" in the UI.
+*   **Integration Test Visibility:** Ensure tests explicitly navigate to the correct tab (e.g., "Source") before asserting against DOM content like Ace Editor values.
+*   **Playwright Hook Timeouts:** Default timeouts are often insufficient for long-running operations like Docker container startup. Use explicit timeouts in hooks (e.g., `300_000ms`).
+*   **Mock Service Readiness:** `Wait.forListeningPorts()` is more reliable than `Wait.forLogMessage()` for determining service readiness in testcontainers.
+*   **Editor "Raw Mode" Interaction:** Tests must explicitly toggle the "Raw PromQL" switch before interacting with underlying textareas if the GUI is the default.
+*   **Validation-Driven Test Design:** Implementing new validation rules (e.g., unused metrics) requires updating all integration tests to ensure they generate valid, complete documents.
+
+### Monitoring & Generators
+*   **GCP Monitoring (Terraform):** Traverse all possible locations (Direct guarantees, Plan SLOs, Support SLOs) when generating system-wide configurations like Alert Policies.
+*   **Terraform Syntax (Escaping):** Complex monitoring filters require nested quote escaping. Simplifying generator logic (e.g., reducing excessive backslashes) improves both readability and testability.
+*   **Protocol Consistency:** Ensure application logic and generators agree on URI formats (e.g., `mailto://` vs `mailto:`).
+*   **Custom Resource Generation:** Heuristics (like checking for `custom.googleapis.com`) can help decide when to generate supporting resources like `google_monitoring_metric_descriptor`.
+
+### PromQL & Parsers
+
+*   **Strict Grammar Compliance:** Adhere to official grammar specifications (e.g., Prometheus's `generated_parser.y`) to ensure ecosystem compatibility.
+
+*   **Safe Parser Visitors:** ANTLR-generated visitors must be robust against partial/malformed input to prevent crashes during real-time parsing.
+
+*   **Strict Metric Definition:** PromQL expressions must only reference metrics explicitly defined in the `metrics` section of the SLA.
+
+*   **Standard-First Design:** Prioritize official standard adherence over lenient custom extensions.
+
+*   **Cross-Reference Validation:** Use custom JavaScript validation for logical consistency between sections (e.g., ensuring all defined metrics are used), as structural schema validation (AJV) is insufficient for these checks.
+
+*   **Recursive Specification Traversal:** Use recursive traversal functions to accurately capture all possible metric reference points, including nested objects and DSL identifiers.
+
+
+
+### UI & Styling
+
+*   **Bootstrap Interactive Components:** Interactive elements (Accordions, Dropdowns) require the Bootstrap JS bundle (`bootstrap.bundle.min.js`), not just CSS.
+
+*   **Responsive Height Management:** Use flexbox and dynamic height calculations for components like Ace Editor to maintain usability across screen sizes.
+
+*   **Reverse Lookups for UX:** Use utility functions to display friendly names instead of cryptic URIs (e.g., for Google Calendar URLs).
+
+*   **Global Utility Exposure for Testing:** Expose internal state-modifying functions to the `window` object to facilitate robust automated testing with Playwright.
