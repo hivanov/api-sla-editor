@@ -115,7 +115,7 @@ const onManualInput = (value) => {
       <span class="input-group-text small">ISO 8601</span>
       <input 
         type="text" 
-        class="form-control form-control-sm" 
+        class="form-control form-control-sm input-duration-iso" 
         :class="{'is-invalid': hasError}"
         :value="modelValue" 
         @input="onManualInput($event.target.value)" 
@@ -128,19 +128,19 @@ const onManualInput = (value) => {
     <div class="row g-2">
       <div class="col-3">
         <label class="form-label x-small mb-0">Days</label>
-        <input type="number" class="form-control form-control-sm" :value="parts.days" @input="updatePart('days', $event.target.value)" min="0">
+        <input type="number" class="form-control form-control-sm input-duration-days" :value="parts.days" @input="updatePart('days', $event.target.value)" min="0">
       </div>
       <div class="col-3">
         <label class="form-label x-small mb-0">Hours</label>
-        <input type="number" class="form-control form-control-sm" :value="parts.hours" @input="updatePart('hours', $event.target.value)" min="0">
+        <input type="number" class="form-control form-control-sm input-duration-hours" :value="parts.hours" @input="updatePart('hours', $event.target.value)" min="0">
       </div>
       <div class="col-3">
         <label class="form-label x-small mb-0">Mins</label>
-        <input type="number" class="form-control form-control-sm" :value="parts.minutes" @input="updatePart('minutes', $event.target.value)" min="0">
+        <input type="number" class="form-control form-control-sm input-duration-mins" :value="parts.minutes" @input="updatePart('minutes', $event.target.value)" min="0">
       </div>
       <div class="col-3">
         <label class="form-label x-small mb-0">Secs</label>
-        <input type="number" class="form-control form-control-sm" :value="parts.seconds" @input="updatePart('seconds', $event.target.value)" min="0">
+        <input type="number" class="form-control form-control-sm input-duration-seconds" :value="parts.seconds" @input="updatePart('seconds', $event.target.value)" min="0">
       </div>
     </div>
   </div>

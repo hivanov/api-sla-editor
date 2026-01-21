@@ -6,7 +6,7 @@ test.describe('Metrics constraints', () => {
   });
 
   test('should show validation error for invalid metric type in source', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -27,7 +27,7 @@ plans:
       editor._emit('change');
     });
 
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     
     // Check if the error is displayed in the GUI
     const errorFeedback = page.locator('.metrics-editor-component .invalid-feedback');
@@ -40,7 +40,7 @@ plans:
 
   test('comprehensive sync: invalid source -> gui error -> fix in gui -> valid source', async ({ page }) => {
     // 1. Set invalid metric type in Source
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       editor.setValue(`sla: 1.0.0
@@ -71,7 +71,7 @@ plans:
     expect(hasAnnotation).toBe(true);
 
     // 4. Switch to GUI and verify error display
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     const metricCard = page.locator('.metrics-editor-component .card:has-text("test_metric")');
     const typeSelect = metricCard.locator('.col-md-6:has(label:has-text("Type")) select');
     await expect(typeSelect).toHaveClass(/is-invalid/);
@@ -84,7 +84,7 @@ plans:
     }).toPass();
 
     // 6. Switch back to Source and verify it's now valid
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     
     // Wait for editor to update
     await page.waitForFunction(() => {
@@ -122,16 +122,17 @@ plans:
     await expect(unitSelect).toHaveValue('requests');
 
     // To be valid, it must be referenced
-    await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'P');
-    await page.click('.plans-editor-component button:has-text("Add Plan")');
-    const pCard = page.locator('.plans-editor-component .plan-item:has-text("P")');
-    await pCard.locator('.availability-editor-component select.metric-selector').selectOption('valid_metric');
+    await page.fill('.plans-editor-component .input-new-plan-name', 'P');
+    await page.click('.plans-editor-component .btn-add-plan');
+    const pCard = page.locator('.plans-editor-component .plan-item').filter({ hasText: 'P' }).first();
+    const availEditor = pCard.locator('.availability-editor-component');
+    await availEditor.locator('select.metric-selector').selectOption('valid_metric');
     
     // Toggle raw mode
-    const rawSwitch = pCard.locator('.availability-editor-component #raw-promql-toggle');
-    await rawSwitch.click();
+    const rawSwitch = availEditor.locator('.check-raw-promql');
+    await rawSwitch.check({ force: true });
     
-    await pCard.locator('.availability-editor-component textarea').fill('valid_metric > 0');
+    await availEditor.locator('.textarea-promql-raw').fill('valid_metric > 0');
 
     // Verify it's valid
     await expect(async () => {

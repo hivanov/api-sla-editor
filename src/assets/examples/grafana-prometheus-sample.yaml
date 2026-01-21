@@ -32,7 +32,7 @@ plans:
         period: PT1M
       - measurement: "sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m])) < 0.01"
         period: PT5M
-    x-support-policy:
+    supportPolicy:
       contactPoints:
         - contactType: "DevOps Team"
           channels:
@@ -40,7 +40,7 @@ plans:
               url: "mailto://devops@example.com"
             - type: email
               url: "mailto://oncall@example.com"
-    x-service-credits:
+    serviceCredits:
       currency: USD
       claimWindow: P30D
       tiers:

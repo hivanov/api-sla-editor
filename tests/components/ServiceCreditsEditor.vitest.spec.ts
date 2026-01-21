@@ -61,7 +61,7 @@ describe('ServiceCreditsEditor', () => {
     const wrapper = mount(ServiceCreditsEditor, {
       props: {
         serviceCredits: { currency: 'USD', claimWindow: 'P30D', tiers: [] },
-        path: '/plans/gold/x-service-credits'
+        path: '/plans/gold/serviceCredits'
       },
       global: {
         provide: {
@@ -84,10 +84,10 @@ describe('ServiceCreditsEditor', () => {
       props: {
         serviceCredits: { currency: '', claimWindow: 'invalid' },
         errors: {
-          '/plans/gold/x-service-credits/currency': ['Currency is required'],
-          '/plans/gold/x-service-credits/claimWindow': ['Invalid duration format']
+          '/plans/gold/serviceCredits/currency': ['Currency is required'],
+          '/plans/gold/serviceCredits/claimWindow': ['Invalid duration format']
         },
-        path: '/plans/gold/x-service-credits'
+        path: '/plans/gold/serviceCredits'
       },
     })
 

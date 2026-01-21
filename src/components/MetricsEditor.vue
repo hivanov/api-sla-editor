@@ -3,13 +3,13 @@
     <div v-for="(metric, name) in safeMetrics" :key="name" class="card mb-3" :data-metric-name="name">
       <div class="card-header d-flex justify-content-between align-items-center bg-light">
         <h5 class="mb-0">{{ name }}</h5>
-        <button class="btn btn-outline-danger btn-sm" @click="removeMetric(name)">Remove</button>
+        <button class="btn btn-outline-danger btn-sm btn-remove-metric" @click="removeMetric(name)">Remove</button>
       </div>
       <div class="card-body">
         <div class="row">
            <div class="col-md-6 mb-3">
              <label class="form-label">Type</label>
-             <select class="form-select" :class="{'is-invalid': errors['/metrics/' + name + '/type']}" :value="metric.type" @change="updateMetric(name, 'type', $event.target.value)">
+             <select class="form-select select-metric-type" :class="{'is-invalid': errors['/metrics/' + name + '/type']}" :value="metric.type" @change="updateMetric(name, 'type', $event.target.value)">
                <option value="">Select Type</option>
                <option value="boolean">boolean</option>
                <option value="integer">integer</option>
@@ -22,7 +22,7 @@
            </div>
            <div class="col-md-6 mb-3">
              <label class="form-label">Unit</label>
-             <select class="form-select" :class="{'is-invalid': errors['/metrics/' + name + '/unit']}" :value="metric.unit" @change="updateMetric(name, 'unit', $event.target.value)">
+             <select class="form-select select-metric-unit" :class="{'is-invalid': errors['/metrics/' + name + '/unit']}" :value="metric.unit" @change="updateMetric(name, 'unit', $event.target.value)">
                <option value="">None / Custom</option>
                <option value="requests">requests</option>
                <option value="ms">ms</option>
@@ -46,7 +46,7 @@
         
         <div class="mb-3">
           <label class="form-label">Monitoring ID</label>
-          <input type="text" class="form-control" 
+          <input type="text" class="form-control input-metric-monitoring-id" 
             :class="{'is-invalid': errors['/metrics/' + name + '/monitoringId']}"
             :value="metric.monitoringId" 
             @input="updateMetric(name, 'monitoringId', $event.target.value)"
@@ -59,7 +59,7 @@
         <div class="row">
            <div class="col-md-6 mb-3">
               <label class="form-label">Resource Type</label>
-              <input type="text" class="form-control"
+              <input type="text" class="form-control input-metric-resource-type"
                 :class="{'is-invalid': errors['/metrics/' + name + '/resourceType']}"
                 :value="metric.resourceType"
                 @input="updateMetric(name, 'resourceType', $event.target.value)"
@@ -70,7 +70,7 @@
            </div>
            <div class="col-md-6 mb-3">
              <label class="form-label">Metric Kind</label>
-             <select class="form-select"
+             <select class="form-select select-metric-kind"
                 :class="{'is-invalid': errors['/metrics/' + name + '/metricKind']}"
                 :value="metric.metricKind"
                 @change="updateMetric(name, 'metricKind', $event.target.value)">
@@ -101,8 +101,8 @@
     </div>
     <div class="mt-3">
       <div class="input-group">
-        <input type="text" class="form-control" placeholder="New metric name" v-model="newMetricName">
-        <button class="btn btn-primary" @click="addMetric">Add Metric</button>
+        <input type="text" class="form-control input-new-metric-name" placeholder="New metric name" v-model="newMetricName">
+        <button class="btn btn-primary btn-add-metric" @click="addMetric">Add Metric</button>
       </div>
     </div>
   </div>

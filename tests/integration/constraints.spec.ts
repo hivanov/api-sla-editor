@@ -20,7 +20,7 @@ test.describe('Numeric Constraints', () => {
     
     await costInput.fill('-100');
     // It should be constrained to 0 in the GUI state, which reflects in the Source tab
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -35,7 +35,7 @@ test.describe('Numeric Constraints', () => {
     const compInput = planCard.locator('.service-credits-editor-component input[placeholder="5"]');
     await compInput.fill('-50');
 
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -51,7 +51,7 @@ test.describe('Numeric Constraints', () => {
     const daysInput = durationEditor.locator('input[type="number"]').first();
     await daysInput.fill('-5');
 
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -64,7 +64,11 @@ test.describe('Numeric Constraints', () => {
     test('should not allow negative downtime in AvailabilityEditor', async ({ page }) => {
     const planCard = page.locator('.plan-item:has-text("Constraint Plan")');
     const availEditor = planCard.locator('.availability-editor-component');
-    const rawSwitch = availEditor.locator('#raw-promql-toggle');
+    
+    // Select metric first to enable PrometheusMeasurementEditor
+    await availEditor.locator('select.metric-selector').selectOption('uptime');
+
+    const rawSwitch = availEditor.locator('.check-raw-promql');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
@@ -77,7 +81,7 @@ test.describe('Numeric Constraints', () => {
     const hoursInput = availEditor.locator('.row.g-2 input[type="number"]').nth(1);
     await hoursInput.fill('10');
     
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     let editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -85,10 +89,10 @@ test.describe('Numeric Constraints', () => {
     expect(editorValue).not.toContain('target: 100%');
 
     // Now set negative hours
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await hoursInput.fill('-10');
     
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();

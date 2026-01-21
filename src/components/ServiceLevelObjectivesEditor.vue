@@ -4,18 +4,18 @@
     <div v-for="(slo, index) in safeObjectives" :key="index" class="card mb-2 p-2 slo-item">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <span>SLO #{{ index + 1 }}</span>
-        <button class="btn btn-danger btn-sm" @click="removeSlo(index)">Remove</button>
+        <button class="btn btn-danger btn-sm btn-remove-slo" @click="removeSlo(index)">Remove</button>
       </div>
       <div class="mb-3">
         <label class="form-label">Priority</label>
-        <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + index + '/priority']}" placeholder="e.g., High" :value="slo.priority" @input="updateSlo(index, 'priority', $event.target.value)">
+        <input type="text" class="form-control input-slo-priority" :class="{'is-invalid': errors[path + '/' + index + '/priority']}" placeholder="e.g., High" :value="slo.priority" @input="updateSlo(index, 'priority', $event.target.value)">
         <div class="invalid-feedback" v-if="errors[path + '/' + index + '/priority']">
           {{ errors[path + '/' + index + '/priority'].join(', ') }}
         </div>
       </div>
       <div class="mb-3">
         <label class="form-label">Name</label>
-        <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + index + '/name']}" placeholder="e.g., Incident Resolution" :value="slo.name" @input="updateSlo(index, 'name', $event.target.value)">
+        <input type="text" class="form-control input-slo-name" :class="{'is-invalid': errors[path + '/' + index + '/name']}" placeholder="e.g., Incident Resolution" :value="slo.name" @input="updateSlo(index, 'name', $event.target.value)">
         <div class="invalid-feedback" v-if="errors[path + '/' + index + '/name']">
           {{ errors[path + '/' + index + '/name'].join(', ') }}
         </div>
@@ -24,118 +24,31 @@
       <div v-for="(guarantee, gIndex) in slo.guarantees" :key="gIndex" class="card mb-2 p-2 slo-guarantee-item">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Guar. #{{ gIndex + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeSloGuarantee(index, gIndex)">Remove</button>
+          <button class="btn btn-danger btn-sm btn-remove-slo-guarantee" @click="removeSloGuarantee(index, gIndex)">Remove</button>
         </div>
         <div class="mb-3">
-          <div class="d-flex gap-3 mb-2 flex-wrap">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" :name="'slo-mode-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" :id="'slo-mode-measurement-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" 
-                :checked="getSloGuaranteeMode(guarantee) === 'measurement'" 
-                @change="setSloGuaranteeMode(index, gIndex, 'measurement')">
-              <label class="form-check-label small" :for="'slo-mode-measurement-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex">
-                Measurement (Recommended)
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" :name="'slo-mode-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" :id="'slo-mode-structured-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" 
-                :checked="getSloGuaranteeMode(guarantee) === 'structured'" 
-                @change="setSloGuaranteeMode(index, gIndex, 'structured')">
-              <label class="form-check-label small" :for="'slo-mode-structured-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex">
-                Structured
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" :name="'slo-mode-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" :id="'slo-mode-legacy-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex" 
-                :checked="getSloGuaranteeMode(guarantee) === 'legacy'" 
-                @change="setSloGuaranteeMode(index, gIndex, 'legacy')">
-              <label class="form-check-label small" :for="'slo-mode-legacy-' + path.replace(/\//g, '-') + '-' + index + '-' + gIndex">
-                Simple Duration (Legacy)
-              </label>
-            </div>
-          </div>
-
-          <template v-if="getSloGuaranteeMode(guarantee) === 'measurement'">
-            <PrometheusMeasurementEditor 
-              :model-value="guarantee.measurement" 
-              :metrics="metrics"
-              :errors="errors"
-              :path="path + '/' + index + '/guarantees/' + gIndex + '/measurement'"
-              @update:model-value="updateSloGuarantee(index, gIndex, 'measurement', $event)"
-            />
-          </template>
-
-          <template v-else>
-            <label class="form-label">Metric</label>
-            <select class="form-select" :class="{'is-invalid': errors[path + '/' + index + '/guarantees/' + gIndex + '/metric']}" :value="guarantee.metric" @change="updateSloGuarantee(index, gIndex, 'metric', $event.target.value)">
-              <option value="" disabled>Select metric</option>
-              <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
-            </select>
-            <div class="invalid-feedback" v-if="errors[path + '/' + index + '/guarantees/' + gIndex + '/metric']">
-              {{ errors[path + '/' + index + '/guarantees/' + gIndex + '/metric'].join(', ') }}
-            </div>
-          </template>
+          <PrometheusMeasurementEditor 
+            :model-value="guarantee.measurement" 
+            :metrics="metrics"
+            :errors="errors"
+            :path="path + '/' + index + '/guarantees/' + gIndex + '/measurement'"
+            @update:model-value="updateSloGuarantee(index, gIndex, 'measurement', $event)"
+          />
         </div>
-
-        <template v-if="getSloGuaranteeMode(guarantee) === 'structured'">
-          <div class="row g-2">
-            <div class="col-md-4 mb-2">
-              <label class="form-label">Operator</label>
-              <select class="form-select" :class="{'is-invalid': errors[path + '/' + index + '/guarantees/' + gIndex + '/operator']}" :value="guarantee.operator" @change="updateSloGuarantee(index, gIndex, 'operator', $event.target.value)">
-                <option value="">None</option>
-                <option value=">">></option>
-                <option value="<"><</option>
-                <option value=">=">>=</option>
-                <option value="<="><=</option>
-                <option value="=">=</option>
-                <option value="between">between</option>
-                <option value="avg">avg</option>
-              </select>
-            </div>
-            
-            <div class="col-md-8 mb-2">
-              <label class="form-label">Value</label>
-              <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/' + index + '/guarantees/' + gIndex + '/value']}" placeholder="Value" :value="guarantee.value" @input="updateSloGuarantee(index, gIndex, 'value', $event.target.value)">
-            </div>
-          </div>
-
-          <div class="mb-2">
-            <DurationEditor 
-              :model-value="guarantee.period" 
-              :errors="errors"
-              :path="path + '/' + index + '/guarantees/' + gIndex + '/period'"
-              @update:model-value="updateSloGuarantee(index, gIndex, 'period', $event)"
-              label="Period"
-            />
-          </div>
-        </template>
-
-        <template v-else-if="getSloGuaranteeMode(guarantee) === 'legacy'">
-          <div class="mt-2 pt-2 border-top">
-            <DurationEditor 
-              :model-value="guarantee.duration" 
-              :errors="errors"
-              :path="path + '/' + index + '/guarantees/' + gIndex + '/duration'"
-              @update:model-value="updateSloGuarantee(index, gIndex, 'duration', $event)"
-              label="Duration"
-            />
-          </div>
-        </template>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addSloGuarantee(index)">Add SLO Guarantee</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-slo-guarantee" @click="addSloGuarantee(index)">Add SLO Guarantee</button>
     </div>
-    <button class="btn btn-secondary btn-sm mt-2 add-slo-btn" @click="addSlo">Add SLO</button>
+    <button class="btn btn-secondary btn-sm mt-2 add-slo-btn btn-add-slo" @click="addSlo">Add SLO</button>
   </div>
 </template>
 
 <script>
 import { computed } from 'vue';
-import DurationEditor from './DurationEditor.vue';
 import PrometheusMeasurementEditor from './PrometheusMeasurementEditor.vue';
 
 export default {
   name: 'ServiceLevelObjectivesEditor',
   components: {
-    DurationEditor,
     PrometheusMeasurementEditor
   },
   props: {
@@ -199,55 +112,11 @@ export default {
       updateObjectives(newObjectives);
     };
 
-    const getSloGuaranteeMode = (guarantee) => {
-      if (guarantee.measurement !== undefined) {
-        return 'measurement';
-      }
-      if (guarantee.duration !== undefined && guarantee.operator === undefined && guarantee.value === undefined && guarantee.period === undefined) {
-        return 'legacy';
-      }
-      return 'structured';
-    };
-
-    const setSloGuaranteeMode = (sloIndex, guaranteeIndex, mode) => {
-      const newObjectives = [...safeObjectives.value];
-      const slo = { ...newObjectives[sloIndex] };
-      slo.guarantees = [...slo.guarantees];
-      const guarantee = { ...slo.guarantees[guaranteeIndex] };
-      
-      if (mode === 'measurement') {
-        delete guarantee.metric;
-        delete guarantee.operator;
-        delete guarantee.value;
-        delete guarantee.period;
-        delete guarantee.duration;
-        if (guarantee.measurement === undefined) guarantee.measurement = '';
-      } else if (mode === 'legacy') {
-        delete guarantee.measurement;
-        delete guarantee.operator;
-        delete guarantee.value;
-        delete guarantee.period;
-        if (guarantee.duration === undefined) guarantee.duration = '';
-        if (guarantee.metric === undefined) guarantee.metric = '';
-      } else {
-        delete guarantee.measurement;
-        delete guarantee.duration;
-        if (guarantee.metric === undefined) guarantee.metric = '';
-      }
-      
-      slo.guarantees[guaranteeIndex] = guarantee;
-      newObjectives[sloIndex] = slo;
-      updateObjectives(newObjectives);
-    };
-
     const updateSloGuarantee = (sloIndex, guaranteeIndex, key, value) => {
       const newObjectives = [...safeObjectives.value];
       const slo = { ...newObjectives[sloIndex] };
       slo.guarantees = [...slo.guarantees];
       const guarantee = { ...slo.guarantees[guaranteeIndex], [key]: value };
-      if (value === '' || value === null || value === undefined) {
-        delete guarantee[key];
-      }
       slo.guarantees[guaranteeIndex] = guarantee;
       newObjectives[sloIndex] = slo;
       updateObjectives(newObjectives);
@@ -270,8 +139,6 @@ export default {
       addSloGuarantee,
       updateSloGuarantee,
       removeSloGuarantee,
-      getSloGuaranteeMode,
-      setSloGuaranteeMode,
     };
   },
 };

@@ -6,7 +6,7 @@ test.describe('Description Tab', () => {
   });
 
   test('should reflect custom currencies in description', async ({ page }) => {
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     
     // Add custom currency
     await page.click('text=Add Custom Currency');
@@ -26,7 +26,7 @@ test.describe('Description Tab', () => {
     await planItem.locator('.pricing-editor-component input[placeholder="Currency"]').fill('UNIT');
 
     // Go to Description tab
-    await page.click('text=Description');
+    await page.click('.btn-tab-description');
     
     const description = page.locator('.policy-description');
     await expect(description).toContainText('Currencies');
@@ -36,7 +36,7 @@ test.describe('Description Tab', () => {
   });
 
   test('should reflect holiday calendar names in description', async ({ page }) => {
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     
     // Add Plan
     await page.fill('input[placeholder="New plan name"]', 'Gold');
@@ -52,7 +52,7 @@ test.describe('Description Tab', () => {
     await input.dispatchEvent('input');
 
     // Go to Description tab
-    await page.click('text=Description');
+    await page.click('.btn-tab-description');
     
     const description = page.locator('.policy-description');
     await expect(description).toContainText('Germany: Bavaria Holidays');
@@ -61,7 +61,7 @@ test.describe('Description Tab', () => {
 
   test('should reflect human-readable prometheus measurements in description', async ({ page }) => {
     test.setTimeout(30000);
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     
     // 1. Define a metric
     await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'latency');
@@ -77,18 +77,18 @@ test.describe('Description Tab', () => {
     const quotaEditor = goldPlan.locator('.quotas-editor-component .prometheus-measurement-editor');
     await quotaEditor.locator('select').first().selectOption('quantile_over_time');
     await quotaEditor.locator('input[type="number"]').first().fill('0.99');
-    await quotaEditor.locator('select').nth(1).selectOption('latency');
+    await quotaEditor.locator('select.metric-select').selectOption('latency');
     await quotaEditor.locator('input[type="number"]').nth(1).fill('5');
-    await quotaEditor.locator('input[type="text"]').fill('15');
+    await quotaEditor.locator('.input-promql-value').fill('15');
 
     // 4. Add an Exclusion
     await goldPlan.locator('.exclusions-editor-component button:has-text("Add Exclusion")').click();
     
     // Switch to Metric mode
-    await goldPlan.locator('.exclusions-editor-component .d-flex.align-items-center select').last().selectOption('metric');
+    await goldPlan.locator('.exclusions-editor-component select').first().selectOption('metric');
 
     const exclEditor = goldPlan.locator('.exclusions-editor-component .prometheus-measurement-editor');
-    const rawSwitch = exclEditor.locator('#raw-promql-toggle');
+    const rawSwitch = exclEditor.locator('.check-raw-promql');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
@@ -96,10 +96,10 @@ test.describe('Description Tab', () => {
     await exclEditor.locator('textarea').fill('avg_over_time(latency[10m]) < 10');
     
     // 5. Switch to Description tab
-    await page.click('.nav-link:has-text("Description")');
+    await page.click('.btn-tab-description');
     const description = page.locator('.policy-description');
     
-    // Verify Guarantee rendering
+    // Verify Quota rendering (it's in the markdown body now as a human readable string)
     await expect(description).toContainText('The 99th percentile of latency over 5 minutes is less than 15');
     // Verify Exclusion rendering
     await expect(description).toContainText('The average of latency over 10 minutes is less than 10');

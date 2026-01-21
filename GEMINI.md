@@ -142,4 +142,9 @@ The application has been updated to be more responsive. Key changes include:
 *   **Upstream Specification Authority:** Always base custom grammar implementations on official sources (e.g., standard Yacc/Bison definitions like [Prometheus's generated_parser.y](https://raw.githubusercontent.com/prometheus/prometheus/refs/heads/main/promql/parser/generated_parser.y)) to ensure predictability and ecosystem compatibility.
 *   **Test Case Validity:** When parsing errors occur in test suites, verify that the input expressions in the tests are syntactically valid according to the official standard. Correcting the test expectations to match the standard is preferred over modifying the parser to accommodate invalid input.
 
+### CSS Selector Refinements
+
+*   **Actionable Items:** When authoring Vue components and/or forms, make sure to include CSS selectors in all actionable items (links, inputs, buttons, status indicators, etc.).
+*   **Selector Prioritization:** Prioritize using the CSS selector classes above over normal CSS at all times. If a CSS selector class is missing, add it to the control first and then use it in the test, instead of writing generic CSS selectors.
+
 

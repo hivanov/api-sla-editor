@@ -304,9 +304,16 @@ export const extractStructuredGuarantee = (promql: string) => {
     if (!res.valid || !res.ast || res.ast.type !== 'BinaryExpr') return null;
 
     const ast = res.ast;
+    const getValue = (node: any) => {
+      if (node.type === 'NumberLiteral') return node.value.toString();
+      if (node.type === 'StringLiteral') return node.value;
+      if (node.type === 'VectorSelector' && (node.name === 'true' || node.name === 'false')) return node.name;
+      return null;
+    };
+
     const structured: any = {
       operator: ast.op,
-      value: ast.right.type === 'NumberLiteral' ? ast.right.value.toString() : null
+      value: getValue(ast.right)
     };
 
     // Try to find the metric and period in the left side

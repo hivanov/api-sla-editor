@@ -5,7 +5,7 @@ test.describe('Prometheus Measurement Editor Switching', () => {
     await page.goto('/');
     
     // Ensure we are in GUI mode
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
 
     // Add a metric first because SLOs usually need a metric
     const metricsWrapper = page.locator('#metrics-editor');
@@ -27,7 +27,7 @@ test.describe('Prometheus Measurement Editor Switching', () => {
 
   test('should hide Raw PromQL toggle for non-representable expressions', async ({ page }) => {
     const sloGuarantee = page.locator('.slo-guarantee-item').first();
-    const toggle = sloGuarantee.locator('#raw-promql-toggle');
+    const toggle = sloGuarantee.locator('.check-raw-promql');
     
     // 1. Initial state: Switch is visible
     await expect(toggle).toBeVisible();
@@ -52,21 +52,20 @@ test.describe('Prometheus Measurement Editor Switching', () => {
     await expect(sloGuarantee.locator('select').first()).toBeVisible();
     
     // Verify values were synced back
-    const valueInput = sloGuarantee.locator('input[placeholder*="e.g. 15"]');
+    const valueInput = sloGuarantee.locator('.input-promql-value');
     await expect(valueInput).toHaveValue('10');
   });
 
   test('should stay in Raw mode if expression becomes non-representable via source editor', async ({ page }) => {
     const sloGuarantee = page.locator('.slo-guarantee-item').first();
-    const toggle = sloGuarantee.locator('#raw-promql-toggle');
+    const toggle = sloGuarantee.locator('.check-raw-promql');
 
     // Switch to Source tab
-    await page.click('text=Source');
-    // ... wait a bit for Ace to load
-    await page.waitForTimeout(500);
+    await page.click('.btn-tab-source');
+    await expect(page.locator('.ace_editor')).toBeVisible();
     
     // Switch away and back to GUI
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     
     await toggle.check();
     await sloGuarantee.locator('textarea').fill('requests_total / 10 > 5');
@@ -83,12 +82,12 @@ test.describe('Prometheus Measurement Editor Switching', () => {
     const sloGuarantee = page.locator('.slo-guarantee-item').first();
     
     // In GUI mode
-    await sloGuarantee.locator('.metric-select').selectOption('requests');
-    const valueInput = sloGuarantee.locator('input[placeholder*="e.g. 15"]');
+    await sloGuarantee.locator('select.metric-select').selectOption('requests');
+    const valueInput = sloGuarantee.locator('.input-promql-value');
     await valueInput.fill(''); // Clear value
     
     // It should NOT show "Valid PromQL"
-    const validLabel = sloGuarantee.locator('text=Valid PromQL');
+    const validLabel = sloGuarantee.locator('.label-valid-promql');
     await expect(validLabel).not.toBeVisible();
     
     // It should show an error

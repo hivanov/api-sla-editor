@@ -7,7 +7,7 @@
       <div v-for="(value, key) in safeQuotas" :key="key" class="mb-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="fw-bold small">Quota Entry</span>
-          <button class="btn btn-outline-danger btn-sm" @click="removeQuota(key)">Remove</button>
+          <button class="btn btn-outline-danger btn-sm btn-remove-quota" @click="removeQuota(key)">Remove</button>
         </div>
         <PrometheusMeasurementEditor 
           :model-value="value" 
@@ -20,7 +20,7 @@
           {{ errors[path + '/' + key].join(', ') }}
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addQuota">Add Quota</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-quota" @click="addQuota">Add Quota</button>
     </div>
   </div>
 </template>

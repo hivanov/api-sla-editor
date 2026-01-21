@@ -7,13 +7,13 @@ test.describe('GUI-Source Synchronization', () => {
 
   test('should reflect GUI changes in Source tab', async ({ page }) => {
     // 1. Go to GUI tab (default)
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     // 2. Change a field in GUI
     await page.fill('input#context-id', 'sync-test-id');
 
     // 3. Switch to Source tab
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     // 4. Check if Ace Editor has the change
     const editorValue = await page.evaluate(() => {
@@ -26,7 +26,7 @@ test.describe('GUI-Source Synchronization', () => {
 
   test('should reflect Source changes in GUI tab', async ({ page }) => {
     // 1. Switch to Source tab
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     // 2. Change content in Ace Editor
     await page.evaluate(() => {
@@ -35,7 +35,7 @@ test.describe('GUI-Source Synchronization', () => {
     });
 
     // 3. Switch to GUI tab
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     // 4. Check if GUI input has the change
     await expect(page.locator('input#context-id')).toHaveValue('from-source');
@@ -43,21 +43,21 @@ test.describe('GUI-Source Synchronization', () => {
 
   test('should reflect plan deletion from Source in GUI', async ({ page }) => {
     // 1. Add a plan in GUI
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'plan-to-delete');
     await page.click('.plans-editor-component button:has-text("Add Plan")');
     
     await expect(page.locator('.plan-item:has-text("plan-to-delete")')).toBeVisible();
 
     // 2. Switch to Source and remove the plan
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       editor.setValue('sla: 1.0.0\ncontext:\n  id: test\n  type: plans\nmetrics: {}\nplans: {}', -1);
     });
 
     // 3. Switch back to GUI
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     // 4. Check if plan is gone
     await expect(page.locator('.plan-item:has-text("plan-to-delete")')).not.toBeVisible();
@@ -65,7 +65,7 @@ test.describe('GUI-Source Synchronization', () => {
 
   test('should reflect deep changes (e.g. support policy) between tabs', async ({ page }) => {
     // 1. In GUI, add a plan and a support hour
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'deep-plan');
     await page.click('.plans-editor-component button:has-text("Add Plan")');
     
@@ -74,7 +74,7 @@ test.describe('GUI-Source Synchronization', () => {
     await planCard.locator('input[placeholder="HH:mm"]').first().fill('10:00');
 
     // 2. Switch to Source and verify
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     let editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -89,7 +89,7 @@ test.describe('GUI-Source Synchronization', () => {
     });
 
     // 4. Switch back to GUI and verify
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await expect(planCard.locator('input[placeholder="HH:mm"]').first()).toHaveValue('11:00');
   });
 });

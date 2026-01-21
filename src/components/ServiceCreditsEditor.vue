@@ -6,7 +6,7 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Currency</label>
-        <input type="text" class="form-control" 
+        <input type="text" class="form-control input-service-credits-currency" 
                :class="{'is-invalid': errors[path + '/currency']}" 
                placeholder="Currency" 
                :value="safeServiceCredits.currency" 
@@ -31,12 +31,12 @@
       <div v-for="(tier, index) in safeServiceCredits.tiers" :key="index" class="card mb-2 p-2">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Tier #{{ index + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeTier(index)">Remove</button>
+          <button class="btn btn-danger btn-sm btn-remove-service-credit-tier" @click="removeTier(index)">Remove</button>
         </div>
         <div class="row">
           <div class="col-md-6 mb-2">
             <label class="form-label">Metric</label>
-            <select class="form-select" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/metric']}" :value="tier.condition?.metric" @change="updateTierCondition(index, 'metric', $event.target.value)">
+            <select class="form-select select-service-credit-metric" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/metric']}" :value="tier.condition?.metric" @change="updateTierCondition(index, 'metric', $event.target.value)">
               <option value="" disabled>Select metric</option>
               <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
             </select>
@@ -46,28 +46,28 @@
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Operator</label>
-            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/operator']}" placeholder="<" :value="tier.condition?.operator" @input="updateTierCondition(index, 'operator', $event.target.value)">
+            <input type="text" class="form-control input-service-credit-operator" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/operator']}" placeholder="<" :value="tier.condition?.operator" @input="updateTierCondition(index, 'operator', $event.target.value)">
             <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/condition/operator']">
               {{ errors[path + '/tiers/' + index + '/condition/operator'].join(', ') }}
             </div>
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Value</label>
-            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/value']}" placeholder="99.9" :value="tier.condition?.value" @input="updateTierCondition(index, 'value', $event.target.value)">
+            <input type="text" class="form-control input-service-credit-value" :class="{'is-invalid': errors[path + '/tiers/' + index + '/condition/value']}" placeholder="99.9" :value="tier.condition?.value" @input="updateTierCondition(index, 'value', $event.target.value)">
             <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/condition/value']">
               {{ errors[path + '/tiers/' + index + '/condition/value'].join(', ') }}
             </div>
           </div>
           <div class="col-md-6 mb-2">
             <label class="form-label">Compensation</label>
-            <input type="number" class="form-control compensation-input" :class="{'is-invalid': errors[path + '/tiers/' + index + '/compensation']}" placeholder="5" :value="tier.compensation" @input="handleCompensationInput(index, $event)" min="0">
+            <input type="number" class="form-control compensation-input input-service-credit-compensation" :class="{'is-invalid': errors[path + '/tiers/' + index + '/compensation']}" placeholder="5" :value="tier.compensation" @input="handleCompensationInput(index, $event)" min="0">
             <div class="invalid-feedback" v-if="errors[path + '/tiers/' + index + '/compensation']">
               {{ errors[path + '/tiers/' + index + '/compensation'].join(', ') }}
             </div>
           </div>
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addTier">Add Tier</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-service-credit-tier" @click="addTier">Add Tier</button>
     </div>
   </div>
 </template>

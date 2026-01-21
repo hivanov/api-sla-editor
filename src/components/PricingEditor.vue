@@ -6,14 +6,14 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Cost</label>
-        <input type="number" class="form-control" :class="{'is-invalid': errors[path + '/cost']}" placeholder="Cost" :value="safePricing.cost" @input="update('cost', $event.target.value)" min="0">
+        <input type="number" class="form-control input-pricing-cost" :class="{'is-invalid': errors[path + '/cost']}" placeholder="Cost" :value="safePricing.cost" @input="update('cost', $event.target.value)" min="0">
         <div class="invalid-feedback" v-if="errors[path + '/cost']">
           {{ errors[path + '/cost'].join(', ') }}
         </div>
       </div>
       <div class="mb-3">
         <label class="form-label">Currency</label>
-        <input type="text" class="form-control" 
+        <input type="text" class="form-control input-pricing-currency" 
                :class="{'is-invalid': errors[path + '/currency']}" 
                placeholder="Currency" 
                :value="safePricing.currency" 

@@ -24,11 +24,11 @@ describe('PlansEditor', () => {
             guarantees: [],
             pricing: { cost: 100, currency: 'USD', period: 'P1M' },
             quotas: { 'max-users': '100' },
-            'x-support-policy': {},
-            'x-service-credits': {},
-            'x-maintenance-policy': {},
-            'x-sla-exclusions': [],
-            'x-lifecycle-policy': {},
+            supportPolicy: {},
+            serviceCredits: {},
+            maintenancePolicy: {},
+            slaExclusions: [],
+            lifecyclePolicy: {},
           },
         },
         metrics: { 'max-users': { type: 'integer' } }
@@ -75,7 +75,7 @@ describe('PlansEditor', () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {
-          basic: { title: 'Basic Plan', description: 'Desc', availability: { target: '99%', metric: 'uptime', expression: 'up == 1' }, guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
+          basic: { title: 'Basic Plan', description: 'Desc', availability: { target: '99%', metric: 'uptime', expression: 'up == 1' }, guarantees: [], pricing: {}, quotas: {}, supportPolicy: {} },
         },
       },
     })
@@ -83,7 +83,7 @@ describe('PlansEditor', () => {
     // Update title
     await wrapper.find('input[placeholder="Plan Title"]').setValue('Updated Basic Plan')
     let expectedPlans = {
-      basic: { title: 'Updated Basic Plan', description: 'Desc', availability: { target: '99%', metric: 'uptime', expression: 'up == 1' }, guarantees: [], pricing: {}, quotas: {}, 'x-support-policy': {} },
+      basic: { title: 'Updated Basic Plan', description: 'Desc', availability: { target: '99%', metric: 'uptime', expression: 'up == 1' }, guarantees: [], pricing: {}, quotas: {}, supportPolicy: {} },
     }
     expect(wrapper.emitted('update:plans')[0][0]).toEqual(expectedPlans)
 
@@ -97,7 +97,7 @@ describe('PlansEditor', () => {
     const wrapper = mount(PlansEditor, {
       props: {
         plans: {
-          basic: { title: 'Basic Plan', pricing: {}, quotas: {}, guarantees: [], 'x-support-policy': {} },
+          basic: { title: 'Basic Plan', pricing: {}, quotas: {}, guarantees: [], supportPolicy: {} },
         },
       },
     })

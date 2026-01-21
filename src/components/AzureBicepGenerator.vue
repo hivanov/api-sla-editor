@@ -300,7 +300,7 @@ export default {
 
        if (sla.plans) {
           Object.values(sla.plans).forEach(plan => {
-             const support = plan['x-support-policy'];
+             const support = plan.supportPolicy;
              if (support && support.contactPoints) {
                 support.contactPoints.forEach(cp => {
                    if (cp.channels) {

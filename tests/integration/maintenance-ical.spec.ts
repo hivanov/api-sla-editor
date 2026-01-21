@@ -6,7 +6,7 @@ test.describe('Maintenance iCal Source', () => {
   });
 
   test('should allow adding and editing iCal sources in maintenance policy', async ({ page }) => {
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     // 1. Add a plan first to reveal maintenance policy editor
     await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'uptime');
@@ -20,7 +20,7 @@ test.describe('Maintenance iCal Source', () => {
     // Satisfy required availability
     const availEditor = page.locator('.availability-editor-component');
     await availEditor.locator('select').first().selectOption('uptime');
-    const rawSwitch = availEditor.locator('#raw-promql-toggle');
+    const rawSwitch = availEditor.locator('.check-raw-promql');
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
@@ -41,7 +41,7 @@ test.describe('Maintenance iCal Source', () => {
     await maintenanceEditor.locator('input[placeholder="Description of the source"]').fill(description);
     
     // 4. Remove pricing if it was auto-added to avoid missing required subfields errors
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       let val = editor.getValue();
@@ -49,10 +49,10 @@ test.describe('Maintenance iCal Source', () => {
       val = val.replace(/pricing: \{\}/g, '');
       editor.setValue(val, -1);
     });
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     // 5. Verify in Source editor
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));

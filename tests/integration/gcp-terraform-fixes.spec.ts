@@ -39,12 +39,13 @@ test.describe('GCP Terraform Generator Comprehensive Validation', () => {
     const sloEditor = planCard.locator('.service-level-objectives-editor-component').first();
     await sloEditor.getByRole('button', { name: 'Add SLO Guarantee' }).click();
     const sloGuarantee = sloEditor.locator('.slo-guarantee-item').first();
-    await sloGuarantee.locator('label:has-text("Structured")').click();
-    await sloGuarantee.locator('select').first().selectOption('request_latency');
-    await sloGuarantee.locator('select').nth(1).selectOption('<');
-    await sloGuarantee.locator('input[placeholder="Value"]').fill('200');
-
-    // 3. Generate Terraform
+    
+    await sloGuarantee.locator('select.metric-select').selectOption('request_latency');
+    await sloGuarantee.locator('.input-promql-window-value').fill('1');
+    await sloGuarantee.locator('.select-promql-window-unit').selectOption('m');
+    await sloGuarantee.locator('.input-promql-value').fill('200');
+    
+    // 6. Navigate to Terraform Generator
     await page.click('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
     await page.evaluate(() => {
         const items = Array.from(document.querySelectorAll('.dropdown-item'));

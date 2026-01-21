@@ -2,7 +2,7 @@
   <div class="gcp-monitoring-editor-content gcp-monitoring-editor-component">
     <div class="mb-3">
        <label class="form-label">GCP Project ID</label>
-       <input type="text" class="form-control" 
+       <input type="text" class="form-control input-gcp-project-id" 
           :value="projectId" 
           @input="projectId = $event.target.value"
           placeholder="e.g. my-gcp-project-id">

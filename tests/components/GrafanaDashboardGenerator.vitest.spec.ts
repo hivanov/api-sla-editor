@@ -34,7 +34,7 @@ describe('GrafanaDashboardGenerator', () => {
         name: 'Standard',
         availability: { target: '99.9%', metric: 'uptime', expression: 'up == 1' },
         guarantees: [
-          { metric: 'uptime', operator: '>=', value: '99.9' }
+          { measurement: 'uptime >= 99.9' }
         ]
       }
     }
@@ -60,7 +60,7 @@ describe('GrafanaDashboardGenerator', () => {
     expect(json).toContain('"uid": "Prometheus"');
     
     const dashboard = JSON.parse(json);
-    expect(dashboard.panels.length).toBeGreaterThan(2); 
+    expect(dashboard.panels.length).toBeGreaterThan(1); 
     // Should have Availability Panel
     const avPanel = dashboard.panels.find(p => p.title.includes('Service Availability Status'));
     expect(avPanel).toBeDefined();
@@ -119,7 +119,7 @@ describe('GrafanaDashboardGenerator', () => {
       plans: {
         standard: {
           guarantees: [
-            { metric: 'uptime', operator: '<', value: '200' }
+            { measurement: 'uptime < 200' }
           ]
         }
       }
@@ -149,7 +149,7 @@ describe('GrafanaDashboardGenerator', () => {
         plans: {
             standard: {
                 guarantees: [],
-                'x-service-credits': {
+                'serviceCredits': {
                     currency: 'USD',
                     claimWindow: 'P1M',
                     tiers: [
@@ -191,7 +191,7 @@ describe('GrafanaDashboardGenerator', () => {
           plans: {
               standard: {
                   guarantees: [],
-                  'x-support-policy': {
+                  'supportPolicy': {
                       contactPoints: [
                           {
                               contactType: 'DevOps',

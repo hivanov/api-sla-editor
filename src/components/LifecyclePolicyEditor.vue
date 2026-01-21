@@ -12,7 +12,7 @@
         label="Minimum Term"
       />
       <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" :checked="safeLifecyclePolicy.autoRenewal" @change="updateField('autoRenewal', $event.target.checked)" id="autoRenewal">
+        <input class="form-check-input checkbox-lifecycle-auto-renewal" type="checkbox" :checked="safeLifecyclePolicy.autoRenewal" @change="updateField('autoRenewal', $event.target.checked)" id="autoRenewal">
         <label class="form-check-label" for="autoRenewal">
           Auto Renewal
         </label>

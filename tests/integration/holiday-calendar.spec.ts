@@ -39,7 +39,7 @@ test.describe('Holiday Calendar Search', () => {
     await input.dispatchEvent('input');
 
     // Switch to Source tab to see YAML
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     // Verify YAML update
     const yamlEditor = page.locator('.ace_content');

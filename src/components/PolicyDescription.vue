@@ -7,7 +7,7 @@
 <script>
 import { computed } from 'vue';
 import { marked } from 'marked';
-import { formatDuration, formatRRule, hasContent, formatPrometheusMeasurement } from '../utils/formatters';
+import { formatDuration, formatRRule, hasContent, formatPrometheusMeasurement, extractStructuredGuarantee } from '../utils/formatters';
 import { getHolidayCalendarName } from '../utils/holidays';
 
 export default {
@@ -85,40 +85,31 @@ export default {
             md += `${plan.description}\n\n`;
           }
 
-                    // Availability
+          // Availability
+          if (plan.availability) {
+            md += `#### ─ Availability\n`;
+            const target = typeof plan.availability === 'object' ? plan.availability.target : plan.availability;
+            md += `Service must be available **${target}** of the time.\n`;
 
-                    if (plan.availability) {
+            if (typeof plan.availability === 'object' && plan.availability.metric) {
+              md += `- **Metric:** ${plan.availability.metric}\n`;
+            }
 
-                      md += `#### 🟢 Availability\n`;
-
-                      const target = typeof plan.availability === 'object' ? plan.availability.target : plan.availability;
-
-                      md += `Service must be available **${target}** of the time.\n`;
-
-                      if (typeof plan.availability === 'object' && plan.availability.metric) {
-
-                        md += `- **Metric:** ${plan.availability.metric}\n`;
-
-                      }
-
-                      if (typeof plan.availability === 'object' && plan.availability.expression) {
-                        const humanReadable = formatPrometheusMeasurement(plan.availability.expression);
-                        md += `- **Condition:** ${humanReadable}\n\n`;
-                        md += `The technical monitoring configuration for this availability requirement is:\n\n`;
-                        md += `> \`${plan.availability.expression}\`\n\n`;
-                      }
-
-                      md += `\n`;
-
-                    }
+            if (typeof plan.availability === 'object' && plan.availability.expression) {
+              const humanReadable = formatPrometheusMeasurement(plan.availability.expression);
+              md += `- **Condition:** ${humanReadable}\n\n`;
+              md += `The technical monitoring configuration for this availability requirement is:\n\n`;
+              md += `> \`${plan.availability.expression}\`\n\n`;
+            }
+            md += `\n`;
+          }
 
           // Pricing
           if (plan.pricing && plan.pricing.cost !== undefined) {
-            md += `#### 💰 Pricing\n`;
+            md += `#### ━ Pricing\n`;
             const currencyCode = plan.pricing.currency || '';
             md += `- **Cost:** ${plan.pricing.cost} ${currencyCode}\n`;
             
-            // Show conversion if it's a custom currency
             const customCurrency = props.sla.customCurrencies?.find(c => c.code === currencyCode);
             if (customCurrency && customCurrency.conversion && customCurrency.conversion.rate !== undefined && customCurrency.conversion.baseCurrency) {
               const baseCost = (plan.pricing.cost * customCurrency.conversion.rate).toFixed(2);
@@ -134,7 +125,7 @@ export default {
           // Quotas
           const validQuotas = plan.quotas ? Object.entries(plan.quotas).filter(([k]) => k && k.trim() !== '') : [];
           if (validQuotas.length > 0) {
-            md += `#### 📊 Quotas\n`;
+            md += `#### │ Quotas\n`;
             for (const [metricKey, quota] of validQuotas) {
               if (typeof quota === 'string' && quota.includes('(')) {
                 const humanReadable = formatPrometheusMeasurement(quota);
@@ -155,74 +146,34 @@ export default {
           }
 
           // Guarantees
-          const validGuarantees = plan.guarantees ? plan.guarantees.filter(g => (g.metric && g.metric.trim() !== '') || (g.measurement && g.measurement.trim() !== '')) : [];
+          const validGuarantees = plan.guarantees ? plan.guarantees.filter(g => (g.measurement && g.measurement.trim() !== '')) : [];
           if (validGuarantees.length > 0) {
-            md += `#### 🛡️ Guarantees\n`;
+            md += `#### ┃ Guarantees\n`;
             validGuarantees.forEach(g => {
-              if (g.measurement) {
-                const humanReadable = formatPrometheusMeasurement(g.measurement);
-                md += `- **${humanReadable}**\n\n`;
-                md += `  The technical monitoring configuration for this guarantee is:\n\n`;
-                md += `  > \`${g.measurement}\`\n\n`;
-              } else {
-                let guaranteeText = `- **${g.metric}:** `;
-                if (g.operator) {
-                  if (g.operator === 'avg') {
-                    guaranteeText += `Average of ${g.value || '?'}`;
-                  } else if (g.operator === 'between') {
-                    guaranteeText += `Between ${g.value || '?'}`;
-                  } else {
-                    guaranteeText += `${g.operator} ${g.value || '?'}`;
-                  }
-                  
-                  if (g.period) {
-                    guaranteeText += ` per ${formatDuration(g.period)}`;
-                  }
-                } else if (g.limit) {
-                  guaranteeText += `${formatDuration(g.limit)}`;
-                } else if (g.value) {
-                  guaranteeText += `${g.value}`;
-                }
-                md += `${guaranteeText}\n`;
-              }
+              const humanReadable = formatPrometheusMeasurement(g.measurement);
+              const extracted = extractStructuredGuarantee(g.measurement);
+              const metricDisplay = extracted ? extracted.metric : 'Guarantee';
+              md += `- **${metricDisplay}:** ${humanReadable}\n\n`;
+              md += `  The technical monitoring configuration for this guarantee is:\n\n`;
+              md += `  > \`${g.measurement}\`\n\n`;
             });
             md += `\n`;
           }
 
           // Plan-level Service Level Objectives
           if (plan.serviceLevelObjectives && plan.serviceLevelObjectives.length > 0) {
-            md += `#### 🎯 Service Level Objectives (SLOs)\n`;
+            md += `#### ┄ Service Level Objectives (SLOs)\n`;
             plan.serviceLevelObjectives.forEach(slo => {
-              const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => (g.metric && g.metric.trim() !== '') || (g.measurement && g.measurement.trim() !== '')) : [];
+              const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => (g.measurement && g.measurement.trim() !== '')) : [];
               if (slo.name || slo.priority || validSloGuarantees.length > 0) {
                 md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
                 validSloGuarantees.forEach(g => {
-                  if (g.measurement) {
-                    const humanReadable = formatPrometheusMeasurement(g.measurement);
-                    md += `  - **${humanReadable}**\n\n`;
-                    md += `    The technical monitoring configuration for this objective is:\n\n`;
-                    md += `    > \`${g.measurement}\`\n\n`;
-                  } else {
-                    let guaranteeText = `  - ${g.metric}: `;
-                    if (g.operator) {
-                      if (g.operator === 'avg') {
-                        guaranteeText += `Average of ${g.value || '?'}`;
-                      } else if (g.operator === 'between') {
-                        guaranteeText += `Between ${g.value || '?'}`;
-                      } else {
-                        guaranteeText += `${g.operator} ${g.value || '?'}`;
-                      }
-                      
-                      if (g.period) {
-                        guaranteeText += ` per ${formatDuration(g.period)}`;
-                      }
-                    } else if (g.duration) {
-                      guaranteeText += `${formatDuration(g.duration)}`;
-                    } else if (g.value) {
-                      guaranteeText += `${g.value}`;
-                    }
-                    md += `${guaranteeText}\n`;
-                  }
+                  const humanReadable = formatPrometheusMeasurement(g.measurement);
+                  const extracted = extractStructuredGuarantee(g.measurement);
+                  const metricDisplay = extracted ? extracted.metric : 'Objective';
+                  md += `  - **${metricDisplay}:** ${humanReadable}\n\n`;
+                  md += `    The technical monitoring configuration for this objective is:\n\n`;
+                  md += `    > \`${g.measurement}\`\n\n`;
                 });
               }
             });
@@ -230,15 +181,15 @@ export default {
           }
 
           // Support Policy
-          if (plan['x-support-policy']) {
-            const support = plan['x-support-policy'];
+          if (plan.supportPolicy) {
+            const support = plan.supportPolicy;
             const hasSupportContent = hasContent(support.hoursAvailable) || 
                                      hasContent(support.holidaySchedule?.sources) || 
                                      hasContent(support.serviceLevelObjectives) || 
                                      hasContent(support.contactPoints);
             
             if (hasSupportContent) {
-              md += `#### 🎧 Support Policy\n`;
+              md += `#### ┅ Support Policy\n`;
               
               if (support.hoursAvailable && support.hoursAvailable.length > 0) {
                 md += `**Support Hours:**\n`;
@@ -267,44 +218,25 @@ export default {
                 md += `\n`;
               }
 
-                          if (support.serviceLevelObjectives && support.serviceLevelObjectives.length > 0) {
-                            md += `**Service Level Objectives (SLOs):**\n`;
-                            support.serviceLevelObjectives.forEach(slo => {
-                              const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => (g.metric && g.metric.trim() !== '') || (g.measurement && g.measurement.trim() !== '')) : [];
-                              if (slo.name || slo.priority || validSloGuarantees.length > 0) {
-                                md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
-                                validSloGuarantees.forEach(g => {
-                                  if (g.measurement) {
-                                    const humanReadable = formatPrometheusMeasurement(g.measurement);
-                                    md += `  - **${humanReadable}**\n\n`;
-                                    md += `    The technical monitoring configuration for this objective is:\n\n`;
-                                    md += `    > \`${g.measurement}\`\n\n`;
-                                  } else {
-                                    let guaranteeText = `  - ${g.metric}: `;
-                                    if (g.operator) {
-                                      if (g.operator === 'avg') {
-                                        guaranteeText += `Average of ${g.value || '?'}`;
-                                      } else if (g.operator === 'between') {
-                                        guaranteeText += `Between ${g.value || '?'}`;
-                                      } else {
-                                        guaranteeText += `${g.operator} ${g.value || '?'}`;
-                                      }
-                                      
-                                      if (g.period) {
-                                        guaranteeText += ` per ${formatDuration(g.period)}`;
-                                      }
-                                    } else if (g.duration) {
-                                      guaranteeText += `${formatDuration(g.duration)}`;
-                                    } else if (g.value) {
-                                      guaranteeText += `${g.value}`;
-                                    }
-                                    md += `${guaranteeText}\n`;
-                                  }
-                                });
-                              }
-                            });
-                            md += `\n`;
-                          }
+              if (support.serviceLevelObjectives && support.serviceLevelObjectives.length > 0) {
+                md += `**Service Level Objectives (SLOs):**\n`;
+                support.serviceLevelObjectives.forEach(slo => {
+                  const validSloGuarantees = slo.guarantees ? slo.guarantees.filter(g => (g.measurement && g.measurement.trim() !== '')) : [];
+                  if (slo.name || slo.priority || validSloGuarantees.length > 0) {
+                    md += `- **${slo.name || (slo.priority ? 'Priority ' + slo.priority : 'Objective')}**:\n`;
+                    validSloGuarantees.forEach(g => {
+                      const humanReadable = formatPrometheusMeasurement(g.measurement);
+                      const extracted = extractStructuredGuarantee(g.measurement);
+                      const metricDisplay = extracted ? extracted.metric : 'Objective';
+                      md += `  - **${metricDisplay}:** ${humanReadable}\n\n`;
+                      md += `    The technical monitoring configuration for this objective is:\n\n`;
+                      md += `    > \`${g.measurement}\`\n\n`;
+                    });
+                  }
+                });
+                md += `\n`;
+              }
+
               if (support.contactPoints && support.contactPoints.length > 0) {
                 md += `**Contact Channels:**\n`;
                 support.contactPoints.forEach(cp => {
@@ -324,14 +256,14 @@ export default {
           }
 
           // Maintenance Policy
-          if (plan['x-maintenance-policy']) {
-            const maintenance = plan['x-maintenance-policy'];
+          if (plan.maintenancePolicy) {
+            const maintenance = plan.maintenancePolicy;
             const hasMaintenanceContent = maintenance.countsAsDowntime !== undefined || 
                                          hasContent(maintenance.minimumNotice) || 
                                          hasContent(maintenance.windows);
             
             if (hasMaintenanceContent) {
-              md += `#### 🛠️ Maintenance Policy\n`;
+              md += `#### ┆ Maintenance Policy\n`;
               if (maintenance.countsAsDowntime !== undefined) {
                 md += `- **Counts as downtime:** ${maintenance.countsAsDowntime ? '✅ Yes' : '❌ No'}\n`;
               }
@@ -360,19 +292,18 @@ export default {
           }
 
           // Service Credits
-          if (plan['x-service-credits']) {
-            const credits = plan['x-service-credits'];
+          if (plan.serviceCredits) {
+            const credits = plan.serviceCredits;
             const hasCreditsContent = credits.claimWindow || hasContent(credits.tiers);
             
             if (hasCreditsContent) {
-              md += `#### 💸 Service Credits\n`;
+              md += `#### ┇ Service Credits\n`;
               if (credits.claimWindow) md += `- **Claim Window:** ${formatDuration(credits.claimWindow)}\n\n`;
               if (credits.tiers && credits.tiers.length > 0) {
                 md += `**Compensation Tiers:**\n`;
                 credits.tiers.forEach(t => {
                   if (t.condition && t.condition.metric) {
-                    const val = formatDuration(t.condition.value);
-                    md += `  - If ${t.condition.metric} ${t.condition.operator || 'is'} ${val}: **${t.compensation}${credits.currency || ''}** credit\n`;
+                    md += `  - If ${t.condition.metric} ${t.condition.operator || 'is'} ${t.condition.value}: **${t.compensation}${credits.currency || ''}** credit\n`;
                   }
                 });
               }
@@ -381,12 +312,12 @@ export default {
           }
 
           // Lifecycle Policy
-          if (plan['x-lifecycle-policy']) {
-            const lifecycle = plan['x-lifecycle-policy'];
+          if (plan.lifecyclePolicy) {
+            const lifecycle = plan.lifecyclePolicy;
             const hasLifecycleContent = lifecycle.minimumTerm || lifecycle.autoRenewal !== undefined || lifecycle.noticePeriod || lifecycle.dataRetention;
             
             if (hasLifecycleContent) {
-              md += `#### 🔄 Lifecycle Policy\n`;
+              md += `#### ┈ Lifecycle Policy\n`;
               if (lifecycle.minimumTerm) md += `- **Minimum Term:** ${formatDuration(lifecycle.minimumTerm)}\n`;
               if (lifecycle.autoRenewal !== undefined) md += `- **Auto Renewal:** ${lifecycle.autoRenewal ? 'Yes' : 'No'}\n`;
               if (lifecycle.noticePeriod) md += `- **Notice Period:** ${formatDuration(lifecycle.noticePeriod)}\n`;
@@ -398,10 +329,10 @@ export default {
           }
 
           // Exclusions
-          if (plan['x-sla-exclusions'] && plan['x-sla-exclusions'].length > 0) {
-            const validExclusions = plan['x-sla-exclusions'].filter(e => e && e.trim() !== '');
+          if (plan.slaExclusions && plan.slaExclusions.length > 0) {
+            const validExclusions = plan.slaExclusions.filter(e => e && e.trim() !== '');
             if (validExclusions.length > 0) {
-              md += `#### 🚫 Exclusions\n`;
+              md += `#### ┉ Exclusions\n`;
               validExclusions.forEach(e => {
                 if (e.includes('(') && e.includes(')')) {
                   const humanReadable = formatPrometheusMeasurement(e);

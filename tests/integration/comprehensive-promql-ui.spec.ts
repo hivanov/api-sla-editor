@@ -8,7 +8,7 @@ test.describe('Comprehensive PromQL UI Validation', () => {
   test('should show PromQL validation errors in Source, GUI, and Result Table', async ({ page }) => {
     test.setTimeout(30000);
     // 1. Go to Source and enter invalid YAML with PromQL errors
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     const invalidSla = `
 sla: 1.0.0
@@ -41,7 +41,7 @@ plans:
     }).toPass();
 
     // 3. Verify errors in GUI
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     
     // Find Gold plan
     const goldPlan = page.locator('.plan-item:has-text("Gold")');
@@ -50,7 +50,7 @@ plans:
     // Check availability expression error
     const availEditor = goldPlan.locator('.availability-editor-component');
     // We need to make sure the availability editor is in expression mode to see the error
-    const toggle = availEditor.locator('input#raw-promql-toggle');
+    const toggle = availEditor.locator('input.check-raw-promql');
     if (!(await toggle.isChecked())) {
         await toggle.click();
     }
@@ -64,7 +64,7 @@ plans:
     await expect(guaranteeEditor.locator('.invalid-feedback')).toContainText('mismatched input');
 
     // 4. Verify annotations/markers in Ace Editor (back to Source)
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     
     // Wait for Ace to be ready and have annotations
     await expect(async () => {
@@ -82,7 +82,7 @@ plans:
   });
 
   test('should clear errors when PromQL is fixed', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     const invalidSla = `
 sla: 1.0.0
@@ -119,7 +119,7 @@ plans:
   });
 
   test('should show validation success for correct SLA with PromQL', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     const validSla = `
 sla: 1.0.0
@@ -149,12 +149,12 @@ plans:
     await expect(page.locator('.validation-card')).toContainText('Validation successful!');
     
     // Check GUI as well
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     const goldPlan = page.locator('.plan-item:has-text("Gold")');
     const availEditor = goldPlan.locator('.availability-editor-component');
     
     // Switch to Raw PromQL to see the expression
-    const toggle = availEditor.locator('input#raw-promql-toggle');
+    const toggle = availEditor.locator('input.check-raw-promql');
     if (!(await toggle.isChecked())) {
         await toggle.click();
     }

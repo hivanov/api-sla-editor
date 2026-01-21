@@ -72,16 +72,38 @@ export default {
     });
 
     const parseDurationToSeconds = (duration) => {
-        // Simple regex for P1D, PT1H, PT1M, PT1S
-        // This is a naive implementation
-        if (!duration) return 0;
-        const match = duration.match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-        if (!match) return 0;
-        const days = parseInt(match[1] || 0);
-        const hours = parseInt(match[2] || 0);
-        const minutes = parseInt(match[3] || 0);
-        const seconds = parseInt(match[4] || 0);
-        return (days * 86400) + (hours * 3600) + (minutes * 60) + seconds;
+        if (!duration || typeof duration !== 'string') return 0;
+        
+        // Handle ISO 8601
+        if (duration.startsWith('P')) {
+            const regex = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/;
+            const match = duration.match(regex);
+            if (!match) return 0;
+            const days = parseInt(match[1] || 0);
+            const hours = parseInt(match[2] || 0);
+            const minutes = parseInt(match[3] || 0);
+            const seconds = parseInt(match[4] || 0);
+            return (days * 86400) + (hours * 3600) + (minutes * 60) + seconds;
+        } 
+        
+        // Handle Prometheus format (simple s, m, h, d, w)
+        const promRegex = /(\d+)([smhdw])/g;
+        let totalSeconds = 0;
+        const matches = duration.matchAll(promRegex);
+        let found = false;
+        for (const match of matches) {
+            found = true;
+            const val = parseInt(match[1]);
+            const unit = match[2];
+            switch (unit) {
+                case 's': totalSeconds += val; break;
+                case 'm': totalSeconds += val * 60; break;
+                case 'h': totalSeconds += val * 3600; break;
+                case 'd': totalSeconds += val * 86400; break;
+                case 'w': totalSeconds += val * 604800; break;
+            }
+        }
+        return found ? totalSeconds : 0;
     };
 
     const generate = () => {
@@ -131,7 +153,7 @@ export default {
 
        if (sla.plans) {
           Object.values(sla.plans).forEach(plan => {
-             const support = plan['x-support-policy'];
+             const support = plan['supportPolicy'];
              if (support && support.contactPoints) {
                 support.contactPoints.forEach(cp => {
                    if (cp.channels) {
@@ -196,7 +218,7 @@ export default {
                 });
              }
              // 3. Support Policy SLOs
-             const support = plan['x-support-policy'];
+             const support = plan['supportPolicy'];
              if (support && support.serviceLevelObjectives) {
                 support.serviceLevelObjectives.forEach((slo, sloIdx) => {
                    if (slo.guarantees) {
@@ -209,25 +231,14 @@ export default {
 
        // Generate Alert Policies
        allGuarantees.forEach(({ planName, guarantee, index, source }) => {
-          let metricName = guarantee.metric;
-          let operator = guarantee.operator;
-          let value = guarantee.value;
-          let period = guarantee.period || guarantee.duration;
-
-          if (!metricName && guarantee.measurement) {
-             const extracted = extractStructuredGuarantee(guarantee.measurement);
-             if (extracted) {
-                metricName = extracted.metric;
-                operator = extracted.operator;
-                value = extracted.value;
-                if (!period) period = extracted.period;
-             }
-          }
-
-          if (!metricName) {
-             // If we still don't have a metric name, we can't generate a GCP alert easily without more complex parsing
+          const extracted = extractStructuredGuarantee(guarantee.measurement);
+          
+          if (!extracted) {
+             // If we can't extract structured info from the measurement, we can't generate a GCP alert easily
              return;
           }
+
+          const { metric: metricName, operator, value, period } = extracted;
 
           const metricDef = sla.metrics[metricName];
           

@@ -5,15 +5,19 @@ test.describe('Comprehensive Validation Errors', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     
     // Add a metric
     await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'latency');
     await page.click('.metrics-editor-component button:has-text("Add Metric")');
+    const latencyCard = page.locator('.metrics-editor-component [data-metric-name="latency"]');
+    await latencyCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
 
     // Add a plan
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', planName);
     await page.click('.plans-editor-component button:has-text("Add Plan")');
+    const plan = page.locator(`.plan-item:has-text("${planName}")`);
+    await plan.locator('.availability-editor-component select.metric-selector').selectOption('latency');
   });
 
   test('should show validation errors in PricingEditor', async ({ page }) => {
@@ -87,7 +91,7 @@ test.describe('Comprehensive Validation Errors', () => {
     // If it is in GUI mode, we might need to toggle to raw or just leave it empty if there's a required check.
     // The PrometheusMeasurementEditor has validation for PromQL.
     
-    const toggle = guarantees.locator('input#raw-promql-toggle');
+    const toggle = guarantees.locator('input.check-raw-promql');
     await toggle.click();
     await guarantees.locator('textarea').fill('invalid promql (((');
     
@@ -96,22 +100,33 @@ test.describe('Comprehensive Validation Errors', () => {
   });
 
   test('should show validation errors in SLO Guarantees', async ({ page }) => {
+    // 1. Add a metric 'up'
+    const metricsEditor = page.locator('.metrics-editor-component');
+    await metricsEditor.locator('input[placeholder="New metric name"]').fill('up');
+    await metricsEditor.locator('button:has-text("Add Metric")').click();
+    const upCard = page.locator('.metrics-editor-component [data-metric-name="up"]');
+    await upCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
+
+    // 2. Locate the SLO editor for ErrorPlan
     const plan = page.locator(`.plan-item:has-text("${planName}")`);
-    const slo = plan.locator('.service-level-objectives-editor-component').first();
+    const sloEditor = plan.locator('.service-level-objectives-editor-component').first();
+
+    // 3. Set invalid SLO Guarantee
+    await sloEditor.locator('button:has-text("Add SLO")').click();
+    await sloEditor.locator('button:has-text("Add SLO Guarantee")').click();
     
-    await slo.locator('button:has-text("Add SLO")').click();
-    await slo.locator('button:has-text("Add SLO Guarantee")').click();
+    // Invalid PromQL
+    const sloMeasurementInput = sloEditor.locator('.prometheus-measurement-editor textarea');
+    // We need to switch to raw mode to enter explicitly invalid PromQL that isn't auto-fixed
+    await sloEditor.locator('.check-raw-promql').click();
+    await sloMeasurementInput.fill('up ((( invalid');
     
-    // Switch to legacy mode
-    await slo.locator('label', { hasText: 'Simple Duration (Legacy)' }).click();
-    
-    // Invalid duration
-    const sloDurationInput = slo.locator('.duration-editor input[placeholder="e.g. P1DT4H"]');
-    await sloDurationInput.fill('invalid');
-    await sloDurationInput.dispatchEvent('input');
+    // Switch to Source to trigger validation
+    await page.click('.btn-tab-source');
     
     await expect(async () => {
-        await expect(sloDurationInput).toHaveClass(/is-invalid/);
+        const errorRows = page.locator('.validation-card table tbody tr');
+        await expect(errorRows).toContainText(['Invalid PromQL']);
     }).toPass();
   });
 });

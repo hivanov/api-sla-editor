@@ -7,7 +7,7 @@
       <div v-for="(guarantee, index) in safeGuarantees" :key="index" class="card mb-2 p-2">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="fw-bold">Guarantee #{{ index + 1 }}</span>
-          <button class="btn btn-outline-danger btn-sm" @click="removeGuarantee(index)">Remove</button>
+          <button class="btn btn-outline-danger btn-sm btn-remove-guarantee" @click="removeGuarantee(index)">Remove</button>
         </div>
         <div class="row g-2">
           <div class="col-md-12 mb-2">
@@ -21,7 +21,7 @@
           </div>
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addGuarantee">Add Guarantee</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-guarantee" @click="addGuarantee">Add Guarantee</button>
     </div>
   </div>
 </template>
@@ -70,9 +70,6 @@ export default {
     const updateGuarantee = (index, key, value) => {
       const newList = [...safeGuarantees.value];
       const newGuarantee = { ...newList[index], [key]: value };
-      if (value === '' || value === null || value === undefined) {
-        delete newGuarantee[key];
-      }
       newList[index] = newGuarantee;
       updateGuarantees(newList);
     };

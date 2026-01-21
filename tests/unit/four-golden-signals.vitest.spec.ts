@@ -37,21 +37,21 @@ describe('Four Golden Signals SLA Validation', () => {
   it('should contain SLA conditions for all golden signals across plans', () => {
     // Check Standard Plan
     const standardPlan = slaData.plans.standard;
-    expect(standardPlan.quotas.traffic.max).toBe(100);
-    expect(standardPlan.guarantees.some(g => g.metric === 'latency')).toBe(true);
-    expect(standardPlan.guarantees.some(g => g.metric === 'errors')).toBe(true);
-    expect(standardPlan.serviceLevelObjectives.some(slo => slo.guarantees.some(g => g.metric === 'saturation'))).toBe(true);
+    expect(standardPlan.quotas.traffic).toContain('100');
+    expect(standardPlan.guarantees.some(g => g.measurement.includes('latency'))).toBe(true);
+    expect(standardPlan.guarantees.some(g => g.measurement.includes('errors'))).toBe(true);
+    expect(standardPlan.serviceLevelObjectives.some(slo => slo.guarantees.some(g => g.measurement.includes('saturation')))).toBe(true);
 
     // Check Premium Plan
     const premiumPlan = slaData.plans.premium;
     expect(premiumPlan.pricing.cost).toBe(100);
-    expect(premiumPlan.quotas.traffic.max).toBe(5000);
+    expect(premiumPlan.quotas.traffic).toContain('5000');
     
     const premiumGuarantees = premiumPlan.guarantees;
-    expect(premiumGuarantees.some(g => g.metric === 'latency')).toBe(true);
-    expect(premiumGuarantees.some(g => g.metric === 'errors')).toBe(true);
-    expect(premiumGuarantees.some(g => g.metric === 'traffic')).toBe(true);
-    expect(premiumGuarantees.some(g => g.metric === 'saturation')).toBe(true);
+    expect(premiumGuarantees.some(g => g.measurement.includes('latency'))).toBe(true);
+    expect(premiumGuarantees.some(g => g.measurement.includes('errors'))).toBe(true);
+    expect(premiumGuarantees.some(g => g.measurement.includes('traffic'))).toBe(true);
+    expect(premiumGuarantees.some(g => g.measurement.includes('saturation'))).toBe(true);
   });
 
   it('should fail validation if a required field is missing', () => {

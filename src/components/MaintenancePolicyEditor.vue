@@ -5,7 +5,7 @@
     </div>
     <div class="card-body">
       <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" :checked="safeMaintenancePolicy.countsAsDowntime" @change="updateField('countsAsDowntime', $event.target.checked)" id="countsAsDowntime">
+        <input class="form-check-input checkbox-maintenance-counts-as-downtime" type="checkbox" :checked="safeMaintenancePolicy.countsAsDowntime" @change="updateField('countsAsDowntime', $event.target.checked)" id="countsAsDowntime">
         <label class="form-check-label" for="countsAsDowntime">
           Counts as Downtime
         </label>
@@ -37,11 +37,11 @@
       <div v-for="(window, index) in safeMaintenancePolicy.windows" :key="index" class="card mb-2 p-2">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Window #{{ index + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeWindow(index)">Remove</button>
+          <button class="btn btn-danger btn-sm btn-remove-maintenance-window" @click="removeWindow(index)">Remove</button>
         </div>
         <div class="mb-3">
           <label class="form-label">Type</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/windows/' + index + '/type']}" placeholder="Routine" :value="window.type" @input="updateWindow(index, 'type', $event.target.value)">
+          <input type="text" class="form-control input-maintenance-window-type" :class="{'is-invalid': errors[path + '/windows/' + index + '/type']}" placeholder="Routine" :value="window.type" @input="updateWindow(index, 'type', $event.target.value)">
           <div class="invalid-feedback" v-if="errors[path + '/windows/' + index + '/type']">
             {{ errors[path + '/windows/' + index + '/type'].join(', ') }}
           </div>
@@ -63,30 +63,30 @@
           label="Duration"
         />
       </div>
-      <button class="btn btn-secondary btn-sm mt-2 mb-4" @click="addWindow">Add Window</button>
+      <button class="btn btn-secondary btn-sm mt-2 mb-4 btn-add-maintenance-window" @click="addWindow">Add Window</button>
 
       <h6>Maintenance Sources (iCal)</h6>
       <div v-for="(source, index) in safeMaintenancePolicy.sources" :key="index" class="card mb-2 p-2">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Source #{{ index + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeSource(index)">Remove</button>
+          <button class="btn btn-danger btn-sm btn-remove-maintenance-source" @click="removeSource(index)">Remove</button>
         </div>
         <div class="mb-3">
           <label class="form-label">Calendar URL</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/maintenance.ics" :value="source.calendarUrl" @input="updateSource(index, 'calendarUrl', $event.target.value)">
+          <input type="text" class="form-control input-maintenance-source-url" :class="{'is-invalid': errors[path + '/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/maintenance.ics" :value="source.calendarUrl" @input="updateSource(index, 'calendarUrl', $event.target.value)">
           <div class="invalid-feedback" v-if="errors[path + '/sources/' + index + '/calendarUrl']">
             {{ errors[path + '/sources/' + index + '/calendarUrl'].join(', ') }}
           </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Description</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/sources/' + index + '/description']}" placeholder="Description of the source" :value="source.description" @input="updateSource(index, 'description', $event.target.value)">
+          <input type="text" class="form-control input-maintenance-source-description" :class="{'is-invalid': errors[path + '/sources/' + index + '/description']}" placeholder="Description of the source" :value="source.description" @input="updateSource(index, 'description', $event.target.value)">
           <div class="invalid-feedback" v-if="errors[path + '/sources/' + index + '/description']">
             {{ errors[path + '/sources/' + index + '/description'].join(', ') }}
           </div>
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addSource">Add Source</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-maintenance-source" @click="addSource">Add Source</button>
     </div>
   </div>
 </template>

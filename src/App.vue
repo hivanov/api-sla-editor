@@ -3,26 +3,26 @@
     <header class="bg-dark text-light p-3 shadow-sm">
       <div class="container-xxl d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-3">
-          <h1 class="h3 mb-0" style="cursor: pointer;" @click="setView('editor')">SLA Editor</h1>
+          <h1 class="h3 mb-0 logo-title" style="cursor: pointer;" @click="setView('editor')">SLA Editor</h1>
           <div class="vr d-none d-md-block bg-secondary"></div>
           <nav class="d-none d-md-flex gap-2">
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['terraform', 'bicep', 'grafana'].includes(currentView) }">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle btn-transform" type="button" data-bs-toggle="dropdown" :class="{ active: ['terraform', 'bicep', 'grafana'].includes(currentView) }">
                 Transform
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep (Azure)</a></li>
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('grafana')">Generate Grafana (Prometheus)</a></li>
+                <li><a class="dropdown-item btn-gen-terraform" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
+                <li><a class="dropdown-item btn-gen-bicep" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep (Azure)</a></li>
+                <li><a class="dropdown-item btn-gen-grafana" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('grafana')">Generate Grafana (Prometheus)</a></li>
               </ul>
             </div>
              <div class="dropdown">
-              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['tutorial', 'help'].includes(currentView) }">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle btn-help-menu" type="button" data-bs-toggle="dropdown" :class="{ active: ['tutorial', 'help'].includes(currentView) }">
                 Help
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help Page</a></li>
+                <li><a class="dropdown-item btn-view-tutorial" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
+                <li><a class="dropdown-item btn-view-help" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help Page</a></li>
               </ul>
             </div>
           </nav>
@@ -58,13 +58,13 @@
               <div class="card-header bg-white border-bottom-0 pb-0">
                 <ul class="nav nav-tabs card-header-tabs">
                   <li class="nav-item">
-                    <a href="#" class="nav-link" :class="{ active: activeTab === 'gui' }" @click.prevent="activeTab = 'gui'">GUI</a>
+                    <a href="#" class="nav-link btn-tab-gui" :class="{ active: activeTab === 'gui' }" @click.prevent="activeTab = 'gui'">GUI</a>
                   </li>
                   <li class="nav-item">
-                    <a href="#" class="nav-link" :class="{ active: activeTab === 'description' }" @click.prevent="activeTab = 'description'">Description</a>
+                    <a href="#" class="nav-link btn-tab-description" :class="{ active: activeTab === 'description' }" @click.prevent="activeTab = 'description'">Description</a>
                   </li>
                   <li class="nav-item">
-                    <a href="#" class="nav-link" :class="{ active: activeTab === 'source' }" @click.prevent="activeTab = 'source'">Source</a>
+                    <a href="#" class="nav-link btn-tab-source" :class="{ active: activeTab === 'source' }" @click.prevent="activeTab = 'source'">Source</a>
                   </li>
                 </ul>
               </div>
@@ -134,7 +134,7 @@
               </div>
               <div class="card-body overflow-auto">
                 <p class="text-muted small">Load an example to get started with SLA creation.</p>
-                <select class="form-select mb-3" @change="loadExample($event.target.value)">
+                <select class="form-select mb-3 select-example-loader" @change="loadExample($event.target.value)">
                   <option selected disabled>Select an example</option>
                   <option v-for="(content, name) in examples" :key="name" :value="name">
                     {{ name.replace(/-/g, ' ') }}
@@ -436,33 +436,59 @@ export default {
         }
         
         // Custom PromQL Validation
-        if (doc && doc.plans) {
-          Object.entries(doc.plans).forEach(([planName, plan]) => {
-            if (plan.availability && plan.availability.expression) {
-              const res = validatePromQL(plan.availability.expression, doc.metrics);
-              if (!res.valid) {
-                allErrors.push(getErrorWithLine({
-                  instancePath: `/plans/${planName}/availability/expression`,
-                  message: `Invalid PromQL: ${res.error}`,
-                  keyword: 'promql'
-                }));
+        if (doc) {
+          const validateObject = (node, path) => {
+            if (!node || typeof node !== 'object') return;
+
+            // 1. Direct PromQL fields
+            const promqlFields = ['expression', 'measurement'];
+            promqlFields.forEach(field => {
+              if (node[field] && typeof node[field] === 'string') {
+                const res = validatePromQL(node[field], doc.metrics);
+                if (!res.valid) {
+                  allErrors.push(getErrorWithLine({
+                    instancePath: `${path}/${field}`,
+                    message: `Invalid PromQL: ${res.error}`,
+                    keyword: 'promql'
+                  }));
+                }
               }
-            }
-            if (plan.guarantees) {
-              plan.guarantees.forEach((g, idx) => {
-                if (g.measurement) {
-                  const res = validatePromQL(g.measurement, doc.metrics);
-                  if (!res.valid) {
-                    allErrors.push(getErrorWithLine({
-                      instancePath: `/plans/${planName}/guarantees/${idx}/measurement`,
-                      message: `Invalid PromQL: ${res.error}`,
-                      keyword: 'promql'
-                    }));
-                  }
+            });
+
+            // 2. Quotas (can be PromQL strings)
+            if (node.quotas && typeof node.quotas === 'object') {
+              Object.entries(node.quotas).forEach(([m, val]) => {
+                if (typeof val === 'string' && (val.includes('(') || val.includes(' '))) {
+                   const res = validatePromQL(val, doc.metrics);
+                   if (!res.valid) {
+                     allErrors.push(getErrorWithLine({
+                       instancePath: `${path}/quotas/${m}`,
+                       message: `Invalid PromQL: ${res.error}`,
+                       keyword: 'promql'
+                     }));
+                   }
                 }
               });
             }
-          });
+
+            // Recursive traversal
+            Object.entries(node).forEach(([k, v]) => {
+              if (Array.isArray(v)) {
+                v.forEach((item, idx) => validateObject(item, `${path}/${k}/${idx}`));
+              } else if (typeof v === 'object') {
+                validateObject(v, `${path}/${k}`);
+              }
+            });
+          };
+
+          if (doc.plans) {
+            Object.entries(doc.plans).forEach(([planName, plan]) => {
+              validateObject(plan, `/plans/${planName}`);
+            });
+          }
+          if (doc.supportPolicy) {
+             validateObject(doc.supportPolicy, '/supportPolicy');
+          }
         }
 
         // Custom Validation: All defined metrics should be referenced at least once
@@ -489,9 +515,22 @@ export default {
               }
             });
 
-            // 3. Quotas (the keys are the metric names)
+            // 3. Quotas (the keys are the metric names if they are not complex expressions)
+            // If quotas are PromQL strings, they are handled by step 2 if we traverse them.
             if (node.quotas && typeof node.quotas === 'object') {
-              Object.keys(node.quotas).forEach(m => referencedMetrics.add(m));
+              Object.entries(node.quotas).forEach(([m, val]) => {
+                if (typeof val === 'string') {
+                   const res = validatePromQL(val);
+                   if (res.valid && res.metrics) {
+                     res.metrics.forEach(rm => referencedMetrics.add(rm));
+                   } else {
+                     // If not valid PromQL, assume it might be a simple value and the key is the metric
+                     referencedMetrics.add(m);
+                   }
+                } else {
+                   referencedMetrics.add(m);
+                }
+              });
             }
 
             // Recursive traversal

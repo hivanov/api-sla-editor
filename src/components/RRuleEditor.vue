@@ -119,7 +119,7 @@ const onManualInput = (value) => {
       <span class="input-group-text small">RFC 5545</span>
       <input 
         type="text" 
-        class="form-control form-control-sm" 
+        class="form-control form-control-sm input-rrule-manual" 
         :class="{'is-invalid': errors[path]}"
         :value="modelValue" 
         @input="onManualInput($event.target.value)" 
@@ -133,7 +133,7 @@ const onManualInput = (value) => {
     <div class="row g-2 mb-2">
       <div class="col-md-6">
         <label class="form-label x-small mb-0">Frequency</label>
-        <select class="form-select form-select-sm" v-model="state.FREQ" @change="updateState">
+        <select class="form-select form-select-sm select-rrule-freq" v-model="state.FREQ" @change="updateState">
           <option v-for="freq in FREQUENCIES" :key="freq.value" :value="freq.value">
             {{ freq.label }}
           </option>
@@ -141,7 +141,7 @@ const onManualInput = (value) => {
       </div>
       <div class="col-md-6">
         <label class="form-label x-small mb-0">Interval</label>
-        <input type="number" class="form-control form-select-sm" v-model.number="state.INTERVAL" @input="updateState" min="1">
+        <input type="number" class="form-control form-select-sm input-rrule-interval" v-model.number="state.INTERVAL" @input="updateState" min="1">
       </div>
     </div>
 
@@ -152,9 +152,10 @@ const onManualInput = (value) => {
           v-for="day in DAYS" 
           :key="day.value"
           type="button"
-          class="btn btn-sm"
+          class="btn btn-sm btn-rrule-day"
           :class="state.BYDAY.includes(day.value) ? 'btn-primary' : 'btn-outline-secondary'"
           @click="toggleDay(day.value)"
+          :data-day="day.value"
         >
           {{ day.label }}
         </button>
@@ -165,7 +166,7 @@ const onManualInput = (value) => {
       <label class="form-label x-small mb-0">Day of Month (e.g. 1, 15, -1)</label>
       <input 
         type="text" 
-        class="form-control form-control-sm" 
+        class="form-control form-control-sm input-rrule-bymonthday" 
         :value="state.BYMONTHDAY.join(', ')" 
         @input="state.BYMONTHDAY = $event.target.value.split(',').map(v => parseInt(v.trim(), 10)).filter(v => !isNaN(v)); updateState()"
         placeholder="1, 15, -1"

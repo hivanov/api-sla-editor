@@ -8,12 +8,12 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
           <div class="d-flex align-items-center">
             <span class="fw-bold small me-2">Exclusion #{{ index + 1 }}</span>
-            <select class="form-select form-select-sm" style="width: auto;" :value="getExclusionType(index, exclusion)" @change="setExclusionType(index, $event.target.value)">
+            <select class="form-select form-select-sm select-exclusion-type" style="width: auto;" :value="getExclusionType(index, exclusion)" @change="setExclusionType(index, $event.target.value)">
               <option value="metric">Metric (PromQL)</option>
               <option value="text">Text (Description)</option>
             </select>
           </div>
-          <button class="btn btn-outline-danger btn-sm" @click="removeExclusion(index)">Remove</button>
+          <button class="btn btn-outline-danger btn-sm btn-remove-exclusion" @click="removeExclusion(index)">Remove</button>
         </div>
         
         <div v-if="getExclusionType(index, exclusion) === 'text'">
@@ -37,8 +37,8 @@
           {{ errors[path + '/' + index].join(', ') }}
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addExclusion">Add Exclusion</button>
-      <button class="btn btn-outline-secondary btn-sm mt-2 ms-2" @click="addStandardExclusions">Add Standard Force Majeure</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-exclusion" @click="addExclusion">Add Exclusion</button>
+      <button class="btn btn-outline-secondary btn-sm mt-2 ms-2 btn-add-standard-exclusions" @click="addStandardExclusions">Add Standard Force Majeure</button>
     </div>
   </div>
 </template>
@@ -47,6 +47,7 @@
 import { computed, reactive } from 'vue';
 import MarkdownEditor from './MarkdownEditor.vue';
 import PrometheusMeasurementEditor from './PrometheusMeasurementEditor.vue';
+import { validatePromQL } from '../utils/formatters';
 
 const STANDARD_EXCLUSIONS = [
   "Natural disasters (e.g., fire, flood, earthquake, hurricane)",
@@ -90,8 +91,8 @@ export default {
 
     const isPromQL = (str) => {
       if (!str) return true; // Default empty to metric to preserve old behavior
-      // Robust PromQL detection: has function call or comparison operators
-      return /[a-z_]+\(.*\)/.test(str) || /[<>!=]=?/.test(str);
+      // Robust PromQL detection using the parser
+      return validatePromQL(str).valid;
     };
 
     const getExclusionType = (index, exclusion) => {

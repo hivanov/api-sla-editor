@@ -50,7 +50,7 @@ plans:
         priority: "High"
         guarantees:
           - measurement: "avg_over_time(request_latency[1m]) < 200"
-    x-support-policy:
+    supportPolicy:
       contactPoints:
         - contactType: "SRE On-Call"
           channels:
@@ -88,7 +88,7 @@ plans:
         priority: "Medium"
         guarantees:
           - measurement: "avg_over_time(request_latency[5m]) < 500"
-    x-support-policy:
+    supportPolicy:
       contactPoints:
         - contactType: "DevOps Support"
           channels:

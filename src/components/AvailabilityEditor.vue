@@ -8,7 +8,7 @@
       <!-- Metric Selector -->
       <div class="mb-3">
         <label class="form-label small fw-bold">Availability Metric</label>
-        <select class="form-select form-select-sm metric-selector" v-model="selectedMetric" @change="emitUpdate">
+        <select class="form-select form-select-sm metric-selector select-avail-metric" v-model="selectedMetric" @change="handleMetricChange">
           <option value="" disabled>Select a metric...</option>
           <option v-for="(metric, key) in metrics" :key="key" :value="key">
             {{ metric.description || key }} ({{ key }})
@@ -27,6 +27,7 @@
           :errors="errors"
           :path="path + '/expression'"
           :fixed-metric="selectedMetric"
+          :disabled="!selectedMetric"
           @update:model-value="onExpressionUpdate"
         />
 
@@ -39,10 +40,11 @@
       <ul class="nav nav-pills nav-fill mb-3 bg-light p-1 rounded border">
         <li class="nav-item" v-for="mode in modes" :key="mode.id">
           <button 
-            class="nav-link py-1 px-2 small" 
+            class="nav-link py-1 px-2 small btn-mode-switch" 
             :class="{ active: currentMode === mode.id }"
             @click="currentMode = mode.id"
             type="button"
+            :data-mode="mode.id"
           >
             {{ mode.label }}
           </button>
@@ -52,7 +54,7 @@
       <!-- Standard Tiers Mode -->
       <div v-if="currentMode === 'tier'" class="mb-3">
         <label class="form-label small fw-bold">Select Common Tier</label>
-        <select class="form-select border-primary tier-select" :value="currentTier" @change="onTierSelect($event.target.value)">
+        <select class="form-select border-primary tier-select select-avail-tier" :value="currentTier" @change="onTierSelect($event.target.value)">
           <option value="" disabled>Select common tier...</option>
           <option v-for="tier in commonTiers" :key="tier.value" :value="tier.value">
             {{ tier.label }} ({{ tier.value }}%)
@@ -66,7 +68,7 @@
         <div class="input-group">
           <input 
             type="number" 
-            class="form-control manual-percentage-input" 
+            class="form-control manual-percentage-input input-avail-percentage" 
             :class="{'is-invalid': errors[path]}"
             step="0.000000001" 
             min="0" 
@@ -89,7 +91,7 @@
         <div class="row g-2 mb-3">
           <div class="col-md-6">
             <label class="form-label extra-small">Calculation Period</label>
-            <select class="form-select form-select-sm period-select" v-model="selectedPeriod" @change="recalculateDowntime">
+            <select class="form-select form-select-sm period-select select-downtime-period" v-model="selectedPeriod" @change="recalculateDowntime">
               <option value="day">Daily</option>
               <option value="week">Weekly</option>
               <option value="bi-weekly">Bi-weekly (14d)</option>
@@ -102,23 +104,23 @@
         <div class="row g-2">
           <div class="col">
             <label class="form-label extra-small">Days</label>
-            <input type="number" class="form-control form-control-sm downtime-days" v-model.number="downtime.days" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-days input-downtime-days" v-model.number="downtime.days" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Hours</label>
-            <input type="number" class="form-control form-control-sm downtime-hours" v-model.number="downtime.hours" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-hours input-downtime-hours" v-model.number="downtime.hours" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Mins</label>
-            <input type="number" class="form-control form-control-sm downtime-mins" v-model.number="downtime.mins" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-mins input-downtime-mins" v-model.number="downtime.mins" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Secs</label>
-            <input type="number" class="form-control form-control-sm downtime-secs" v-model.number="downtime.secs" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-secs input-downtime-secs" v-model.number="downtime.secs" @input="onDowntimeInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small">Ms</label>
-            <input type="number" class="form-control form-control-sm downtime-ms" v-model.number="downtime.ms" @input="onDowntimeInput" min="0">
+            <input type="number" class="form-control form-control-sm downtime-ms input-downtime-ms" v-model.number="downtime.ms" @input="onDowntimeInput" min="0">
           </div>
         </div>
         <div class="form-text small mt-2">
@@ -134,13 +136,13 @@
           <div class="col-md-6">
             <label class="form-label extra-small">Deployments</label>
             <div class="input-group input-group-sm">
-              <input type="number" class="form-control deployment-count" v-model.number="deployment.count" @input="onDeploymentInput" min="0">
+              <input type="number" class="form-control deployment-count input-deployment-count" v-model.number="deployment.count" @input="onDeploymentInput" min="0">
               <span class="input-group-text">per</span>
             </div>
           </div>
           <div class="col-md-6">
             <label class="form-label extra-small">Period</label>
-            <select class="form-select form-select-sm deployment-period-select" v-model="deployment.period" @change="onDeploymentInput">
+            <select class="form-select form-select-sm deployment-period-select select-deployment-period" v-model="deployment.period" @change="onDeploymentInput">
               <option value="day">Day</option>
               <option value="week">Week</option>
               <option value="bi-weekly">2 Weeks (Bi-weekly)</option>
@@ -154,23 +156,23 @@
         <div class="row g-2">
           <div class="col">
             <label class="form-label extra-small text-muted">Days</label>
-            <input type="number" class="form-control form-control-sm deployment-days" v-model.number="deployment.duration.days" @input="onDeploymentInput" min="0">
+            <input type="number" class="form-control form-control-sm deployment-days input-deployment-days" v-model.number="deployment.duration.days" @input="onDeploymentInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small text-muted">Hours</label>
-            <input type="number" class="form-control form-control-sm deployment-hours" v-model.number="deployment.duration.hours" @input="onDeploymentInput" min="0">
+            <input type="number" class="form-control form-control-sm deployment-hours input-deployment-hours" v-model.number="deployment.duration.hours" @input="onDeploymentInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small text-muted">Mins</label>
-            <input type="number" class="form-control form-control-sm deployment-mins" v-model.number="deployment.duration.mins" @input="onDeploymentInput" min="0">
+            <input type="number" class="form-control form-control-sm deployment-mins input-deployment-mins" v-model.number="deployment.duration.mins" @input="onDeploymentInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small text-muted">Secs</label>
-            <input type="number" class="form-control form-control-sm deployment-secs" v-model.number="deployment.duration.secs" @input="onDeploymentInput" min="0">
+            <input type="number" class="form-control form-control-sm deployment-secs input-deployment-secs" v-model.number="deployment.duration.secs" @input="onDeploymentInput" min="0">
           </div>
           <div class="col">
             <label class="form-label extra-small text-muted">Ms</label>
-            <input type="number" class="form-control form-control-sm deployment-ms" v-model.number="deployment.duration.ms" @input="onDeploymentInput" min="0">
+            <input type="number" class="form-control form-control-sm deployment-ms input-deployment-ms" v-model.number="deployment.duration.ms" @input="onDeploymentInput" min="0">
           </div>
         </div>
         
@@ -306,6 +308,12 @@ export default {
             metric: selectedMetric.value,
             expression: expression.value
         });
+    };
+
+    const handleMetricChange = () => {
+      // Set default expression template for the new metric
+      expression.value = `avg_over_time(${selectedMetric.value}[5m]) <`;
+      emitUpdate();
     };
 
     const updateAvailability = (val) => {
@@ -452,6 +460,7 @@ export default {
       expression,
       onExpressionUpdate,
       emitUpdate,
+      handleMetricChange,
       onPercentageInput,
       onTierSelect,
       onDowntimeInput,

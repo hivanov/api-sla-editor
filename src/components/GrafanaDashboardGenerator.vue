@@ -48,7 +48,7 @@ import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-monokai';
 import jsYaml from 'js-yaml';
-import { toPromQL, ensurePromQLBoolean } from '../utils/formatters';
+import { toPromQL, ensurePromQLBoolean, extractStructuredGuarantee } from '../utils/formatters';
 
 export default {
   name: 'GrafanaDashboardGenerator',
@@ -158,7 +158,7 @@ export default {
            });
        }
 
-       // Row 1: Status Headers (Stat Panels)
+       // Row 1: Status Headers (Stat Panels) 
        
        let xPos = 0;
        
@@ -173,14 +173,18 @@ export default {
 
        // Status Panels
        guarantees.forEach((g, i) => {
-         const metric = sla.metrics[g.metric];
+         const extracted = extractStructuredGuarantee(g.measurement);
+         if (!extracted) return;
+         
+         const { metric: metricName, operator, value } = extracted;
+         const metric = sla.metrics[metricName];
          if (!metric || !metric.monitoringId) return;
 
          panels.push({
            id: i + 1,
            gridPos: { h: 6, w: 4, x: xPos % 24, y: yPos },
            type: 'stat',
-           title: `${metric.description || g.metric} Status`,
+           title: `${metric.description || metricName} Status`,
            datasource: { uid: datasourceName.value },
            targets: [{
              expr: toPromQL(metric.monitoringId),
@@ -190,7 +194,7 @@ export default {
              defaults: {
                thresholds: {
                  mode: 'absolute',
-                 steps: generateThresholds(g.operator, g.value)
+                 steps: generateThresholds(operator, value)
                },
                unit: metric.unit === 'percent' ? 'percent' : (metric.unit === 'ms' ? 'ms' : 'none')
              }
@@ -209,14 +213,18 @@ export default {
 
        // Time Series Panels
        guarantees.forEach((g, i) => {
-         const metric = sla.metrics[g.metric];
+         const extracted = extractStructuredGuarantee(g.measurement);
+         if (!extracted) return;
+
+         const { metric: metricName, operator, value } = extracted;
+         const metric = sla.metrics[metricName];
          if (!metric || !metric.monitoringId) return;
 
          panels.push({
            id: i + 100,
            gridPos: { h: 8, w: 12, x: xPos % 24, y: yPos },
            type: 'timeseries',
-           title: `${metric.description || g.metric} Over Time`,
+           title: `${metric.description || metricName} Over Time`,
            datasource: { uid: datasourceName.value },
            targets: [{
              expr: toPromQL(metric.monitoringId),
@@ -226,7 +234,7 @@ export default {
              defaults: {
                thresholds: {
                  mode: 'absolute',
-                 steps: generateThresholds(g.operator, g.value)
+                 steps: generateThresholds(operator, value)
                },
                custom: {
                   axisLabel: metric.unit,
@@ -246,12 +254,11 @@ export default {
        yPos += 8;
 
        // Compensation / Service Credits
-       // If x-service-credits is present in any plan
        const compensationQueries = [];
        if (sla.plans) {
          Object.values(sla.plans).forEach(plan => {
-           if (plan['x-service-credits']) {
-             const credits = plan['x-service-credits'];
+           if (plan.serviceCredits) {
+             const credits = plan.serviceCredits;
              
              // Text Panel explaining the policy
              let md = `### Service Credits Policy\n\n**Currency**: ${credits.currency}\n**Claim Window**: ${credits.claimWindow}\n\n| Condition | Compensation |\n|---|---|
@@ -366,24 +373,28 @@ export default {
 
            if (plan.guarantees) {
              plan.guarantees.forEach(g => {
-                const metric = sla.metrics[g.metric];
+                const extracted = extractStructuredGuarantee(g.measurement);
+                if (!extracted) return;
+
+                const { metric: metricName, operator, value, period } = extracted;
+                const metric = sla.metrics[metricName];
                 if (!metric || !metric.monitoringId) return;
 
                 // Prometheus Rule
-                const op = invertOperator(g.operator);
+                const op = invertOperator(operator);
                 const mId = toPromQL(metric.monitoringId);
-                const expr = `${mId} ${op} ${g.value}`;
+                const expr = `${mId} ${op} ${value}`;
                 
                 rules.push({
-                  alert: `SlaBreach_${g.metric}`,
+                  alert: `SlaBreach_${metricName}`,
                   expr: expr,
-                  for: g.period || '1m', 
+                  for: period || '1m', 
                   labels: {
                     severity: 'page',
                     plan: planName
                   },
                   annotations: {
-                    summary: `SLA Breach: ${g.metric} is ${op} ${g.value}`,
+                    summary: `SLA Breach: ${metricName} is ${op} ${value}`,
                     description: `Current value: {{ $value }}`
                   }
                 });
@@ -397,8 +408,8 @@ export default {
            }
 
            // Contact Points
-           if (plan['x-support-policy'] && plan['x-support-policy'].contactPoints) {
-              plan['x-support-policy'].contactPoints.forEach(cp => {
+           if (plan.supportPolicy && plan.supportPolicy.contactPoints) {
+              plan.supportPolicy.contactPoints.forEach(cp => {
                   if (cp.channels) {
                       const receivers = cp.channels.map(ch => {
                           if (ch.type === 'email') {

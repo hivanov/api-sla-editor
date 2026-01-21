@@ -6,7 +6,7 @@ test.describe('Duration formatting in Description tab', () => {
   });
 
   test('should format ISO 8601 durations correctly', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     const yamlWithDurations = `
 sla: 1.0.0
@@ -26,7 +26,7 @@ plans:
       cost: 100
       currency: USD
       period: P30D
-    x-maintenance-policy:
+    maintenancePolicy:
       minimumNotice:
         standard: P7D
         emergency: PT1H
@@ -40,7 +40,7 @@ plans:
       window.app.setYamlContent(yaml);
     }, yamlWithDurations);
     
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     
     const description = page.locator('.policy-description');
     await expect(description).toContainText('30 days');
@@ -50,7 +50,7 @@ plans:
   });
 
   test('should format complex durations with multiple parts', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     const yamlWithComplexDuration = `
 sla: 1.0.0
@@ -76,14 +76,14 @@ plans:
       window.app.setYamlContent(yaml);
     }, yamlWithComplexDuration);
     
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     
     // P1DT2H30M15S -> 1 day, 2 hours, 30 minutes and 15 seconds
     await expect(page.locator('.policy-description')).toContainText('1 day, 2 hours, 30 minutes and 15 seconds');
   });
 
   test('should format durations in guarantees', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     const yamlWithGuarantees = `
 sla: 1.0.0
@@ -100,15 +100,14 @@ plans:
       target: 99%
       expression: up == 1
     guarantees:
-      - metric: response-time
-        limit: PT10S
+      - measurement: "avg_over_time(response_time[10s]) < 1"
 `;
 
     await page.evaluate((yaml) => {
       window.app.setYamlContent(yaml);
     }, yamlWithGuarantees);
     
-    await page.click('a:has-text("Description")');
-    await expect(page.locator('.policy-description')).toContainText('response-time: 10 seconds');
+    await page.click('.btn-tab-description');
+    await expect(page.locator('.policy-description')).toContainText('response_time: The average of response_time over 10 seconds');
   });
 });

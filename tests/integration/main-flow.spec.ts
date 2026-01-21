@@ -10,40 +10,43 @@ test.describe('Main flow', () => {
   });
 
   test('should switch between GUI and source editor', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     await expect(page.locator('.ace_editor')).toBeVisible();
 
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await expect(page.locator('input#context-id')).toBeVisible();
   });
 
   test('should edit in GUI and verify in source', async ({ page }) => {
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await page.fill('input#context-id', 'new-id');
 
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     await expect(page.locator('.ace_content')).toContainText('new-id');
   });
 
   test('should edit in source and verify in GUI', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate((yamlString) => {
       window.setYamlContent(yamlString);
     }, 'sla: 1.0.0\ncontext:\n  id: source-id\n  type: plans\nmetrics: {}\nplans: {}');
     
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     
     await expect(page.locator('input#context-id')).toHaveValue('source-id');
   });
 
   test('should load an example', async ({ page }) => {
-    await page.selectOption('select', 'support-mon-fri');
+    await page.selectOption('select.select-example-loader', 'support-mon-fri');
 
     // Wait for the Ace Editor content to update (after programmatic set)
     await page.waitForFunction(
       (expectedText) => {
-        const editor = ace.edit(document.querySelector('.ace_editor'));
+        const el = document.querySelector('.ace_editor');
+        if (!el) return false;
+        // @ts-ignore
+        const editor = ace.edit(el);
         return editor.getValue().includes(expectedText);
       },
       'support-mon-fri'
@@ -51,10 +54,13 @@ test.describe('Main flow', () => {
   });
 
   test('should show validation errors', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
-      const editor = ace.edit(document.querySelector('.ace_editor'));
+      const el = document.querySelector('.ace_editor');
+      if (!el) return;
+      // @ts-ignore
+      const editor = ace.edit(el);
       editor.setValue('invalid yaml');
       editor._emit('change');
     });
@@ -93,21 +99,22 @@ test.describe('Main flow', () => {
     
     // Interact with AvailabilityEditor
     const availEditor = basicPlanCard.locator('.availability-editor-component');
-    await availEditor.locator('select.metric-selector').selectOption('up'); 
+    await availEditor.locator('.select-avail-metric').selectOption('up'); 
     
     // Use manual entry for percentage to keep it simple
-    await availEditor.locator('button:has-text("Manual Entry")').click();
-    await availEditor.locator('input.manual-percentage-input').fill('99.9');
+    await availEditor.locator('.btn-mode-switch[data-mode="manual"]').click();
+    await availEditor.locator('.input-avail-percentage').fill('99.9');
 
     // Set expression manually in raw mode
-    const rawSwitch = availEditor.locator('#raw-promql-toggle');
+    const promQLEditor = availEditor.locator('.prometheus-measurement-editor');
+    const rawSwitch = promQLEditor.locator('.check-raw-promql'); 
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
-    await availEditor.locator('textarea').fill('up == 1');
+    await promQLEditor.locator('textarea').fill('up == 1');
 
     // Switch to Source tab to trigger final YAML update and validation
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     // 5. Verify validation success
     await expect(async () => {
@@ -116,7 +123,10 @@ test.describe('Main flow', () => {
 
     // 6. Verify generated YAML content
     const editorValue = await page.evaluate(() => {
-      const editor = ace.edit(document.querySelector('.ace_editor'));
+      const el = document.querySelector('.ace_editor');
+      if (!el) return '';
+      // @ts-ignore
+      const editor = ace.edit(el);
       return editor.getValue();
     });
 

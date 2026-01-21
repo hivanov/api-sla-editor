@@ -5,7 +5,7 @@
         <h2 class="mb-4">SLA Editor Tutorial</h2>
 
         <section class="mb-5">
-          <div class="card shadow-sm border-info">
+          <div class="card border-info">
             <div class="card-header bg-info text-white">
               <h3 class="h5 mb-0">Motivation: Why this tool exists</h3>
             </div>
@@ -35,7 +35,7 @@
         </section>
 
         <section class="mb-5">
-          <div class="card shadow-sm">
+          <div class="card">
             <div class="card-header bg-white">
               <h3 class="h5 mb-0">The Philosophy of Modern SLAs</h3>
             </div>
@@ -66,7 +66,7 @@
         </section>
 
         <section class="mb-5">
-          <div class="card shadow-sm">
+          <div class="card">
             <div class="card-header bg-white">
               <h3 class="h5 mb-0">Purpose of this Tool</h3>
             </div>
@@ -107,7 +107,7 @@
         </section>
 
         <section class="mb-5">
-          <div class="card shadow-sm border-primary">
+          <div class="card border-primary">
             <div class="card-header bg-primary text-white">
               <h3 class="h5 mb-0">Step-by-Step Example: Pet Store API</h3>
             </div>
@@ -237,7 +237,7 @@
         </section>
 
         <section class="mb-5">
-          <div class="card shadow-sm bg-light">
+          <div class="card bg-light">
             <div class="card-body">
               <h3 class="h5">Tutorial Summary</h3>
               <p>By following these steps, you have achieved a <strong>comprehensive, machine-readable SLA</strong> for the Pet Store API. You have successfully:</p>

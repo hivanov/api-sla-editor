@@ -38,7 +38,7 @@ test.describe('Responsiveness and Layout', () => {
 
   test('should handle tab switching without resizing issues', async ({ page }) => {
     // Go to Source tab
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     
     // Check if Ace Editor is visible and has height
     const aceEditor = page.locator('.ace-editor-container');
@@ -47,7 +47,7 @@ test.describe('Responsiveness and Layout', () => {
     expect(box.height).toBeGreaterThan(100);
     
     // Go back to GUI tab
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await expect(page.locator('.card-header:has-text("Context")').first()).toBeVisible();
   });
 });

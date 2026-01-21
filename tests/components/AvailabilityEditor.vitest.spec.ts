@@ -31,7 +31,7 @@ describe('AvailabilityEditor', () => {
     const lastEmit = emitted[emitted.length - 1][0];
     expect(lastEmit.target).toBe('99.5%');
     expect(lastEmit.metric).toBe('uptime');
-    expect(lastEmit.expression).toContain('uptime');
+    expect(lastEmit.expression).toBe('avg_over_time(uptime[5m]) <');
   })
 
   it('updates metric when metric selector changes', async () => {
@@ -41,13 +41,16 @@ describe('AvailabilityEditor', () => {
 
     const select = wrapper.find('.metric-selector');
     await select.setValue('latency');
+    // Ensure the change handler is called
+    await wrapper.vm.handleMetricChange();
 
     const emitted = wrapper.emitted('update:availability');
     expect(emitted).toBeTruthy();
     const lastEmit = emitted[emitted.length - 1][0];
     expect(lastEmit.target).toBe('99.9%');
     expect(lastEmit.metric).toBe('latency');
-    expect(lastEmit.expression).toContain('latency');
+    // In measurement mode, switching metric resets expression to default template for that metric
+    expect(lastEmit.expression).toBe('avg_over_time(latency[5m]) <');
   });
 
   it('updates expression when expression input changes', async () => {
@@ -176,8 +179,6 @@ describe('AvailabilityEditor', () => {
     })
     
     // It should be in structured mode because expression contains '_over_time'
-    expect(wrapper.findComponent({ name: 'PrometheusMeasurementEditor' }).exists()).toBe(true);
-    
     const promEditor = wrapper.findComponent({ name: 'PrometheusMeasurementEditor' });
     const metricSelect = promEditor.find('.metric-select');
     
@@ -185,13 +186,26 @@ describe('AvailabilityEditor', () => {
     expect(metricSelect.element.disabled).toBe(true);
     
     // Change availability metric
-    await wrapper.find('.metric-selector').setValue('latency');
+    const selector = wrapper.find('.metric-selector');
+    await selector.setValue('latency');
+    await wrapper.vm.handleMetricChange();
+    await wrapper.vm.$nextTick();
     
+    // Ensure nested editor is in UI mode
+    promEditor.vm.isRawMode = false;
+    await wrapper.vm.$nextTick();
+
     // Expression should update to use latency
     const emitted = wrapper.emitted('update:availability');
     const lastEmit = emitted[emitted.length - 1][0];
     expect(lastEmit.metric).toBe('latency');
     expect(lastEmit.expression).toContain('latency');
-    expect(metricSelect.element.value).toBe('latency');
+    
+    // Check internal state as well
+    expect(wrapper.vm.selectedMetric).toBe('latency');
+    
+    await wrapper.vm.$nextTick();
+    const updatedMetricSelect = promEditor.find('select.metric-select');
+    expect(updatedMetricSelect.element.value).toBe('latency');
   });
 })

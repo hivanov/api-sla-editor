@@ -5,7 +5,7 @@ test.describe('New Plan Synchronization', () => {
     await page.goto('/');
     
     // Given I am in the GUI tab
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     // When I type "new plan" in "new plan name" control
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'new plan');
@@ -14,7 +14,7 @@ test.describe('New Plan Synchronization', () => {
     await page.click('.plans-editor-component button:has-text("Add Plan")');
 
     // And I switch to the Source tab
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     // Then the source code should reflect my changes.
     const editorValue = await page.evaluate(() => {

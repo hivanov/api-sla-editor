@@ -5,7 +5,7 @@
         <h2 class="mb-4">SLA Editor Help</h2>
         <p class="text-muted mb-4">Detailed guide to all functionalities and concepts within the SLA Editor.</p>
 
-        <div class="accordion shadow-sm" id="helpAccordion">
+        <div class="accordion" id="helpAccordion">
           
           <!-- Template for Help Items -->
           <div class="accordion-item" v-for="(item, index) in helpItems" :key="index">

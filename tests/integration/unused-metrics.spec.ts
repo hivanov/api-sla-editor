@@ -7,7 +7,7 @@ test.describe('Unused Metrics Validation', () => {
 
   test('should show error when a metric is defined but not used', async ({ page }) => {
     // Navigate to Source tab
-    await page.click('text=Source');
+    await page.click('.btn-tab-source');
 
     // Set YAML with an unused metric
     const yaml = `
@@ -43,7 +43,7 @@ plans:
   });
 
   test('should be valid when all metrics are used in various places', async ({ page }) => {
-    await page.click('text=Source');
+    await page.click('.btn-tab-source');
 
     // used in: availability, guarantees, SLOs, quotas
     const yaml = `
@@ -63,18 +63,13 @@ plans:
       target: "99.9%"
       expression: "m_avail > 0"
     guarantees:
-      - metric: m_guar
-        operator: ">"
-        value: "10"
+      - measurement: "m_guar > 10"
     serviceLevelObjectives:
       - name: "SLO"
         guarantees:
-          - metric: m_slo
-            operator: ">"
-            value: "5"
+          - measurement: "m_slo > 5"
     quotas:
-      m_quota:
-        max: 100
+      m_quota: "m_quota < 100"
 `;
     
     await page.evaluate((content) => {
@@ -86,7 +81,7 @@ plans:
   });
 
   test('should recognize metrics used in PromQL expressions', async ({ page }) => {
-    await page.click('text=Source');
+    await page.click('.btn-tab-source');
 
     const yaml = `
 sla: 1.0.0

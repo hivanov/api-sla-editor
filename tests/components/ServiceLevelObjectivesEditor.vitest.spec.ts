@@ -65,65 +65,18 @@ describe('ServiceLevelObjectivesEditor', () => {
     expect(wrapper.emitted('update:modelValue')[0][0][0].guarantees[0]).toEqual({ measurement: '' })
   })
 
-  it('updates an existing SLO guarantee (switching modes)', async () => {
+  it('updates an existing SLO guarantee', async () => {
     const wrapper = mount(ServiceLevelObjectivesEditor, {
       props: { 
         ...defaultProps,
-        modelValue: [{ priority: 'High', name: 'Incident Resolution', guarantees: [{ metric: 'Uptime', duration: 'PT1H' }] }]
+        modelValue: [{ priority: 'High', name: 'Incident Resolution', guarantees: [{ measurement: '' }] }]
       }
     })
     
-    // Default mode for existing might be legacy if duration is present
-    expect(wrapper.vm.getSloGuaranteeMode(wrapper.props('modelValue')[0].guarantees[0])).toBe('legacy')
-
-    // Switch to structured mode
-    const structuredRadio = wrapper.find('input[type="radio"][id^="slo-mode-structured"]')
-    await structuredRadio.setValue()
+    const prometheusEditor = wrapper.findComponent({ name: 'PrometheusMeasurementEditor' })
+    await prometheusEditor.vm.$emit('update:modelValue', 'avg_over_time(uptime[5m]) > 0.99')
     
-    let emitted = wrapper.emitted('update:modelValue')[0][0][0].guarantees[0]
-    expect(emitted.duration).toBeUndefined()
-    expect(emitted.metric).toBe('Uptime')
-
-    // Switch to measurement mode
-    const measurementRadio = wrapper.find('input[type="radio"][id^="slo-mode-measurement"]')
-    await measurementRadio.setValue()
-    
-    emitted = wrapper.emitted('update:modelValue')[1][0][0].guarantees[0]
-    expect(emitted.metric).toBeUndefined()
-    expect(emitted.measurement).toBe('')
-  })
-
-  it('updates a metric in structured mode', async () => {
-    const wrapper = mount(ServiceLevelObjectivesEditor, {
-      props: { 
-        ...defaultProps,
-        modelValue: [{ priority: 'High', name: 'IR', guarantees: [{ metric: 'Uptime', operator: '>', value: '99%' }] }]
-      }
-    })
-    
-    await wrapper.find('select.form-select').setValue('Latency')
-    expect(wrapper.emitted('update:modelValue')[0][0][0].guarantees[0].metric).toBe('Latency')
-  })
-
-  it('hides Period and Operator controls in measurement mode', async () => {
-    const wrapper = mount(ServiceLevelObjectivesEditor, {
-      props: { 
-        ...defaultProps,
-        modelValue: [{ priority: 'H', name: 'N', guarantees: [{ measurement: 'avg_over_time(m[5m]) < 10' }] }]
-      }
-    })
-    
-    // We want to make sure the OUTER Period/Operator labels are not there.
-    // PrometheusMeasurementEditor has its own Operator label, so we check for their absence in the parent scope.
-    // The structured template uses <label class="form-label">Operator</label> and Period label.
-    // We can check if those templates are NOT rendered.
-    const structuredDiv = wrapper.find('.row.g-2'); // This is the div containing structured operator/value
-    expect(structuredDiv.exists()).toBe(false);
-    
-    // Period is inside a DurationEditor, but we check if the label 'Period' exists outside of PrometheusMeasurementEditor
-    const labels = wrapper.findAll('label');
-    const periodLabel = labels.find(l => l.text() === 'Period');
-    expect(periodLabel).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')[0][0][0].guarantees[0]).toEqual({ measurement: 'avg_over_time(uptime[5m]) > 0.99' })
   })
 
   it('displays validation errors', () => {

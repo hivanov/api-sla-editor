@@ -22,14 +22,15 @@ test.describe('Force Majeure Integration', () => {
 
     // 2b. Make the plan valid (fill required fields)
     const availEditor = planCard.locator('.availability-editor-component');
-    await availEditor.locator('select').first().selectOption('uptime');
-    const rawSwitch = availEditor.locator('#raw-promql-toggle');
+    await availEditor.locator('.select-avail-metric').selectOption('uptime');
+    const promQLEditor = availEditor.locator('.prometheus-measurement-editor');
+    const rawSwitch = promQLEditor.locator('.check-raw-promql'); 
     if (!(await rawSwitch.isChecked())) {
         await rawSwitch.click();
     }
-    await availEditor.locator('textarea').fill('uptime == 1');
-    await availEditor.locator('.nav-link:has-text("Manual Entry")').click();
-    await availEditor.locator('input[type="number"]').first().fill('99.9');
+    await promQLEditor.locator('textarea').fill('uptime == 1');
+    await availEditor.locator('.btn-mode-switch[data-mode="manual"]').click();
+    await availEditor.locator('.input-avail-percentage').fill('99.9');
 
     await planCard.locator('.pricing-editor-component input[placeholder="Cost"]').fill('10');
     await planCard.locator('.pricing-editor-component input[placeholder="Currency"]').fill('EUR');
@@ -66,19 +67,22 @@ test.describe('Force Majeure Integration', () => {
     await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
 
     // 6. Verify in Source Tab (YAML)
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     
     const yamlContent = await page.evaluate(() => {
-      const editor = ace.edit(document.querySelector('.ace_editor'));
+      const el = document.querySelector('.ace_editor');
+      if (!el) return '';
+      // @ts-ignore
+      const editor = ace.edit(el);
       return editor.getValue();
     });
 
-    expect(yamlContent).toContain('x-sla-exclusions:');
+    expect(yamlContent).toContain('slaExclusions:');
     expect(yamlContent).toContain('- Natural disasters (e.g., fire, flood, earthquake, hurricane)');
     expect(yamlContent).toContain('- War, terrorism, riots, or civil unrest');
     
     // 7. Verify in Description Tab
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     const descriptionContent = page.locator('.markdown-body');
     await expect(descriptionContent).toContainText('Natural disasters (e.g., fire, flood, earthquake, hurricane)');
     await expect(descriptionContent).toContainText('Failures of infrastructure (transportation, utilities, communications) outside provider control');
@@ -118,7 +122,7 @@ test.describe('Force Majeure Integration', () => {
     await metricEditor.locator('input[type="text"]').fill('99.9');
     
     // 4. Verify YAML contains both
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const yamlContent = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -154,7 +158,7 @@ test.describe('Force Majeure Integration', () => {
     await textarea.fill('Meteor strike');
 
     // 6. Verify in Source
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const yamlContent = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();

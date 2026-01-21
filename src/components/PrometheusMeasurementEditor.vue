@@ -7,24 +7,24 @@
     <div v-if="!isRawMode" class="row g-3">
       <div class="col-md-4">
         <label class="form-label small fw-bold">Function</label>
-        <select class="form-select form-select-sm" :value="state.func" @change="updateField('func', $event.target.value)">
+        <select class="form-select form-select-sm select-promql-func" :value="state.func" @change="updateField('func', $event.target.value)">
           <option v-for="fn in prometheusFunctions" :key="fn.value" :value="fn.value">{{ fn.label }}</option>
         </select>
       </div>
       
       <div class="col-md-2" v-if="showQuantile">
         <label class="form-label small fw-bold">Quantile</label>
-        <input type="number" step="0.01" min="0" max="1" class="form-control form-control-sm" :value="state.quantile" @input="updateField('quantile', $event.target.value)">
+        <input type="number" step="0.01" min="0" max="1" class="form-control form-control-sm input-promql-quantile" :value="state.quantile" @input="updateField('quantile', $event.target.value)">
       </div>
 
       <div class="col-md-2" v-if="showPredictionSeconds">
         <label class="form-label small fw-bold">Lookahead (s)</label>
-        <input type="number" step="1" min="0" class="form-control form-control-sm" :value="state.quantile" @input="updateField('quantile', $event.target.value)">
+        <input type="number" step="1" min="0" class="form-control form-control-sm input-promql-lookahead" :value="state.quantile" @input="updateField('quantile', $event.target.value)">
       </div>
 
       <div class="col-md-6" :class="{'col-md-4': showQuantile || showPredictionSeconds}">
         <label class="form-label small fw-bold">Metric</label>
-        <select class="form-select form-select-sm metric-select" :value="state.metric" @change="updateField('metric', $event.target.value)" :disabled="!!fixedMetric">
+        <select class="form-select form-select-sm metric-select select-promql-metric" :value="state.metric" @change="updateField('metric', $event.target.value)" :disabled="!!fixedMetric">
           <option value="" disabled>Select metric</option>
           <option v-for="(metric, name) in metrics" :key="name" :value="name">{{ name }}</option>
         </select>
@@ -33,8 +33,8 @@
       <div class="col-md-3" v-if="isRangeFunc">
         <label class="form-label small fw-bold">Window</label>
         <div class="input-group input-group-sm">
-          <input type="number" min="1" class="form-control" :value="state.windowValue" @input="updateField('windowValue', $event.target.value)">
-          <select class="form-select" style="max-width: 80px;" :value="state.windowUnit" @change="updateField('windowUnit', $event.target.value)">
+          <input type="number" min="1" class="form-control input-promql-window-value" :value="state.windowValue" @input="updateField('windowValue', $event.target.value)">
+          <select class="form-select select-promql-window-unit" style="max-width: 80px;" :value="state.windowUnit" @change="updateField('windowUnit', $event.target.value)">
             <option value="s">sec</option>
             <option value="m">min</option>
             <option value="h">hour</option>
@@ -45,7 +45,7 @@
 
       <div class="col-md-3" :class="{'col-md-6': !isRangeFunc}">
         <label class="form-label small fw-bold">Operator</label>
-        <select class="form-select form-select-sm" :value="state.operator" @change="updateField('operator', $event.target.value)">
+        <select class="form-select form-select-sm select-promql-operator" :value="state.operator" @change="updateField('operator', $event.target.value)">
           <option value="<">&lt;</option>
           <option value="<=">&lt;=</option>
           <option value=">">&gt;</option>
@@ -57,7 +57,7 @@
 
       <div class="col-md-6">
         <label class="form-label small fw-bold">Value</label>
-        <input type="text" class="form-control form-control-sm" :class="{'is-invalid': hasError}" placeholder="e.g. 15" :value="state.value" @input="updateField('value', $event.target.value)">
+        <input type="text" class="form-control form-control-sm input-promql-value" :class="{'is-invalid': hasError}" placeholder="e.g. 15" :value="state.value" @input="updateField('value', $event.target.value)">
         <div class="invalid-feedback" v-if="hasError">
           {{ getErrors.join(', ') }}
         </div>
@@ -68,7 +68,7 @@
       <div class="col-12">
         <label class="form-label small fw-bold">Raw Expression</label>
         <textarea 
-          class="form-control form-control-sm font-monospace" 
+          class="form-control form-control-sm font-monospace textarea-promql-raw" 
           rows="2" 
           :value="modelValue" 
           @input="emit('update:modelValue', $event.target.value)"
@@ -84,10 +84,10 @@
     <div class="mt-2 text-muted x-small d-flex justify-content-between align-items-center">
       <span>Preview: <code>{{ preview }}</code></span>
       <div class="d-flex align-items-center gap-2">
-        <span v-if="!promqlError && preview" class="text-success me-2"><i class="bi bi-check-circle-fill"></i> Valid PromQL</span>
+        <span v-if="!promqlError && preview" class="text-success me-2 label-valid-promql"><i class="bi bi-check-circle-fill"></i> Valid PromQL</span>
         <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="raw-promql-toggle" v-model="isRawMode" :disabled="!canSwitchToEditor && isRawMode">
-          <label class="form-check-label x-small" for="raw-promql-toggle">Raw PromQL</label>
+          <input class="form-check-input check-raw-promql" type="checkbox" v-model="isRawMode" :disabled="disabled || (!canSwitchToEditor && isRawMode)">
+          <label class="form-check-label x-small">Raw PromQL</label>
         </div>
         <div v-if="!canSwitchToEditor && isRawMode" class="badge bg-light text-secondary border x-small">
           Raw Mode Only
@@ -123,6 +123,10 @@ export default {
     fixedMetric: {
       type: String,
       default: null,
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['update:modelValue'],
@@ -284,12 +288,18 @@ export default {
       }
     };
 
-    const parse = (str) => {
-      if (!str) return false;
+    const parse = (input) => {
+      if (!input) return false;
       try {
-        const result = validatePromQL(str);
-        if (result.valid && checkRepresentability(result.ast)) {
-          parseAST(result.ast);
+        if (typeof input === 'string') {
+          const result = validatePromQL(input);
+          if (result.valid && checkRepresentability(result.ast)) {
+            parseAST(result.ast);
+            return true;
+          }
+        } else {
+          // Assume AST
+          parseAST(input);
           return true;
         }
       } catch (e) {
@@ -336,24 +346,41 @@ export default {
 
     watch(() => props.modelValue, (newVal) => {
       if (!newVal) {
-        isRawMode.value = false;
+        if (!isRawMode.value) {
+           // Reset state to defaults if empty
+           state.metric = '';
+           state.value = '';
+        }
         return;
       }
+      
       const result = validatePromQL(newVal);
       const representable = result.valid && checkRepresentability(result.ast);
       
       if (representable) {
-        if (isRawMode.value) {
-          // If it was raw but now is representable, we might want to switch back
-          // but we only do it if the value actually changed to something different from what format() would produce
-          // or if it was just initialized.
-          parse(newVal);
+        if (newVal !== format()) {
+          parse(result.ast);
           isRawMode.value = false;
-        } else if (newVal !== format()) {
-          parse(newVal);
         }
       } else {
-        isRawMode.value = true;
+        // Only switch to raw mode if we are NOT already editing in GUI mode
+        // and the value is NOT what our GUI would produce.
+        if (newVal !== format() && !isRawMode.value) {
+           // If it's valid but not representable, we MUST switch to raw
+           if (result.valid) {
+              isRawMode.value = true;
+           } 
+           // If it's invalid, it might be a partial expression from GUI or a totally broken raw expression.
+           // We only switch to raw if it's NOT a partial expression from our GUI.
+           // Heuristic: if it contains things our GUI doesn't produce (like multiple metrics or complex functions)
+           else if (newVal.includes(' ') || newVal.includes('(')) {
+              // Check if it looks like something GUI would produce but incomplete
+              const looksLikeGui = prometheusFunctions.some(f => newVal.startsWith(f.value + '('));
+              if (!looksLikeGui) {
+                isRawMode.value = true;
+              }
+           }
+        }
       }
     }, { immediate: true });
 

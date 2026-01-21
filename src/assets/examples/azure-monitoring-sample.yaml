@@ -31,7 +31,7 @@ plans:
     guarantees:
       - measurement: "avg_over_time(cpu_utilization[5m]) < 80"
       - measurement: "avg_over_time(memory_utilization[5m]) < 90"
-    x-support-policy:
+    supportPolicy:
       contactPoints:
         - contactType: Support Team
           channels:
