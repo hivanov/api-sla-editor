@@ -106,7 +106,7 @@
   "definitions": {
     "iso8601Duration": {
       "type": "string",
-      "pattern": "^P(((\d+D(T(\d+H)?(\d+M)?(\d+S)?)?)|(T(\d+H)?(\d+M)?(\d+S)?)))$",
+      "pattern": "^P(((\\d+D(T(\\d+H)?(\\d+M)?(\\d+S)?)?)|(T(\\d+H)?(\\d+M)?(\\d+S)?)))$",
       "description": "ISO 8601 duration format (e.g., P1D, PT1H30M)."
     },
     "plan": {

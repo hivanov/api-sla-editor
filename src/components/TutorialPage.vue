@@ -231,6 +231,26 @@
                   </div>
                 </div>
 
+                <!-- Step 6 -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step6">
+                      6. Generate Monitoring Infrastructure
+                    </button>
+                  </h2>
+                  <div id="step6" class="accordion-collapse collapse" data-bs-parent="#tutorialSteps">
+                    <div class="accordion-body">
+                      <p>The most powerful feature of this tool is turning your document into code:</p>
+                      <ul>
+                        <li><strong>Terraform:</strong> Go to the <code>Generators -> GCP Terraform</code> tab. Provide your Project ID and click 'Generate' to get a full monitoring setup.</li>
+                        <li><strong>Grafana:</strong> Go to the <code>Generators -> Grafana</code> tab. Enter your Prometheus datasource UID to get a ready-to-import Dashboard JSON and Alert Rules.</li>
+                        <li><strong>Azure Bicep:</strong> Use the <code>Generators -> Azure Bicep</code> tab to generate Azure Monitor alerts and Action Groups.</li>
+                      </ul>
+                      <p class="small text-muted"><i class="bi bi-info-circle"></i> Tip: Use <strong>PromQL</strong> measurements in Step 2 to ensure the generators produce precise monitoring queries.</p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -247,10 +267,16 @@
                 <li>Matched technical Guarantees with operational Quotas.</li>
                 <li>Integrated external calendars for real-world support and maintenance tracking.</li>
                 <li>Established a clear lifecycle for the contract and its data.</li>
+                <li><strong>Generated production-ready monitoring code (Terraform/Bicep/Grafana).</strong></li>
               </ul>
               <div class="alert alert-success">
                 <h5 class="h6 fw-bold mb-2">Ready to use?</h5>
-                Go to the <strong>Source</strong> tab at the top of the editor. There you can see the generated YAML. You can copy this content to your project repository, or use it to configure automated monitoring and billing systems.
+                <p>Explore the tabs at the top of the editor:</p>
+                <ul>
+                  <li><strong>Description:</strong> See a human-readable summary of your SLA (great for non-technical stakeholders).</li>
+                  <li><strong>Source:</strong> View or edit the raw YAML/JSON.</li>
+                  <li><strong>Generators:</strong> Export your SLA as cloud infrastructure code.</li>
+                </ul>
               </div>
             </div>
           </div>
