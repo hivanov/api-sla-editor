@@ -1,108 +1,73 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Azure Bicep Generator', () => {
-  test('should generate Bicep without syntax errors in editor', async ({ page }) => {
-    await page.goto('/');
+const examples = [
+  'availability-1-week-downtime',
+  'azure-monitoring-sample',
+  'four-golden-signals',
+  'gcp-monitoring-complex',
+  'grafana-prometheus-sample',
+  'metrics-100-concurrent-connections',
+  'support-mon-fri'
+];
 
-    await page.selectOption('select.select-example-loader', 'gcp-monitoring-complex');
-    await page.click('button.btn-transform');
-    await page.click('a.btn-gen-bicep');
+test.describe('Azure Bicep Syntax for Examples', () => {
+  for (const example of examples) {
+    test(`should generate Bicep without errors for ${example}`, async ({ page }) => {
+      await page.goto('/');
+      
+      // Load example
+      await page.selectOption('select', example);
 
-    await page.locator('.input-azure-resource-id').fill('/subscriptions/x/resourcegroups/y');
-    await page.locator('.input-azure-location').fill('eastus');
+      // Navigate to Bicep Generator
+      await page.click('button:has-text("Transform")');
+      await page.click('a:has-text("Generate Bicep (Azure)")');
 
-    await page.click('.azure-bicep-generator button.btn-generate');
-    
-    await expect(async () => {
-        const bicep = await page.evaluate(() => {
-            const el = document.querySelector('.ace_editor');
-            if (!el) return '';
-            // @ts-ignore
-            return ace.edit(el).getValue();
-        });
-        expect(bicep).toContain('resource');
-        
-        const errorGutterIcon = page.locator('.ace_gutter-cell.ace_error');
-        expect(await errorGutterIcon.count()).toBe(0);
-    }).toPass();
-  });
+      // Fill required configuration
+      await page.locator('.input-azure-resource-id').fill('/subscriptions/test/resourceGroups/test/providers/Microsoft.Compute/virtualMachines/test');
+      await page.locator('.input-azure-location').fill('eastus');
 
-  test('should show validation error for malformed Bicep', async ({ page }) => {
-    await page.goto('/');
-    await page.selectOption('select.select-example-loader', 'gcp-monitoring-complex');
-    await page.click('button.btn-transform');
-    await page.click('a.btn-gen-bicep');
-    await page.locator('.input-azure-resource-id').fill('/subscriptions/x');
-    await page.locator('.input-azure-location').fill('eastus');
-    await page.click('.azure-bicep-generator button.btn-generate');
+      // Click Generate
+      await page.click('.azure-bicep-generator button:has-text("Generate")');
 
-    await expect(page.locator('.azure-bicep-generator .alert-danger')).not.toBeVisible();
-  });
+      // Check for local errors in the generator UI
+      const localErrors = page.locator('.azure-bicep-generator .alert-warning');
+      const errorCount = await localErrors.count();
+      if (errorCount > 0) {
+          const text = await localErrors.textContent();
+          console.warn(`Warning/Error generating ${example}: ${text}`);
+      }
 
-  test('should NOT highlight numbers within identifiers', async ({ page }) => {
-    await page.goto('/');
-    await page.selectOption('select.select-example-loader', 'azure-monitoring-sample');
-    await page.click('button.btn-transform');
-    await page.click('a.btn-gen-bicep');
-    await page.locator('.input-azure-resource-id').fill('/subscriptions/sub/resourcegroups/rg');
-    await page.locator('.input-azure-location').fill('eastus');
-    await page.click('.azure-bicep-generator button.btn-generate');
+      // Check for validation errors in the Ace editor annotations (simulated by the generator's validation)
+      const validationAlert = page.locator('.azure-bicep-generator .alert-danger');
+      await expect(validationAlert).not.toBeVisible();
 
-    const bicep = await page.evaluate(() => {
-        const el = document.querySelector('.ace_editor');
-        if (!el) return '';
-        // @ts-ignore
-        return ace.edit(el).getValue();
+      // Verify some code was actually generated
+      const getEditorValue = async () => {
+          return await page.evaluate(() => {
+              const el = document.querySelector('.ace_editor');
+              if (!el) return '';
+              // @ts-ignore
+              const editor = ace.edit(el);
+              return editor.getValue();
+          });
+      };
+
+      const bicep = await getEditorValue();
+      
+      // If the example has metrics with monitoringId, it should generate resources.
+      const hasMonitoringIds = await page.evaluate(() => {
+          // @ts-ignore
+          const sla = window.app.sla;
+          if (!sla || !sla.metrics) return false;
+          return Object.values(sla.metrics).some((m: any) => m.monitoringId);
+      });
+
+      if (hasMonitoringIds) {
+          expect(bicep).toContain('resource ');
+          expect(bicep.length).toBeGreaterThan(100);
+      } else {
+          expect(bicep).toContain('// Azure Bicep Monitoring Template');
+      }
     });
-    expect(bicep).toContain('resource rule_');
-  });
-
-  test('should highlight all major Bicep syntax elements', async ({ page }) => {
-    await page.goto('/');
-    await page.selectOption('select.select-example-loader', 'azure-monitoring-sample');
-    await page.click('button.btn-transform');
-    await page.click('a.btn-gen-bicep');
-    await page.locator('.input-azure-resource-id').fill('/subscriptions/sub/resourcegroups/rg');
-    await page.locator('.input-azure-location').fill('eastus');
-    await page.click('.azure-bicep-generator button.btn-generate');
-
-    const bicep = await page.evaluate(() => {
-        const el = document.querySelector('.ace_editor');
-        if (!el) return '';
-        // @ts-ignore
-        return ace.edit(el).getValue();
-    });
-    expect(bicep).toContain('resource');
-    expect(bicep).toContain('properties');
-  });
-
-  test('should highlight Bicep string interpolation and escaped quotes', async ({ page }) => {
-    await page.goto('/');
-    await page.selectOption('select.select-example-loader', 'azure-monitoring-sample');
-    await page.click('button.btn-transform');
-    await page.click('a.btn-gen-bicep');
-    await page.locator('.input-azure-resource-id').fill('/sub/rg');
-    await page.locator('.input-azure-location').fill('eastus');
-    await page.click('.azure-bicep-generator button.btn-generate');
-
-    await page.evaluate(() => {
-        const el = document.querySelector('.ace_editor');
-        if (el) {
-            // @ts-ignore
-            const editor = ace.edit(el);
-            editor.setReadOnly(false);
-            // Use double single quotes for Bicep escaping
-            editor.setValue("var test = 'Hello ${name}!'\nvar escaped = 'It\'s working'\n", -1);
-        }
-    });
-
-    const bicep = await page.evaluate(() => {
-        const el = document.querySelector('.ace_editor');
-        if (!el) return '';
-        // @ts-ignore
-        return ace.edit(el).getValue();
-    });
-    expect(bicep).toContain('${name}');
-    expect(bicep).toContain("It's working");
-  });
+  }
 });

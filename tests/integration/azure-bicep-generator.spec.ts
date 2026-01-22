@@ -16,13 +16,13 @@ test.describe('Azure Bicep Generator', () => {
 
   test('should generate bicep when configuration is provided in the generator view', async ({ page }) => {
     // 1. Configure a Metric and a Plan first (needed for alerts)
-    await page.click('.card-header:has-text("Metrics")');
+    await page.locator('#metrics-editor .card-header').filter({ hasText: 'Metrics' }).click();
     await page.fill('input[placeholder="New metric name"]', 'cpu_util');
     await page.click('button:has-text("Add Metric")');
     const metricCard = page.locator('.metrics-editor-component .card').filter({ hasText: 'cpu_util' });
     await metricCard.locator('input[placeholder*="compute.googleapis.com"]').fill('percentage_cpu');
 
-    await page.click('.card-header:has-text("Plans")');
+    await page.locator('#plans-editor .card-header').filter({ hasText: 'Plans' }).click();
     await page.fill('input[placeholder="New plan name"]', 'Basic');
     await page.click('button:has-text("Add Plan")');
     const planCard = page.locator('.plans-editor-component .card').filter({ hasText: 'Basic' });

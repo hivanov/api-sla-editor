@@ -10,6 +10,13 @@ import type {
     TerraformIdentifier
 } from './terraform/ast';
 import { emitTerraform } from './terraform/emitter';
+import type {
+    BicepStatement,
+    BicepExpression,
+    BicepObject,
+    BicepResource
+} from './bicep/ast';
+import { BicepEmitter } from './bicep/emitter';
 
 export interface TerraformAlertOptions {
     planName: string;
@@ -190,7 +197,7 @@ export const generateGcpAlertPolicy = (opts: TerraformAlertOptions): string => {
     return emitTerraform(generateGcpAlertPolicyNode(opts)) + '\n\n';
 };
 
-export const generateAzureBicepAlert = (opts: TerraformAlertOptions & { location: string, scope: string, actionGroups?: string[] }): string => {
+export const generateAzureBicepAlertNode = (opts: TerraformAlertOptions & { location: string, scope: string, actionGroups?: string[] }): BicepStatement => {
     const usePromQL = isComplexPromQL(opts.expression);
 
     if (usePromQL) {
@@ -206,142 +213,211 @@ export const generateAzureBicepAlert = (opts: TerraformAlertOptions & { location
              query = `${query} ${violationOp} ${opts.threshold}`;
         }
 
-        let bicep = `resource ${ruleGroupName} 'Microsoft.AlertsManagement/prometheusRuleGroups@2023-03-01' = {
-`;
-        bicep += `  name: '${ruleGroupName}'
-`;
-        bicep += `  location: '${opts.location}'
-`;
-        bicep += `  properties: {
-`;
-        bicep += `    description: 'SLA Breach: ${opts.planName} - ${opts.source} - ${opts.metricName}'
-`;
-        bicep += `    scopes: [
-`;
-        bicep += `      '${opts.scope}'
-`;
-        bicep += `    ]
-`;
-        bicep += `    enabled: true
-`;
-        bicep += `    rules: [
-`;
-        bicep += `      {
-`;
-        bicep += `        alert: 'SlaBreach_${opts.metricName}'
-`;
-        bicep += `        expression: '${query.replace(/'/g, "'" )}'
-`;
-        bicep += `        severity: 2
-`;
-        bicep += `        enabled: true
-`;
-        if (opts.duration) {
-            bicep += `        for: '${parseDurationToIso(opts.duration)}'
-`;
-        }
-        if (opts.actionGroups && opts.actionGroups.length > 0) {
-            bicep += `        actions: [
-`;
-            opts.actionGroups.forEach(ag => {
-               bicep += `          {
-`;
-               bicep += `            actionGroupId: ${ag}.id
-`;
-               bicep += `          }
-`;
-            });
-            bicep += `        ]
-`;
-        }
-        bicep += `      }
-`;
-        bicep += `    ]
-`;
-        bicep += `  }
-`;
-        bicep += `}
+        const properties: BicepObject = {
+            type: 'Object',
+            properties: [
+                { name: 'description', value: { type: 'Literal', value: `SLA Breach: ${opts.planName} - ${opts.source} - ${opts.metricName}` } },
+                { name: 'scopes', value: { type: 'Array', items: [{ type: 'Literal', value: opts.scope }] } },
+                { name: 'enabled', value: { type: 'Literal', value: true } },
+                {
+                    name: 'rules',
+                    value: {
+                        type: 'Array',
+                        items: [
+                            {
+                                type: 'Object',
+                                properties: [
+                                    { name: 'alert', value: { type: 'Literal', value: `SlaBreach_${opts.metricName}` } },
+                                    { name: 'expression', value: { type: 'Literal', value: query } },
+                                    { name: 'severity', value: { type: 'Literal', value: 2 } },
+                                    { name: 'enabled', value: { type: 'Literal', value: true } }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
 
-`;
-        return bicep;
+        if (opts.duration) {
+            (properties.properties.find(p => p.name === 'rules')!.value as any).items[0].properties.push({
+                name: 'for',
+                value: { type: 'Literal', value: parseDurationToIso(opts.duration) }
+            });
+        }
+
+        if (opts.actionGroups && opts.actionGroups.length > 0) {
+            (properties.properties.find(p => p.name === 'rules')!.value as any).items[0].properties.push({
+                name: 'actions',
+                value: {
+                    type: 'Array',
+                    items: opts.actionGroups.map(ag => ({
+                        type: 'Object',
+                        properties: [
+                            { name: 'actionGroupId', value: { type: 'MemberExpression', object: { type: 'Identifier', name: ag }, property: 'id' } }
+                        ]
+                    }))
+                }
+            });
+        }
+
+        return {
+            type: 'Resource',
+            name: ruleGroupName,
+            resourceType: 'Microsoft.AlertsManagement/prometheusRuleGroups@2023-03-01',
+            body: properties
+        } as BicepResource;
 
     } else {
         // Standard Metric Alert
         const alertName = `alert_${opts.planName}_${opts.source}_${opts.index}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
         const period = parseDurationToIso(opts.duration || '60s');
 
-        let bicep = `resource ${alertName} 'Microsoft.Insights/metricalerts@2018-03-01' = {
-`;
-        bicep += `  name: 'SLA Breach: ${opts.planName} - ${opts.source} - ${opts.metricName}'
-`;
-        bicep += `  location: 'global'
-`;
-        bicep += `  properties: {
-`;
-        bicep += `    description: 'Alert for SLA breach of ${opts.metricName} in plan ${opts.planName}'
-`;
-        bicep += `    severity: 2
-`;
-        bicep += `    enabled: true
-`;
-        bicep += `    scopes: [
-`;
-        bicep += `      '${opts.scope}'
-`;
-        bicep += `    ]
-`;
-        bicep += `    evaluationFrequency: '${period}'
-`;
-        bicep += `    windowSize: '${period}'
-`;
-        bicep += `    criteria: {
-`;
-        bicep += `      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
-`;
-        bicep += `      allOf: [
-`;
-        bicep += `        {
-`;
-        bicep += `          name: 'Metric1'
-`;
-        bicep += `          metricName: '${opts.expression}'
-`;
-        bicep += `          operator: '${getAzureOperator(opts.operator || '<')}'
-`;
-        bicep += `          threshold: ${opts.threshold !== undefined ? opts.threshold : 0}
-`;
-        bicep += `          timeAggregation: '${opts.timeAggregation || 'Average'}'
-`;
-        bicep += `          criterionType: 'StaticThresholdCriterion'
-`;
-        bicep += `        }
-`;
-        bicep += `      ]
-`;
-        bicep += `    }
-`;
-        if (opts.actionGroups && opts.actionGroups.length > 0) {
-            bicep += `    actions: [
-`;
-            opts.actionGroups.forEach(ag => {
-               bicep += `      {
-`;
-               bicep += `        actionGroupId: ${ag}.id
-`;
-               bicep += `      }
-`;
-            });
-            bicep += `    ]
-`;
-        }
-        bicep += `  }
-`;
-        bicep += `}
+        const properties: BicepObject = {
+            type: 'Object',
+            properties: [
+                { name: 'description', value: { type: 'Literal', value: `Alert for SLA breach of ${opts.metricName} in plan ${opts.planName}` } },
+                { name: 'severity', value: { type: 'Literal', value: 2 } },
+                { name: 'enabled', value: { type: 'Literal', value: true } },
+                { name: 'scopes', value: { type: 'Array', items: [{ type: 'Literal', value: opts.scope }] } },
+                { name: 'evaluationFrequency', value: { type: 'Literal', value: period } },
+                { name: 'windowSize', value: { type: 'Literal', value: period } },
+                {
+                    name: 'criteria',
+                    value: {
+                        type: 'Object',
+                        properties: [
+                            { name: "'odata.type'", value: { type: 'Literal', value: 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria' } },
+                            {
+                                name: 'allOf',
+                                value: {
+                                    type: 'Array',
+                                    items: [
+                                        {
+                                            type: 'Object',
+                                            properties: [
+                                                { name: 'name', value: { type: 'Literal', value: 'Metric1' } },
+                                                { name: 'metricName', value: { type: 'Literal', value: opts.expression } },
+                                                { name: 'operator', value: { type: 'Literal', value: getAzureOperator(opts.operator || '<') } },
+                                                { name: 'threshold', value: { type: 'Literal', value: opts.threshold !== undefined ? opts.threshold : 0 } },
+                                                { name: 'timeAggregation', value: { type: 'Literal', value: opts.timeAggregation || 'Average' } },
+                                                { name: 'criterionType', value: { type: 'Literal', value: 'StaticThresholdCriterion' } }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
 
-`;
-        return bicep;
+        if (opts.actionGroups && opts.actionGroups.length > 0) {
+            properties.properties.push({
+                name: 'actions',
+                value: {
+                    type: 'Array',
+                    items: opts.actionGroups.map(ag => ({
+                        type: 'Object',
+                        properties: [
+                            { name: 'actionGroupId', value: { type: 'MemberExpression', object: { type: 'Identifier', name: ag }, property: 'id' } }
+                        ]
+                    }))
+                }
+            });
+        }
+
+        return {
+            type: 'Resource',
+            name: alertName,
+            resourceType: 'Microsoft.Insights/metricalerts@2018-03-01',
+            body: {
+                type: 'Object',
+                properties: [
+                    { name: 'name', value: { type: 'Literal', value: `SLA Breach: ${opts.planName} - ${opts.source} - ${opts.metricName}` } },
+                    { name: 'location', value: { type: 'Literal', value: 'global' } },
+                    { name: 'properties', value: properties }
+                ]
+            }
+        } as BicepResource;
     }
 };
+
+export const generateAzureBicepAlert = (opts: TerraformAlertOptions & { location: string, scope: string, actionGroups?: string[] }): string => {
+    const node = generateAzureBicepAlertNode(opts);
+    const emitter = new BicepEmitter();
+    return emitter.emit([node]) + '\n\n';
+};
+
+export const generateAzureActionGroupNode = (name: string, type: 'email' | 'sms', value: string): BicepStatement => {
+    const groupKey = `ag_${name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const properties: BicepObject = {
+        type: 'Object',
+        properties: [
+            { name: 'groupShortName', value: { type: 'Literal', value: name.substring(0, 12).replace(/[^a-zA-Z0-9]/g, '') } },
+            { name: 'enabled', value: { type: 'Literal', value: true } }
+        ]
+    };
+
+    if (type === 'email') {
+        properties.properties.push({
+            name: 'emailReceivers',
+            value: {
+                type: 'Array',
+                items: [
+                    {
+                        type: 'Object',
+                        properties: [
+                            { name: 'name', value: { type: 'Literal', value: name } },
+                            { name: 'emailAddress', value: { type: 'Literal', value: value } },
+                            { name: 'useCommonAlertSchema', value: { type: 'Literal', value: true } }
+                        ]
+                    }
+                ]
+            }
+        });
+    } else if (type === 'sms') {
+        properties.properties.push({
+            name: 'smsReceivers',
+            value: {
+                type: 'Array',
+                items: [
+                    {
+                        type: 'Object',
+                        properties: [
+                            { name: 'name', value: { type: 'Literal', value: name } },
+                            { name: 'countryCode', value: { type: 'Literal', value: '1' } },
+                            { name: 'phoneNumber', value: { type: 'Literal', value: value } }
+                        ]
+                    }
+                ]
+            }
+        });
+    }
+
+    return {
+        type: 'Resource',
+        name: groupKey,
+        resourceType: 'Microsoft.Insights/actionGroups@2023-01-01',
+        body: {
+            type: 'Object',
+            properties: [
+                { name: 'name', value: { type: 'Literal', value: name.replace(/[^a-zA-Z0-9-]/g, '-') } },
+                { name: 'location', value: { type: 'Literal', value: 'Global' } },
+                { name: 'properties', value: properties }
+            ]
+        }
+    } as BicepResource;
+};
+
+export const generateAzureActionGroup = (name: string, type: 'email' | 'sms', value: string): string => {
+    const node = generateAzureActionGroupNode(name, type, value);
+    const emitter = new BicepEmitter();
+    return emitter.emit([node]) + '\n\n';
+};
+
+
 
 const invertOperator = (op: string) => {
     switch (op) {

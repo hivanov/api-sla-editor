@@ -14,7 +14,6 @@ test.describe('Force Majeure Integration', () => {
     // 1. Setup a Basic Plan
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'Basic Plan');
     await page.click('.plans-editor-component button:has-text("Add Plan")');
-    await page.waitForLoadState('networkidle');
 
     // 2. Expand the plan (it should be expanded by default on creation, but let's be safe if logic changes)
     const planCard = page.locator('.plans-editor-component .plan-item:has-text("Basic Plan")');

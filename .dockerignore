@@ -15,6 +15,14 @@ src/utils/terraform/terraformLexer.ts
 src/utils/terraform/terraformListener.ts
 src/utils/terraform/terraformParser.ts
 src/utils/terraform/terraformVisitor.ts
+src/utils/bicep/bicep.interp
+src/utils/bicep/bicep.tokens
+src/utils/bicep/bicepLexer.interp
+src/utils/bicep/bicepLexer.tokens
+src/utils/bicep/bicepLexer.ts
+src/utils/bicep/bicepListener.ts
+src/utils/bicep/bicepParser.ts
+src/utils/bicep/bicepVisitor.ts
 
 node_modules/
 dist/

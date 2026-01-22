@@ -52,4 +52,14 @@ src/utils/terraform/terraformListener.ts
 src/utils/terraform/terraformParser.ts
 src/utils/terraform/terraformVisitor.ts
 
+# Generated Bicep parser files
+src/utils/bicep/bicep.interp
+src/utils/bicep/bicep.tokens
+src/utils/bicep/bicepLexer.interp
+src/utils/bicep/bicepLexer.tokens
+src/utils/bicep/bicepLexer.ts
+src/utils/bicep/bicepListener.ts
+src/utils/bicep/bicepParser.ts
+src/utils/bicep/bicepVisitor.ts
+
 **/.antlr/

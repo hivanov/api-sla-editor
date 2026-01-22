@@ -44,7 +44,8 @@ import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/theme-monokai';
 import AzureMonitoringEditor from './AzureMonitoringEditor.vue';
 import { extractStructuredGuarantee, getTopLevelFunction, resolveMetricAliases } from '../utils/formatters';
-import { generateAzureBicepAlert, isComplexPromQL } from '../utils/transformers';
+import { generateAzureBicepAlert, isComplexPromQL, generateAzureActionGroup } from '../utils/transformers';
+import { validateBicep as actualValidateBicep } from '../utils/bicep/validator';
 
 // Define Bicep mode for Ace
 ace.define('ace/mode/bicep_highlight_rules', function(require, exports, module) {
@@ -150,57 +151,13 @@ export default {
     });
 
     const validateBicep = (code) => {
-       const results = [];
-       const lines = code.split('\n');
-       
-       lines.forEach((line, index) => {
-          const trimmed = line.trim();
-          const lineNum = index + 1;
-          const openBraces = (line.match(/\{/g) || []).length;
-          const closeBraces = (line.match(/\}/g) || []).length;
-
-          const propMatch = line.match(/^\s*([a-zA-Z0-9]+)\s*:\s*([^'\\[{0-9tfn\\s][^,]*)$/);
-          if (propMatch) {
-             const val = propMatch[2].trim();
-             if (!['true', 'false', 'null'].includes(val) && !val.includes('.') && !val.includes('(')) {
-                results.push({
-                   line: lineNum,
-                   message: `Property '${propMatch[1]}' value should likely be quoted or is an invalid reference.`, 
-                   type: 'warning'
-                });
-             }
-          }
-          if (trimmed.startsWith('resource ') && !trimmed.includes("'")) {
-             results.push({
-                line: lineNum,
-                message: "Resource declaration missing type string.",
-                type: 'error'
-             });
-          }
-          const quotes = (line.match(/'/g) || []).length;
-          if (quotes % 2 !== 0) {
-             results.push({
-                line: lineNum,
-                message: "Unterminated string literal.",
-                type: 'error'
-             });
-          }
-       });
-
-       const totalOpen = (code.match(/\{/g) || []).length;
-       const totalClose = (code.match(/\}/g) || []).length;
-       if (totalOpen > totalClose) {
-          results.push({ line: lines.length, message: "Missing closing brace '}'.", type: 'error' });
-       } else if (totalClose > totalOpen) {
-          results.push({ line: 1, message: "Unexpected closing brace '}'.", type: 'error' });
-       }
-
-       validationResults.value = results;
+       const result = actualValidateBicep(code);
+       validationResults.value = result.errors;
        
        if (editor) {
-          const annotations = results.map(r => ({
+          const annotations = result.errors.map(r => ({
              row: r.line - 1,
-             column: 0,
+             column: r.column,
              text: r.message,
              type: r.type
           }));
@@ -247,31 +204,7 @@ export default {
                             const groupKey = `ag_${name.replace(/[^a-zA-Z0-9]/g, '_')}`;
                             if (!actionGroupNames.has(groupKey)) {
                                actionGroupNames.add(groupKey);
-                               let chunk = `resource ${groupKey} 'Microsoft.Insights/actionGroups@2023-01-01' = {\n`;
-                               chunk += `  name: '${name.replace(/[^a-zA-Z0-9-]/g, '-')}'\n`;
-                               chunk += `  location: 'Global'\n`;
-                               chunk += `  properties: {\n`;
-                               chunk += `    groupShortName: '${name.substring(0, 12).replace(/[^a-zA-Z0-9]/g, '')}'\n`;
-                               chunk += `    enabled: true\n`;
-                               if (type === 'email') {
-                                  chunk += `    emailReceivers: [\n`;
-                                  chunk += `      {\n`;
-                                  chunk += `        name: '${name}'\n`;
-                                  chunk += `        emailAddress: '${emailAddress}'\n`;
-                                  chunk += `        useCommonAlertSchema: true\n`;
-                                  chunk += `      }\n`;
-                                  chunk += `    ]\n`;
-                               } else if (type === 'sms') {
-                                  chunk += `    smsReceivers: [\n`;
-                                  chunk += `      {\n`;
-                                  chunk += `        name: '${name}'\n`;
-                                  chunk += `        countryCode: '1'\n`;
-                                  chunk += `        phoneNumber: '${phoneNumber}'\n`;
-                                  chunk += `      }\n`;
-                                  chunk += `    ]\n`;
-                               }
-                               chunk += `  }\n`;
-                               chunk += `}\n\n`;
+                               const chunk = generateAzureActionGroup(name, type, type === 'email' ? emailAddress : phoneNumber);
                                actionGroups.push({ resourceName: groupKey, chunk });
                             }
                          }
