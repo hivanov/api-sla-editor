@@ -7,7 +7,7 @@ test.describe('Custom Currencies', () => {
 
   test('should allow adding and using custom currency', async ({ page }) => {
     // 1. Go to GUI and find Currencies section
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     await expect(page.locator('text=Currencies')).toBeVisible();
 
     await page.click('text=Add Custom Currency');
@@ -34,7 +34,7 @@ test.describe('Custom Currencies', () => {
     await currencyInput.fill('SKU');
     
     // Verify it's in the YAML
-    await page.click('text=Source');
+    await page.click('.btn-tab-source');
     
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -47,7 +47,7 @@ test.describe('Custom Currencies', () => {
   });
 
   test('should allow custom conversion', async ({ page }) => {
-      await page.click('text=GUI');
+      await page.click('.btn-tab-gui');
       await expect(page.locator('text=Currencies')).toBeVisible();
       await page.click('text=Add Custom Currency');
       const codeInput = page.locator('.currency-editor-component input[placeholder="SKU"]');
@@ -59,7 +59,7 @@ test.describe('Custom Currencies', () => {
       const baseInput = page.locator('.currency-editor-component input[placeholder="USD"]');
       await baseInput.fill('EUR');
 
-      await page.click('text=Source');
+      await page.click('.btn-tab-source');
       const editorValue = await page.evaluate(() => {
         const editor = ace.edit(document.querySelector('.ace_editor'));
         return editor.getValue();
@@ -71,7 +71,7 @@ test.describe('Custom Currencies', () => {
   });
 
   test('should show validation error for negative conversion rate', async ({ page }) => {
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     await page.click('text=Add Custom Currency');
     
     const rateInput = page.locator('.currency-editor-component input[type="number"]');
@@ -86,7 +86,7 @@ test.describe('Custom Currencies', () => {
   });
 
   test('should allow choosing a standard currency (e.g. EUR)', async ({ page }) => {
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     
     // Add a Plan
     await page.click('text=Add Plan');
@@ -98,12 +98,12 @@ test.describe('Custom Currencies', () => {
     
     await currencyInput.fill('EUR');
     
-    await page.click('text=Source');
+    await page.click('.btn-tab-source');
     await expect(page.locator('.ace_content')).toContainText('currency: EUR');
   });
 
   test('should allow using custom currency in service credits', async ({ page }) => {
-    await page.click('text=GUI');
+    await page.click('.btn-tab-gui');
     
     // Add custom currency
     await page.click('text=Add Custom Currency');
@@ -119,8 +119,8 @@ test.describe('Custom Currencies', () => {
     
     await currencyInput.fill('TOKEN');
     
-    await page.click('text=Source');
-    await expect(page.locator('.ace_content')).toContainText('x-service-credits:');
+    await page.click('.btn-tab-source');
+    await expect(page.locator('.ace_content')).toContainText('serviceCredits:');
     await expect(page.locator('.ace_content')).toContainText('currency: TOKEN');
   });
 });

@@ -1,58 +1,97 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/schemas/sla4oai-extended.json",
-  "title": "Extended SLA4OAI Schema",
-  "description": "Validation for SLA4OAI files with strict extensions for Support, Legal, Holidays, and Maintenance.",
+  "$id": "https://example.com/schemas/sla-specification.json",
+  "title": "SLA Specification Schema",
+  "description": "Validation for SLA files with strict focus on PromQL monitoring and modern support policies.",
   "type": "object",
   "required": ["sla", "plans"],
   "properties": {
-    "sla": { "type": "string", "const": "1.0.0" },
+    "sla": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "The version of the SLA specification format. Fixed to 1.0.0."
+    },
     "context": {
       "type": "object",
       "required": ["id"],
+      "description": "Metadata context for the SLA document.",
       "properties": {
-        "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["plans", "agreements"] }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this SLA or set of plans."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["plans", "agreements"],
+          "description": "The nature of the document: 'plans' for a service catalog, 'agreements' for a signed contract."
+        }
       }
     },
     "metrics": {
       "type": "object",
+      "description": "Definition of all metrics used in the SLA. Every metric referenced in any PromQL expression (availability, quotas, guarantees, etc.) MUST be defined here. All defined metrics MUST be referenced at least once in the specification.",
       "additionalProperties": {
         "type": "object",
         "required": ["type"],
         "properties": {
-          "type": { "type": "string", "enum": ["boolean", "integer", "number", "string"] },
-          "unit": { "type": "string" },
-          "description": { "type": "string" },
-          "monitoringId": { "type": "string", "description": "The ID of the metric in the monitoring system (e.g., compute.googleapis.com/instance/cpu/utilization)" },
-          "resourceType": { "type": "string", "description": "The monitored resource type (e.g., gce_instance)" },
-          "metricKind": { "type": "string", "enum": ["GAUGE", "DELTA", "CUMULATIVE"] }
+          "type": {
+            "type": "string",
+            "enum": ["boolean", "integer", "number", "string"],
+            "description": "The data type of the metric values."
+          },
+          "unit": {
+            "type": "string",
+            "description": "The unit of measurement (e.g., ms, requests, percent, bytes)."
+          },
+          "description": {
+            "type": "string",
+            "description": "Markdown-supported description of the metric's meaning and source."
+          },
+          "monitoringId": {
+            "type": "string",
+            "description": "The ID of the metric in the monitoring system (e.g., compute.googleapis.com/instance/cpu/utilization)."
+          },
+          "resourceType": {
+            "type": "string",
+            "description": "The monitored resource type (e.g., gce_instance)."
+          },
+          "metricKind": {
+            "type": "string",
+            "enum": ["GAUGE", "DELTA", "CUMULATIVE"],
+            "description": "The kind of metric: GAUGE (instant), DELTA (change), or CUMULATIVE (total over time)."
+          }
         }
-      }
-    },
-    "x-gcp-monitoring": {
-      "type": "object",
-      "properties": {
-        "projectId": { "type": "string" }
       }
     },
     "customCurrencies": {
       "type": "array",
+      "description": "Optional definitions for non-standard or internal currencies.",
       "items": {
         "type": "object",
         "required": ["code", "description"],
         "properties": {
-          "code": { "type": "string" },
-          "description": { "type": "string" },
+          "code": {
+            "type": "string",
+            "description": "The currency code (e.g., CREDITS)."
+          },
+          "description": {
+            "type": "string",
+            "description": "Friendly name for the currency."
+          },
           "conversion": {
             "type": "object",
             "required": ["rate", "baseCurrency"],
+            "description": "Exchange rate relative to a base currency.",
             "properties": {
               "rate": {
                 "type": "number",
-                "minimum": 0
+                "minimum": 0,
+                "description": "Conversion rate from baseCurrency to this currency."
               },
-              "baseCurrency": { "type": "string" }
+              "baseCurrency": {
+                "type": "string",
+                "description": "The standard currency code (e.g., USD, EUR) used as base."
+              }
             }
           }
         }
@@ -60,84 +99,142 @@
     },
     "plans": {
       "type": "object",
-      "additionalProperties": { "$ref": "#/definitions/plan" }
+      "description": "A map of service plans, where each key is a unique plan ID.",
+      "additionalProperties": {"$ref": "#/definitions/plan"}
     }
   },
   "definitions": {
     "iso8601Duration": {
       "type": "string",
-      "pattern": "^P((\\d+D(T(\\d+H)?(\\d+M)?(\\d+S)?)?)|(T(\\d+H)?(\\d+M)?(\\d+S)?))$"
+      "pattern": "^P(((\\d+D(T(\\d+H)?(\\d+M)?(\\d+S)?)?)|(T(\\d+H)?(\\d+M)?(\\d+S)?)))$",
+      "description": "ISO 8601 duration format (e.g., P1D, PT1H30M)."
     },
     "plan": {
       "type": "object",
       "required": ["availability"],
+      "description": "Definition of a single service level plan.",
       "properties": {
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "availability": {
+        "title": {
           "type": "string",
-          "pattern": "^\\d+(\\.\\d+)?%$"
+          "description": "The human-readable name of the plan."
+        },
+        "description": {
+          "type": "string",
+          "description": "Markdown-supported detailed description of the plan."
+        },
+        "availability": {
+          "type": "object",
+          "required": ["target", "metric", "expression"],
+          "description": "Uptime and availability guarantees.",
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$",
+              "description": "The target availability percentage (e.g., 99.9%)."
+            },
+            "metric": {
+              "type": "string",
+              "description": "The primary metric name used for availability (must be defined in the root metrics section)."
+            },
+            "expression": {
+              "type": "string",
+              "description": "PromQL condition (evaluates to 0 or 1) that defines service 'up' state."
+            }
+          }
         },
         "pricing": {
           "type": "object",
           "required": ["cost", "currency", "period"],
+          "description": "The cost structure for the plan.",
           "properties": {
-            "cost": { "type": "number" },
-            "currency": { "type": "string" },
-            "period": { "$ref": "#/definitions/iso8601Duration" }
-          }
-        },
-        "quotas": { "type": "object" },
-        "guarantees": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "anyOf": [
-              { "required": ["metric"] },
-              { "required": ["measurement"] }
-            ],
-            "properties": {
-              "metric": { "type": "string" },
-              "measurement": { "type": "string" },
-              "limit": { "$ref": "#/definitions/iso8601Duration" },
-              "operator": { "type": "string", "enum": [ ">", "<", ">=", "<=", "=", "between", "avg" ] },
-              "value": { "type": "string" },
-              "period": { "$ref": "#/definitions/iso8601Duration" }
+            "cost": {
+              "type": "number",
+              "description": "The price of the plan."
+            },
+            "currency": {
+              "type": "string",
+              "description": "Currency code (e.g., EUR, USD or custom code)."
+            },
+            "period": {
+              "$ref": "#/definitions/iso8601Duration",
+              "description": "The billing frequency (e.g., P1M for monthly)."
             }
           }
         },
-        "serviceLevelObjectives": { "$ref": "#/definitions/serviceLevelObjectives" },
-        "x-support-policy": { "$ref": "#/definitions/supportPolicy" },
-        "x-service-credits": { "$ref": "#/definitions/serviceCredits" },
-        "x-maintenance-policy": { "$ref": "#/definitions/maintenancePolicy" },
-        "x-sla-exclusions": { "$ref": "#/definitions/exclusions" },
-        "x-lifecycle-policy": { "$ref": "#/definitions/lifecyclePolicy" }
+        "quotas": {
+          "type": "object",
+          "description": "Service usage limits defined as PromQL expressions.",
+          "additionalProperties": {
+            "type": "string",
+            "description": "PromQL expression defining the quota threshold (e.g., 'rate(metric[1m]) < 100')."
+          }
+        },
+        "guarantees": {
+          "type": "array",
+          "description": "Performance guarantees beyond basic availability.",
+          "items": {
+            "type": "object",
+            "required": ["measurement"],
+            "properties": {
+              "measurement": {
+                "type": "string",
+                "description": "PromQL expression defining the guarantee condition (e.g., 'avg_over_time(latency[5m]) < 200')."
+              },
+              "period": {
+                "$ref": "#/definitions/iso8601Duration",
+                "description": "The evaluation window for the guarantee."
+              }
+            }
+          }
+        },
+        "serviceLevelObjectives": {"$ref": "#/definitions/serviceLevelObjectives"},
+        "supportPolicy": {"$ref": "#/definitions/supportPolicy"},
+        "serviceCredits": {"$ref": "#/definitions/serviceCredits"},
+        "maintenancePolicy": {"$ref": "#/definitions/maintenancePolicy"},
+        "slaExclusions": {"$ref": "#/definitions/exclusions"},
+        "lifecyclePolicy": {"$ref": "#/definitions/lifecyclePolicy"}
       }
     },
     "supportPolicy": {
       "type": "object",
-      "description": "Structure based on Schema.org ContactPoint and OpeningHoursSpecification.",
+      "description": "Support availability and contact channels. Based on Schema.org standards.",
       "properties": {
         "contactPoints": {
           "type": "array",
+          "description": "Ways to reach support staff.",
           "items": {
             "type": "object",
             "properties": {
-              "contactType": { "type": "string" },
-              "availableLanguage": { "type": "array", "items": { "type": "string" } },
+              "contactType": {
+                "type": "string",
+                "description": "Name of the support tier or department (e.g., Tier 1 Support)."
+              },
+              "availableLanguage": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Languages supported by this contact point."
+              },
               "channels": {
                 "type": "array",
+                "description": "Specific communication methods.",
                 "items": {
                   "type": "object",
                   "required": ["type", "url"],
                   "properties": {
-                    "type": { "type": "string", "enum": ["web", "email", "phone", "chat"] },
+                    "type": {
+                      "type": "string",
+                      "enum": ["web", "email", "phone", "chat"],
+                      "description": "The type of channel."
+                    },
                     "url": {
                       "type": "string",
                       "description": "Mandatory URI. Must start with http://, https://, mailto://, or tel://",
                       "pattern": "^(https?|mailto|tel):\\/\\/.+"
                     },
-                    "description": { "type": "string" }
+                    "description": {
+                      "type": "string",
+                      "description": "Human-readable label for the channel."
+                    }
                   }
                 }
               }
@@ -146,71 +243,123 @@
         },
         "hoursAvailable": {
           "type": "array",
-          "description": "Attributed to: Schema.org/OpeningHoursSpecification",
+          "description": "Support business hours. Based on Schema.org/OpeningHoursSpecification.",
           "items": {
             "type": "object",
             "required": ["opens", "closes"],
             "properties": {
-              "dayOfWeek": { "type": "array", "items": { "type": "string" } },
-              "opens": { "type": "string", "pattern": "^\\d{2}:\\d{2}$" },
-              "closes": { "type": "string", "pattern": "^\\d{2}:\\d{2}$" },
-              "validFrom": { "type": "string", "format": "date" },
-              "validThrough": { "type": "string", "format": "date" },
-              "timezone": { "type": "string" },
-              "description": { "type": "string" }
+              "dayOfWeek": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Days of the week (e.g., Monday, Tuesday)."
+              },
+              "opens": {
+                "type": "string",
+                "pattern": "^\\d{2}:\\d{2}$",
+                "description": "Opening time in HH:mm format."
+              },
+              "closes": {
+                "type": "string",
+                "pattern": "^\\d{2}:\\d{2}$",
+                "description": "Closing time in HH:mm format."
+              },
+              "validFrom": {
+                "type": "string",
+                "format": "date",
+                "description": "Date when these hours start being valid."
+              },
+              "validThrough": {
+                "type": "string",
+                "format": "date",
+                "description": "Date when these hours stop being valid."
+              },
+              "timezone": {
+                "type": "string",
+                "description": "IANA timezone identifier (e.g., Europe/Berlin)."
+              },
+              "description": {
+                "type": "string",
+                "description": "Optional label for this hours block."
+              }
             }
           }
         },
         "holidaySchedule": {
           "type": "object",
-          "description": "Defines support unavailability via ISO 3166 regions, iCal feeds, or manual dates.",
+          "description": "Support unavailability due to public holidays.",
           "properties": {
             "sources": {
               "type": "array",
+              "description": "Sources for holiday dates (regional codes, iCal feeds, or manual lists).",
               "items": {
                 "type": "object",
                 "properties": {
-                  "type": { "type": "string", "enum": ["region", "ical", "manual"] },
-                  "regionCode": { "type": "string", "pattern": "^[A-Z]{2}(-[A-Z0-9]{1,3})?$" },
-                  "calendarUrl": { "type": "string", "format": "uri" },
-                  "dates": { "type": "array", "items": { "type": "string", "format": "date" } },
-                  "description": { "type": "string" }
+                  "type": {
+                    "type": "string",
+                    "enum": ["region", "ical", "manual"],
+                    "description": "The type of holiday source."
+                  },
+                  "regionCode": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{2}(-[A-Z0-9]{1,3})?$",
+                    "description": "ISO 3166 region code (e.g., DE-BY)."
+                  },
+                  "calendarUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL to an iCalendar (.ics) file."
+                  },
+                  "dates": {
+                    "type": "array",
+                    "items": {"type": "string", "format": "date"},
+                    "description": "List of specific holiday dates (YYYY-MM-DD)."
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Label for the holiday source."
+                  }
                 },
                 "allOf": [
-                  { "if": { "properties": { "type": { "const": "region" } } }, "then": { "required": ["regionCode"] } },
-                  { "if": { "properties": { "type": { "const": "ical" } } }, "then": { "required": ["calendarUrl"] } },
-                  { "if": { "properties": { "type": { "const": "manual" } } }, "then": { "required": ["dates"] } }
+                  { "if": {"properties": {"type": {"const": "region"}}}, "then": {"required": ["regionCode"]}},
+                  { "if": {"properties": {"type": {"const": "ical"}}}, "then": {"required": ["calendarUrl"]}},
+                  { "if": {"properties": {"type": {"const": "manual"}}}, "then": {"required": ["dates"]}}
                 ]
               }
             }
           }
         },
-        "serviceLevelObjectives": { "$ref": "#/definitions/serviceLevelObjectives" }
+        "serviceLevelObjectives": {"$ref": "#/definitions/serviceLevelObjectives"}
       }
     },
     "serviceLevelObjectives": {
       "type": "array",
-      "description": "Attributed to: ITIL Service Design.",
+      "description": "Detailed SLOs for different priority levels or service components.",
       "items": {
         "type": "object",
         "properties": {
-          "priority": { "type": "string" },
-          "name": { "type": "string" },
+          "priority": {
+            "type": "string",
+            "description": "The priority level (e.g., P1, Critical)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Friendly name of the objective."
+          },
           "guarantees": {
             "type": "array",
+            "description": "Specific performance metrics for this SLO.",
             "items": {
               "type": "object",
-              "anyOf": [
-                { "required": ["metric"] },
-                { "required": ["measurement"] }
-              ],
+              "required": ["measurement"],
               "properties": {
-                "metric": { "type": "string" },
-                "measurement": { "type": "string" },
-                "duration": { "$ref": "#/definitions/iso8601Duration" },
-                "operator": { "type": "string", "enum": [ ">", "<", ">=", "<=", "=", "between", "avg" ] },
-                "value": { "type": "string" },
-                "period": { "$ref": "#/definitions/iso8601Duration" }
+                "measurement": {
+                  "type": "string",
+                  "description": "PromQL expression defining the SLO target."
+                },
+                "period": {
+                  "$ref": "#/definitions/iso8601Duration",
+                  "description": "The observation window for this SLO."
+                }
               }
             }
           }
@@ -219,39 +368,72 @@
     },
     "maintenancePolicy": {
       "type": "object",
-      "description": "Structure based on iCalendar (RFC 5545).",
+      "description": "Rules and schedules for planned maintenance.",
       "properties": {
-        "countsAsDowntime": { "type": "boolean" },
+        "countsAsDowntime": {
+          "type": "boolean",
+          "description": "Whether planned maintenance windows count against availability targets."
+        },
         "minimumNotice": {
           "type": "object",
+          "description": "Required lead time before starting maintenance.",
           "properties": {
-            "standard": { "$ref": "#/definitions/iso8601Duration" },
-            "emergency": { "$ref": "#/definitions/iso8601Duration" }
+            "standard": {
+              "$ref": "#/definitions/iso8601Duration",
+              "description": "Notice required for routine maintenance."
+            },
+            "emergency": {
+              "$ref": "#/definitions/iso8601Duration",
+              "description": "Notice required for critical security/stability fixes."
+            }
           }
         },
         "windows": {
           "type": "array",
+          "description": "Recurring maintenance schedules.",
           "items": {
             "type": "object",
             "properties": {
-              "type": { "type": "string" },
+              "type": {
+                "type": "string",
+                "description": "Type of maintenance (e.g., Weekly Backup)."
+              },
               "rrule": {
                 "type": "string",
-                "pattern": "^FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(;.*)?$"
+                "pattern": "^FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(;.*)?$",
+                "description": "RFC 5545 recurrence rule."
               },
-              "duration": { "$ref": "#/definitions/iso8601Duration" },
-              "timezone": { "type": "string" }
+              "duration": {
+                "$ref": "#/definitions/iso8601Duration",
+                "description": "Maximum duration of the maintenance window."
+              },
+              "timezone": {
+                "type": "string",
+                "description": "Timezone for the maintenance schedule."
+              }
             }
           }
         },
         "sources": {
           "type": "array",
+          "description": "External schedules for maintenance (e.g., infrastructure provider feeds).",
           "items": {
             "type": "object",
             "properties": {
-              "type": { "type": "string", "enum": ["ical"] },
-              "calendarUrl": { "type": "string", "format": "uri" },
-              "description": { "type": "string" }
+              "type": {
+                "type": "string",
+                "enum": ["ical"],
+                "description": "The source type."
+              },
+              "calendarUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL to the iCal feed."
+              },
+              "description": {
+                "type": "string",
+                "description": "Label for the schedule source."
+              }
             },
             "required": ["type", "calendarUrl"]
           }
@@ -260,41 +442,86 @@
     },
     "serviceCredits": {
       "type": "object",
-      "description": "Attributed to: WS-Agreement.",
+      "description": "Rules for compensation in case of SLA violations.",
       "properties": {
-        "currency": { "type": "string" },
-        "claimWindow": { "$ref": "#/definitions/iso8601Duration" },
+        "currency": {
+          "type": "string",
+          "description": "Currency for credit calculation."
+        },
+        "claimWindow": {
+          "$ref": "#/definitions/iso8601Duration",
+          "description": "Time limit for the customer to file a credit claim after a violation."
+        },
         "tiers": {
           "type": "array",
+          "description": "Escalating credit percentages or amounts based on the severity of the violation.",
           "items": {
             "type": "object",
             "properties": {
               "condition": {
                 "type": "object",
+                "description": "Violation threshold.",
                 "properties": {
-                  "metric": { "type": "string" },
-                  "operator": { "type": "string" },
-                  "value": { "type": "string" },
-                  "floor": { "type": "string" }
+                  "metric": {
+                    "type": "string",
+                    "description": "The metric to evaluate (must be defined in the root metrics section)."
+                  },
+                  "operator": {
+                    "type": "string",
+                    "description": "Comparison operator (e.g., <, >)."
+                  },
+                  "value": {
+                    "type": "string",
+                    "description": "Threshold value."
+                  },
+                  "floor": {
+                    "type": "string",
+                    "description": "Minimum threshold before this tier applies."
+                  }
                 }
               },
-              "compensation": { "type": "number" }
+              "compensation": {
+                "type": "number",
+                "description": "The credit amount or percentage to be awarded."
+              }
             }
           }
         }
       }
     },
-    "exclusions": { "type": "array", "items": { "type": "string" } },
+    "exclusions": {
+      "type": "array",
+      "description": "Events that do not count as downtime or violations (e.g., Force Majeure).",
+      "items": {
+        "type": "string",
+        "description": "Markdown text or PromQL expression defining an exclusion."
+      }
+    },
     "lifecyclePolicy": {
       "type": "object",
-      "description": "Attributed to: TMF623 SLA Management.",
+      "description": "Agreement term and data handling rules. Based on TMF623.",
       "properties": {
-        "minimumTerm": { "$ref": "#/definitions/iso8601Duration" },
-        "autoRenewal": { "type": "boolean" },
-        "noticePeriod": { "$ref": "#/definitions/iso8601Duration" },
+        "minimumTerm": {
+          "$ref": "#/definitions/iso8601Duration",
+          "description": "The shortest possible contract duration."
+        },
+        "autoRenewal": {
+          "type": "boolean",
+          "description": "Whether the agreement renews automatically."
+        },
+        "noticePeriod": {
+          "$ref": "#/definitions/iso8601Duration",
+          "description": "Time required to cancel before the term ends."
+        },
         "dataRetention": {
           "type": "object",
-          "properties": { "afterTermination": { "$ref": "#/definitions/iso8601Duration" } }
+          "description": "Data storage rules after service end.",
+          "properties": {
+            "afterTermination": {
+              "$ref": "#/definitions/iso8601Duration",
+              "description": "How long data is kept after the contract ends."
+            }
+          }
         }
       }
     }

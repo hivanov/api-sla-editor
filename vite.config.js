@@ -10,9 +10,14 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
+  define: {
+    'process.env': {}
+  },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'util': fileURLToPath(new URL('./src/util-shim.cjs', import.meta.url)),
+      'assert': fileURLToPath(new URL('./src/assert-shim.cjs', import.meta.url))
     },
   },
 })

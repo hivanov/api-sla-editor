@@ -2,6 +2,16 @@ sla: 1.0.0
 context:
   id: "availability-1-week-downtime"
   type: "plans"
+metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime percentage"
 plans:
   enterprise:
-    availability: "98.08%"
+    availability:
+      metric: uptime
+      target: "98.08%"
+      expression: "avg_over_time(uptime[1m]) > 0.9808"
+    guarantees:
+      - measurement: "min_over_time(uptime[1h]) > 0.95"

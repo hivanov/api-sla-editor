@@ -9,11 +9,11 @@
       <div v-for="(cp, index) in safeSupportPolicy.contactPoints" :key="index" class="card mb-2 p-2">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Contact Point #{{ index + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeContactPoint(index)">Remove</button>
+          <button class="btn btn-danger btn-sm btn-remove-contact-point" @click="removeContactPoint(index)">Remove</button>
         </div>
         <div class="mb-3">
           <label class="form-label">Contact Type</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/contactType']}" placeholder="e.g., Technical Support" :value="cp.contactType" @input="updateContactPoint(index, 'contactType', $event.target.value)">
+          <input type="text" class="form-control input-contact-type" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/contactType']}" placeholder="e.g., Technical Support" :value="cp.contactType" @input="updateContactPoint(index, 'contactType', $event.target.value)">
           <div class="invalid-feedback" v-if="errors[path + '/contactPoints/' + index + '/contactType']">
             {{ errors[path + '/contactPoints/' + index + '/contactType'].join(', ') }}
           </div>
@@ -22,14 +22,14 @@
         <div v-for="(channel, cIndex) in cp.channels" :key="cIndex" class="card mb-2 p-2 channel-item">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span>Channel #{{ cIndex + 1 }}</span>
-            <button class="btn btn-danger btn-sm" @click="removeChannel(index, cIndex)">Remove</button>
+            <button class="btn btn-danger btn-sm btn-remove-channel" @click="removeChannel(index, cIndex)">Remove</button>
           </div>
           <div v-if="errors[path + '/contactPoints/' + index + '/channels/' + cIndex]" class="alert alert-danger py-1 small mb-2">
             {{ errors[path + '/contactPoints/' + index + '/channels/' + cIndex].join(', ') }}
           </div>
           <div class="mb-3">
             <label class="form-label">Type</label>
-            <select class="form-select" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/type']}" :value="channel.type" @change="updateChannel(index, cIndex, 'type', $event.target.value)">
+            <select class="form-select select-channel-type" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/type']}" :value="channel.type" @change="updateChannel(index, cIndex, 'type', $event.target.value)">
               <option value="web">Web</option>
               <option value="email">Email</option>
               <option value="phone">Phone</option>
@@ -41,15 +41,15 @@
           </div>
           <div class="mb-3">
             <label class="form-label">URL / Address</label>
-            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/url']}" placeholder="https://... or mailto:..." :value="channel.url" @input="updateChannel(index, cIndex, 'url', $event.target.value)">
+            <input type="text" class="form-control input-channel-url" :class="{'is-invalid': errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/url']}" placeholder="https://... or mailto:..." :value="channel.url" @input="updateChannel(index, cIndex, 'url', $event.target.value)">
             <div class="invalid-feedback" v-if="errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/url']">
               {{ errors[path + '/contactPoints/' + index + '/channels/' + cIndex + '/url'].join(', ') }}
             </div>
           </div>
         </div>
-        <button class="btn btn-secondary btn-sm mt-2" @click="addChannel(index)">Add Channel</button>
+        <button class="btn btn-secondary btn-sm mt-2 btn-add-channel" @click="addChannel(index)">Add Channel</button>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2 mb-4" @click="addContactPoint">Add Contact Point</button>
+      <button class="btn btn-secondary btn-sm mt-2 mb-4 btn-add-contact-point" @click="addContactPoint">Add Contact Point</button>
 
       <!-- Hours Available -->
       <h6>Hours Available</h6>
@@ -57,20 +57,21 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Hours #{{ index + 1 }}</span>
           <div>
-            <button class="btn btn-outline-primary btn-sm me-2" @click="setWorkdays(index)">Workdays (Mon-Fri, 9-17)</button>
-            <button class="btn btn-outline-primary btn-sm me-2" @click="set24x7(index)">24x7 (Mon-Sun, 00-24)</button>
-            <button class="btn btn-danger btn-sm" @click="removeHours(index)">Remove</button>
+            <button class="btn btn-outline-primary btn-sm me-2 btn-set-workdays" @click="setWorkdays(index)">Workdays (Mon-Fri, 9-17)</button>
+            <button class="btn btn-outline-primary btn-sm me-2 btn-set-24x7" @click="set24x7(index)">24x7 (Mon-Sun, 00-24)</button>
+            <button class="btn btn-danger btn-sm btn-remove-hours" @click="removeHours(index)">Remove</button>
           </div>
         </div>
         <div class="mb-3">
           <label class="form-label d-block">Day of Week</label>
           <div v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" :key="day" class="form-check form-check-inline">
             <input 
-              class="form-check-input" 
+              class="form-check-input checkbox-day-of-week" 
               type="checkbox" 
               :id="'day-' + index + '-' + day" 
               :checked="hours.dayOfWeek && hours.dayOfWeek.includes(day)"
               @change="toggleDay(index, day, $event.target.checked)"
+              :data-day="day"
             >
             <label class="form-check-label" :for="'day-' + index + '-' + day">{{ day }}</label>
           </div>
@@ -80,31 +81,31 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Opens (HH:mm)</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/hoursAvailable/' + index + '/opens']}" placeholder="HH:mm" :value="hours.opens" @input="updateHours(index, 'opens', $event.target.value)">
+          <input type="text" class="form-control input-hours-opens" :class="{'is-invalid': errors[path + '/hoursAvailable/' + index + '/opens']}" placeholder="HH:mm" :value="hours.opens" @input="updateHours(index, 'opens', $event.target.value)">
           <div class="invalid-feedback" v-if="errors[path + '/hoursAvailable/' + index + '/opens']">
             {{ errors[path + '/hoursAvailable/' + index + '/opens'].join(', ') }}
           </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Closes (HH:mm)</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/hoursAvailable/' + index + '/closes']}" placeholder="HH:mm" :value="hours.closes" @input="updateHours(index, 'closes', $event.target.value)">
+          <input type="text" class="form-control input-hours-closes" :class="{'is-invalid': errors[path + '/hoursAvailable/' + index + '/closes']}" placeholder="HH:mm" :value="hours.closes" @input="updateHours(index, 'closes', $event.target.value)">
           <div class="invalid-feedback" v-if="errors[path + '/hoursAvailable/' + index + '/closes']">
             {{ errors[path + '/hoursAvailable/' + index + '/closes'].join(', ') }}
           </div>
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addHours">Add Hours</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-hours" @click="addHours">Add Hours</button>
 
       <!-- Holiday Schedule -->
       <h6 class="mt-4">Holiday Schedule</h6>
       <div v-for="(source, index) in safeSupportPolicy.holidaySchedule ? safeSupportPolicy.holidaySchedule.sources : []" :key="index" class="card mb-2 p-2 holiday-source-item">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span>Source #{{ index + 1 }}</span>
-          <button class="btn btn-danger btn-sm" @click="removeHolidaySource(index)">Remove</button>
+          <button class="btn btn-danger btn-sm btn-remove-holiday-source" @click="removeHolidaySource(index)">Remove</button>
         </div>
         <div class="mb-3">
           <label class="form-label">Type</label>
-          <select class="form-select" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/type']}" :value="source.type" @change="updateHolidaySource(index, 'type', $event.target.value)">
+          <select class="form-select select-holiday-source-type" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/type']}" :value="source.type" @change="updateHolidaySource(index, 'type', $event.target.value)">
             <option value="region">Region</option>
             <option value="ical">iCal</option>
             <option value="manual">Manual</option>
@@ -115,7 +116,7 @@
         </div>
         <div v-if="source.type === 'region'" class="mb-3">
           <label class="form-label">Region Code</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/regionCode']}" placeholder="e.g., DE-BY" :value="source.regionCode" @input="updateHolidaySource(index, 'regionCode', $event.target.value)">
+          <input type="text" class="form-control input-holiday-region" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/regionCode']}" placeholder="e.g., DE-BY" :value="source.regionCode" @input="updateHolidaySource(index, 'regionCode', $event.target.value)">
           <div class="invalid-feedback" v-if="errors[path + '/holidaySchedule/sources/' + index + '/regionCode']">
             {{ errors[path + '/holidaySchedule/sources/' + index + '/regionCode'].join(', ') }}
           </div>
@@ -123,7 +124,7 @@
         <div v-if="source.type === 'ical'" class="mb-3">
           <label class="form-label">Calendar URL</label>
           <div class="input-group">
-            <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/holidays.ics" :value="source.calendarUrl" @input="updateHolidaySource(index, 'calendarUrl', $event.target.value)" :list="'holiday-calendars-' + index">
+            <input type="text" class="form-control input-holiday-ical-url" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/calendarUrl']}" placeholder="https://example.com/holidays.ics" :value="source.calendarUrl" @input="updateHolidaySource(index, 'calendarUrl', $event.target.value)" :list="'holiday-calendars-' + index">
             <datalist :id="'holiday-calendars-' + index">
               <option v-for="cal in allHolidayCalendars" :key="cal.id" :value="getGoogleHolidayCalendarUrl(cal.id)">{{ cal.name }}</option>
             </datalist>
@@ -135,13 +136,13 @@
         </div>
         <div v-if="source.type === 'manual'" class="mb-3">
           <label class="form-label">Dates (comma-separated YYYY-MM-DD)</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/dates']}" placeholder="e.g., 2024-01-01,2024-12-25" :value="source.dates ? source.dates.join(',') : ''" @input="updateHolidaySource(index, 'dates', $event.target.value.split(',').map(s => s.trim()))">
+          <input type="text" class="form-control input-holiday-dates" :class="{'is-invalid': errors[path + '/holidaySchedule/sources/' + index + '/dates']}" placeholder="e.g., 2024-01-01,2024-12-25" :value="source.dates ? source.dates.join(',') : ''" @input="updateHolidaySource(index, 'dates', $event.target.value.split(',').map(s => s.trim()))">
           <div class="invalid-feedback" v-if="errors[path + '/holidaySchedule/sources/' + index + '/dates']">
             {{ errors[path + '/holidaySchedule/sources/' + index + '/dates'].join(', ') }}
           </div>
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm mt-2" @click="addHolidaySource">Add Holiday Source</button>
+      <button class="btn btn-secondary btn-sm mt-2 btn-add-holiday-source" @click="addHolidaySource">Add Holiday Source</button>
 
       <!-- Service Level Objectives -->
       <ServiceLevelObjectivesEditor 

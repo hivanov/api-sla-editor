@@ -1,14 +1,14 @@
 <template>
   <div class="plans-editor-content plans-editor-component">
-    <div v-for="(plan, name) in plans" :key="name" class="card mb-4 plan-item shadow-sm">
+    <div v-for="(plan, name) in plans" :key="name" class="card mb-4 plan-item" :data-plan-name="name">
       <div class="card-header d-flex justify-content-between align-items-center bg-light">
         <h5 class="mb-0">{{ name }}</h5>
-        <button class="btn btn-outline-danger btn-sm" @click="removePlan(name)">Remove</button>
+        <button class="btn btn-outline-danger btn-sm btn-remove-plan" @click="removePlan(name)">Remove</button>
       </div>
       <div class="card-body">
         <div class="mb-3">
           <label class="form-label">Title</label>
-          <input type="text" class="form-control" :class="{'is-invalid': errors['/plans/' + name + '/title']}" placeholder="Plan Title" :value="plan.title" @input="updatePlan(name, 'title', $event.target.value)">
+          <input type="text" class="form-control input-plan-title" :class="{'is-invalid': errors['/plans/' + name + '/title']}" placeholder="Plan Title" :value="plan.title" @input="updatePlan(name, 'title', $event.target.value)">
           <div class="invalid-feedback" v-if="errors['/plans/' + name + '/title']">
             {{ errors['/plans/' + name + '/title'].join(', ') }}
           </div>
@@ -27,7 +27,7 @@
         </div>
         
         <!-- Availability Editor -->
-        <AvailabilityEditor :availability="plan.availability" :errors="errors" :path="'/plans/' + name + '/availability'" @update:availability="updatePlan(name, 'availability', $event)" />
+        <AvailabilityEditor :availability="plan.availability" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/availability'" @update:availability="updatePlan(name, 'availability', $event)" />
 
         <!-- Pricing Editor -->
         <PricingEditor :pricing="plan.pricing" :errors="errors" :path="'/plans/' + name + '/pricing'" @update:pricing="updatePlanSubObject(name, 'pricing', $event)" />
@@ -42,25 +42,25 @@
         <ServiceLevelObjectivesEditor :model-value="plan.serviceLevelObjectives" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/serviceLevelObjectives'" @update:model-value="updatePlanSubObject(name, 'serviceLevelObjectives', $event)" />
 
         <!-- Support Policy Editor -->
-        <SupportPolicyEditor :support-policy="plan['x-support-policy']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-support-policy'" @update:support-policy="updatePlanSubObject(name, 'x-support-policy', $event)" />
+        <SupportPolicyEditor :support-policy="plan.supportPolicy" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/supportPolicy'" @update:support-policy="updatePlanSubObject(name, 'supportPolicy', $event)" />
 
         <!-- Service Credits Editor -->
-        <ServiceCreditsEditor :service-credits="plan['x-service-credits']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-service-credits'" @update:service-credits="updatePlanSubObject(name, 'x-service-credits', $event)" />
+        <ServiceCreditsEditor :service-credits="plan.serviceCredits" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/serviceCredits'" @update:service-credits="updatePlanSubObject(name, 'serviceCredits', $event)" />
 
         <!-- Maintenance Policy Editor -->
-        <MaintenancePolicyEditor :maintenance-policy="plan['x-maintenance-policy']" :errors="errors" :path="'/plans/' + name + '/x-maintenance-policy'" @update:maintenance-policy="updatePlanSubObject(name, 'x-maintenance-policy', $event)" />
+        <MaintenancePolicyEditor :maintenance-policy="plan.maintenancePolicy" :errors="errors" :path="'/plans/' + name + '/maintenancePolicy'" @update:maintenance-policy="updatePlanSubObject(name, 'maintenancePolicy', $event)" />
 
         <!-- Exclusions Editor -->
-        <ExclusionsEditor :exclusions="plan['x-sla-exclusions']" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/x-sla-exclusions'" @update:exclusions="updatePlanSubObject(name, 'x-sla-exclusions', $event)" />
+        <ExclusionsEditor :exclusions="plan.slaExclusions" :metrics="metrics" :errors="errors" :path="'/plans/' + name + '/slaExclusions'" @update:exclusions="updatePlanSubObject(name, 'slaExclusions', $event)" />
 
         <!-- Lifecycle Policy Editor -->
-        <LifecyclePolicyEditor :lifecycle-policy="plan['x-lifecycle-policy']" :errors="errors" :path="'/plans/' + name + '/x-lifecycle-policy'" @update:lifecycle-policy="updatePlanSubObject(name, 'x-lifecycle-policy', $event)" />
+        <LifecyclePolicyEditor :lifecycle-policy="plan.lifecyclePolicy" :errors="errors" :path="'/plans/' + name + '/lifecyclePolicy'" @update:lifecycle-policy="updatePlanSubObject(name, 'lifecyclePolicy', $event)" />
       </div>
     </div>
     <div class="mt-3">
       <div class="input-group">
-        <input type="text" class="form-control" placeholder="New plan name" v-model="newPlanName">
-        <button class="btn btn-primary" @click="addPlan">Add Plan</button>
+        <input type="text" class="form-control input-new-plan-name" placeholder="New plan name" v-model="newPlanName">
+        <button class="btn btn-primary btn-add-plan" @click="addPlan">Add Plan</button>
       </div>
     </div>
   </div>
@@ -131,16 +131,7 @@ export default {
         newPlans[newPlanName.value] = {
           title: '',
           description: '',
-          availability: '',
-          guarantees: [],
-          serviceLevelObjectives: [],
-          pricing: {},
-          quotas: {},
-          'x-support-policy': {},
-          'x-service-credits': {},
-          'x-maintenance-policy': {},
-          'x-sla-exclusions': [],
-          'x-lifecycle-policy': {},
+          availability: { target: '100%', metric: '', expression: '' }
         };
         emit('update:plans', newPlans);
         newPlanName.value = '';

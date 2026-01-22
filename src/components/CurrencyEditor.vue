@@ -1,15 +1,15 @@
 <template>
   <div class="currency-editor-component">
-    <div v-for="(currency, index) in safeCurrencies" :key="index" class="card mb-2 p-2 shadow-sm">
+    <div v-for="(currency, index) in safeCurrencies" :key="index" class="card mb-2 p-2">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <span class="fw-bold">Custom Currency #{{ index + 1 }}</span>
-        <button class="btn btn-outline-danger btn-sm" @click="removeCurrency(index)">Remove</button>
+        <button class="btn btn-outline-danger btn-sm btn-remove-currency" @click="removeCurrency(index)">Remove</button>
       </div>
       
       <div class="row g-2">
         <div class="col-md-4 mb-2">
           <label class="form-label">Code (e.g., SKU, CPU)</label>
-          <input type="text" class="form-control" 
+          <input type="text" class="form-control input-currency-code" 
                  :class="{'is-invalid': errors[path + '/' + index + '/code']}"
                  placeholder="SKU" 
                  :value="currency.code" 
@@ -38,7 +38,7 @@
         <div class="row g-2">
           <div class="col-md-6">
             <label class="form-label">Rate (1 {{ currency.code || 'unit' }} = ?)</label>
-            <input type="number" step="any" min="0" class="form-control" 
+            <input type="number" step="any" min="0" class="form-control input-currency-rate" 
                    :class="{'is-invalid': errors[path + '/' + index + '/conversion/rate']}"
                    placeholder="1.0" 
                    :value="currency.conversion?.rate" 
@@ -49,7 +49,7 @@
           </div>
           <div class="col-md-6">
             <label class="form-label">Base Currency</label>
-            <input type="text" class="form-control" 
+            <input type="text" class="form-control input-currency-base" 
                    :class="{'is-invalid': errors[path + '/' + index + '/conversion/baseCurrency']}"
                    placeholder="USD" 
                    :value="currency.conversion?.baseCurrency" 
@@ -66,7 +66,7 @@
       </div>
     </div>
     
-    <button class="btn btn-secondary btn-sm mt-2" @click="addCurrency">Add Custom Currency</button>
+    <button class="btn btn-secondary btn-sm mt-2 btn-add-currency" @click="addCurrency">Add Custom Currency</button>
   </div>
 </template>
 

@@ -5,37 +5,60 @@
         <h2 class="mb-4">SLA Editor Tutorial</h2>
 
         <section class="mb-5">
-          <div class="card shadow-sm">
+          <div class="card border-info">
+            <div class="card-header bg-info text-white">
+              <h3 class="h5 mb-0">Motivation: Why this tool exists</h3>
+            </div>
+            <div class="card-body">
+              <p>
+                In modern service-oriented architectures, exposing reliable APIs is essential for scalability. However, service providers often hesitate to commit to performance guarantees due to the perceived complexity and risk of managing strict contracts.
+              </p>
+              <p>
+                This tool is designed to <strong>demystify the SLA contract</strong>. By providing a clear, visual way to design agreements, it empowers teams to:
+              </p>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="fw-bold text-info">Define Boundaries</div>
+                  <p class="small">Establish clear distinctions between what is supported and what is not, protecting the team from unreasonable expectations.</p>
+                </div>
+                <div class="col-md-4">
+                  <div class="fw-bold text-info">Justify Resources</div>
+                  <p class="small">Use formal agreements to demonstrate the need for additional infrastructure or personnel when service requirements grow.</p>
+                </div>
+                <div class="col-md-4">
+                  <div class="fw-bold text-info">Standardize Quality</div>
+                  <p class="small">Adopt and modify validated contract templates to ensure consistency across a diverse portfolio of services.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-5">
+          <div class="card">
             <div class="card-header bg-white">
-              <h3 class="h5 mb-0">Why do we need SLAs?</h3>
+              <h3 class="h5 mb-0">The Philosophy of Modern SLAs</h3>
             </div>
             <div class="card-body">
               <div class="mb-4">
-                <h4 class="h6 fw-bold">Benefits to Users</h4>
+                <h4 class="h6 fw-bold">From Monitoring to Mutual Agreement</h4>
                 <p>
-                  Service Level Agreements (SLAs) provide users with a clear understanding of what to expect from a service. 
-                  They define the boundaries of the service, including performance, availability, and support. 
-                  This transparency allows users to plan their own operations with certainty, knowing the reliable limits of the dependencies they consume.
+                  SLAs are often viewed solely as monitoring instruments. This tool reframes them as <strong>transparent agreements</strong>. By stating operational conditions upfront (e.g., support hours, maintenance windows), providers can ensure service sustainability while meeting consumer needs.
                 </p>
               </div>
 
               <div class="mb-4">
-                <h4 class="h6 fw-bold">Building Confidence</h4>
+                <h4 class="h6 fw-bold">Value-Driven Metrics</h4>
                 <p>
-                  An explicitly defined SLA demonstrates professionalism and maturity. It signals that the service provider has 
-                  thought critically about the service's capabilities and is committed to maintaining them. 
-                  When a provider creates a contract with penalties (Service Credits) for non-compliance, it puts "skin in the game," 
-                  which significantly boosts user trust.
+                  While technical indicators like latency are vital, we emphasize <strong>business-aligned metrics</strong>. Defining what truly matters to the service consumer leads to more meaningful contracts than generic technical specifications.
                 </p>
               </div>
 
               <div>
-                <h4 class="h6 fw-bold">Capacity and Budget</h4>
+                <h4 class="h6 fw-bold">Operational Accountability</h4>
                 <p>
-                  Defining an SLA is not just about promising high availability; it's a balancing act. 
-                  It forces the provider to ask: <em>"Do we have the infrastructure, personnel, and budget to actually enforce this?"</em>
-                  By calculating the cost of maintaining a certain reliability level (e.g., 99.9% vs 99.99%), organizations can make informed decisions 
-                  avoiding over-promising and under-delivering. It aligns technical reality with business expectations.
+                  Designing an SLA forces a critical evaluation of capacity. 
+                  Calculating the cost of various reliability levels (using tools like <a href="https://uptime.is/" target="_blank">uptime.is</a>) helps align technical capabilities with stakeholder expectations.
                 </p>
               </div>
             </div>
@@ -43,7 +66,7 @@
         </section>
 
         <section class="mb-5">
-          <div class="card shadow-sm">
+          <div class="card">
             <div class="card-header bg-white">
               <h3 class="h5 mb-0">Purpose of this Tool</h3>
             </div>
@@ -84,7 +107,7 @@
         </section>
 
         <section class="mb-5">
-          <div class="card shadow-sm border-primary">
+          <div class="card border-primary">
             <div class="card-header bg-primary text-white">
               <h3 class="h5 mb-0">Step-by-Step Example: Pet Store API</h3>
             </div>
@@ -208,13 +231,33 @@
                   </div>
                 </div>
 
+                <!-- Step 6 -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step6">
+                      6. Generate Monitoring Infrastructure
+                    </button>
+                  </h2>
+                  <div id="step6" class="accordion-collapse collapse" data-bs-parent="#tutorialSteps">
+                    <div class="accordion-body">
+                      <p>The most powerful feature of this tool is turning your document into code:</p>
+                      <ul>
+                        <li><strong>Terraform:</strong> Go to the <code>Generators -> GCP Terraform</code> tab. Provide your Project ID and click 'Generate' to get a full monitoring setup.</li>
+                        <li><strong>Grafana:</strong> Go to the <code>Generators -> Grafana</code> tab. Enter your Prometheus datasource UID to get a ready-to-import Dashboard JSON and Alert Rules.</li>
+                        <li><strong>Azure Bicep:</strong> Use the <code>Generators -> Azure Bicep</code> tab to generate Azure Monitor alerts and Action Groups.</li>
+                      </ul>
+                      <p class="small text-muted"><i class="bi bi-info-circle"></i> Tip: Use <strong>PromQL</strong> measurements in Step 2 to ensure the generators produce precise monitoring queries.</p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
         </section>
 
         <section class="mb-5">
-          <div class="card shadow-sm bg-light">
+          <div class="card bg-light">
             <div class="card-body">
               <h3 class="h5">Tutorial Summary</h3>
               <p>By following these steps, you have achieved a <strong>comprehensive, machine-readable SLA</strong> for the Pet Store API. You have successfully:</p>
@@ -224,10 +267,16 @@
                 <li>Matched technical Guarantees with operational Quotas.</li>
                 <li>Integrated external calendars for real-world support and maintenance tracking.</li>
                 <li>Established a clear lifecycle for the contract and its data.</li>
+                <li><strong>Generated production-ready monitoring code (Terraform/Bicep/Grafana).</strong></li>
               </ul>
               <div class="alert alert-success">
                 <h5 class="h6 fw-bold mb-2">Ready to use?</h5>
-                Go to the <strong>Source</strong> tab at the top of the editor. There you can see the generated YAML. You can copy this content to your project repository, or use it to configure automated monitoring and billing systems.
+                <p>Explore the tabs at the top of the editor:</p>
+                <ul>
+                  <li><strong>Description:</strong> See a human-readable summary of your SLA (great for non-technical stakeholders).</li>
+                  <li><strong>Source:</strong> View or edit the raw YAML/JSON.</li>
+                  <li><strong>Generators:</strong> Export your SLA as cloud infrastructure code.</li>
+                </ul>
               </div>
             </div>
           </div>

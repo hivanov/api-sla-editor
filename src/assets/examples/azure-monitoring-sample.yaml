@@ -1,0 +1,40 @@
+sla: 1.0.0
+context:
+  id: azure-sample
+  type: plans
+metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime percentage"
+    monitoringId: "availability"
+    resourceType: Microsoft.Compute/virtualMachines
+  cpu_utilization:
+    type: number
+    unit: percentage
+    description: CPU utilization of the VM
+    monitoringId: "percentage_cpu"
+    resourceType: Microsoft.Compute/virtualMachines
+  memory_utilization:
+    type: number
+    unit: percentage
+    description: Memory utilization of the VM
+    monitoringId: "available_memory_bytes"
+    resourceType: Microsoft.Compute/virtualMachines
+plans:
+  gold:
+    title: Gold Plan
+    availability:
+      metric: uptime
+      target: "99.9%"
+      expression: "avg_over_time(uptime[1m]) > 0.999"
+    guarantees:
+      - measurement: "avg_over_time(cpu_utilization[5m]) < 80"
+      - measurement: "avg_over_time(memory_utilization[5m]) < 90"
+    supportPolicy:
+      contactPoints:
+        - contactType: Support Team
+          channels:
+            - type: email
+              url: mailto://support@example.com
+              description: Primary support email

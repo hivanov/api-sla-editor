@@ -1,0 +1,85 @@
+sla: 1.0.0
+context:
+  id: four-golden-signals-api
+  type: plans
+metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime percentage"
+    monitoringId: "custom.googleapis.com/api/uptime"
+    resourceType: "global"
+    metricKind: "GAUGE"
+  latency:
+    type: number
+    unit: ms
+    description: "The time it takes to service a request (p95)."
+    monitoringId: "custom.googleapis.com/api/latency"
+    resourceType: "global"
+    metricKind: "GAUGE"
+  traffic:
+    type: integer
+    unit: "req/s"
+    description: "A measure of how much demand is being placed on your system."
+    monitoringId: "custom.googleapis.com/api/traffic"
+    resourceType: "global"
+    metricKind: "CUMULATIVE"
+  errors:
+    type: number
+    unit: percent
+    description: "The rate of requests that fail, either explicitly, implicitly, or by policy."
+    monitoringId: "custom.googleapis.com/api/error_rate"
+    resourceType: "global"
+    metricKind: "GAUGE"
+  saturation:
+    type: number
+    unit: percent
+    description: "How 'full' your service is. A measure of your system fraction, emphasizing the resources that are most constrained."
+    monitoringId: "compute.googleapis.com/instance/cpu/utilization"
+    resourceType: "gce_instance"
+    metricKind: "GAUGE"
+plans:
+  standard:
+    title: "Standard Plan"
+    description: "Base plan with basic golden signals monitoring"
+    availability:
+      metric: uptime
+      target: "99.0%"
+      expression: "avg_over_time(uptime[1m]) > 0.99"
+    pricing:
+      cost: 0
+      currency: USD
+      period: P30D
+    quotas:
+      traffic: "rate(traffic[1m]) < 100"
+    guarantees:
+      - measurement: "avg_over_time(latency[1m]) < 1000"
+      - measurement: "avg_over_time(errors[1m]) < 5"
+    serviceLevelObjectives:
+      - name: "Saturation Warning"
+        priority: "Medium"
+        guarantees:
+          - measurement: "avg_over_time(saturation[5m]) < 90"
+  premium:
+    title: "Premium Plan"
+    description: "Production-grade plan with strict golden signal guarantees"
+    availability:
+      metric: uptime
+      target: "99.99%"
+      expression: "avg_over_time(uptime[1m]) > 0.9999"
+    pricing:
+      cost: 100
+      currency: USD
+      period: P30D
+    quotas:
+      traffic: "rate(traffic[1m]) < 5000"
+    guarantees:
+      - measurement: "avg_over_time(latency[1m]) < 200"
+      - measurement: "avg_over_time(errors[1m]) < 0.1"
+      - measurement: "rate(traffic[1m]) < 4500"
+      - measurement: "avg_over_time(saturation[1m]) < 70"
+    serviceLevelObjectives:
+      - name: "High Performance Latency"
+        priority: "High"
+        guarantees:
+          - measurement: "avg_over_time(latency[10s]) < 100"

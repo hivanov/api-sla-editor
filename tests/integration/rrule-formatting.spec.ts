@@ -6,17 +6,23 @@ test.describe('RRule formatting in Description tab', () => {
   });
 
   test('should format RFC 5545 RRULEs correctly', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     const yamlWithRRule = `
 sla: 1.0.0
 context:
   id: rrule-test
   type: plans
+metrics:
+  up:
+    type: number
 plans:
   standard:
-    availability: 99.9%
-    x-maintenance-policy:
+    availability:
+      metric: uptime
+      target: 99.9%
+      expression: up == 1
+    maintenancePolicy:
       windows:
         - type: weekly-patch
           rrule: FREQ=WEEKLY;BYDAY=MO
@@ -30,7 +36,7 @@ plans:
       window.app.setYamlContent(yaml);
     }, yamlWithRRule);
     
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     
     const description = page.locator('.policy-description');
     // FREQ=WEEKLY;BYDAY=MO -> every week on Monday

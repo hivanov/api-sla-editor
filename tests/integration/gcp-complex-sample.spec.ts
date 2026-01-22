@@ -9,18 +9,17 @@ test.describe('GCP Complex Sample Transformation', () => {
     // 1. Load the example
     await page.selectOption('select.form-select', 'gcp-monitoring-complex');
     
-    // Verify it's loaded by checking a value in the GUI
-    await page.click('.card-header:has-text("GCP Monitoring")');
-    const projectIdInput = page.locator('input[placeholder*="e.g. my-gcp-project-id"]');
-    await expect(projectIdInput).toHaveValue('production-data-platform');
-
-    // 2. Generate Terraform
+    // 2. Navigate to Terraform Generator
     await page.click('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
     await page.evaluate(() => {
         const items = Array.from(document.querySelectorAll('.dropdown-item'));
         const gcpItem = items.find(el => el.textContent.includes('Generate Terraform (GCP)'));
         if (gcpItem) gcpItem.click();
     });
+
+    // Fill project ID (now local state in generator)
+    await page.fill('input[placeholder*="e.g. my-gcp-project-id"]', 'production-data-platform');
+
     await page.click('button:has-text("Generate")');
 
     // 3. Verify Output
@@ -38,6 +37,15 @@ test.describe('GCP Complex Sample Transformation', () => {
 
     const expectedTf = `provider "google" {
   project = "production-data-platform"
+}
+
+resource "google_monitoring_metric_descriptor" "metric_uptime" {
+  description = "Service Uptime percentage"
+  display_name = "uptime"
+  type = "custom.googleapis.com/api/uptime"
+  metric_kind = "GAUGE"
+  value_type = "DOUBLE"
+  unit = "percent"
 }
 
 resource "google_monitoring_metric_descriptor" "metric_request_latency" {
@@ -60,143 +68,92 @@ resource "google_monitoring_metric_descriptor" "metric_error_rate" {
 
 resource "google_monitoring_notification_channel" "channel_1" {
   display_name = "SRE On-Call"
-  type         = "email"
+  type = "email"
   labels = {
-    "email_address" = "sre-alerts@example.com"
+    email_address = "sre-alerts@example.com"
   }
 }
 
 resource "google_monitoring_notification_channel" "channel_2" {
   display_name = "SRE On-Call"
-  type         = "sms"
+  type = "sms"
   labels = {
-    "number" = "+15550123456"
+    number = "+15550123456"
   }
 }
 
 resource "google_monitoring_notification_channel" "channel_3" {
   display_name = "DevOps Support"
-  type         = "email"
+  type = "email"
   labels = {
-    "email_address" = "support@example.com"
+    email_address = "support@example.com"
   }
 }
 
 resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
   display_name = "SLA Breach: Gold - direct - cpu_utilization"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "cpu_utilization breach"
-    condition_threshold {
-      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
-      duration   = "300s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 80
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(compute.googleapis.com/instance/cpu/utilization[5m]) < 80"
+      duration = "5m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_gold_slo_latency_performance_0_0" {
   display_name = "SLA Breach: Gold - slo_Latency Performance - request_latency"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "request_latency breach"
-    condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/request_latency\\""
-      duration   = "60s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 200
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(custom.googleapis.com/api/request_latency[1m]) < 200"
+      duration = "1m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_gold_support_slo_incident_response_support_slo_0_0" {
   display_name = "SLA Breach: Gold - support_slo_Incident Response - error_rate"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "error_rate breach"
-    condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/error_rate\\""
-      duration   = "60s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 0.1
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(custom.googleapis.com/api/error_rate[1m]) < 0.1"
+      duration = "1m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_silver_direct_0" {
   display_name = "SLA Breach: Silver - direct - cpu_utilization"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "cpu_utilization breach"
-    condition_threshold {
-      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
-      duration   = "900s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 90
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(compute.googleapis.com/instance/cpu/utilization[15m]) < 90"
+      duration = "15m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_silver_slo_latency_performance_0_0" {
   display_name = "SLA Breach: Silver - slo_Latency Performance - request_latency"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "request_latency breach"
-    condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/request_latency\\""
-      duration   = "300s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 500
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(custom.googleapis.com/api/request_latency[5m]) < 500"
+      duration = "5m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
-
 `;
 
     const normalize = (s: string) => s.split('\n').map(line => line.trimEnd()).join('\n').trim();

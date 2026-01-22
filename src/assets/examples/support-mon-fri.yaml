@@ -2,9 +2,20 @@ sla: 1.0.0
 context:
   id: "support-mon-fri"
   type: "plans"
+metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime"
 plans:
   enterprise:
-    x-support-policy:
+    availability:
+      metric: uptime
+      target: "99.9%"
+      expression: "avg_over_time(uptime[1m]) > 0.999"
+    guarantees:
+      - measurement: "min_over_time(uptime[5m]) > 0.99"
+    supportPolicy:
       hoursAvailable:
         - dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
           opens: "09:00"

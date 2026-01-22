@@ -3,12 +3,21 @@ context:
   id: "metrics-100-concurrent-connections"
   type: "plans"
 metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime"
   concurrent_connections:
-    type: "capacity"
-    unit: "integer"
+    type: "integer"
+    unit: "items"
     description: "Number of concurrent connections for all APIs."
 plans:
   enterprise:
+    availability:
+      metric: uptime
+      target: "99.9%"
+      expression: "avg_over_time(uptime[1m]) > 0.999"
     quotas:
-      concurrent_connections:
-        max: 100
+      concurrent_connections: "max_over_time(concurrent_connections[1m]) <= 100"
+    guarantees:
+      - measurement: "max_over_time(concurrent_connections[1m]) <= 100"

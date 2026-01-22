@@ -3,35 +3,35 @@
     <div class="card-header p-0 bg-light border-bottom-0 d-flex justify-content-between align-items-center">
       <ul class="nav nav-tabs card-header-tabs m-0">
         <li class="nav-item">
-          <a class="nav-link rounded-0 border-0" :class="{ active: !preview }" href="#" @click.prevent="preview = false">Write</a>
+          <a class="nav-link rounded-0 border-0 btn-markdown-write" :class="{ active: !preview }" href="#" @click.prevent="preview = false">Write</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link rounded-0 border-0" :class="{ active: preview }" href="#" @click.prevent="preview = true">Preview</a>
+          <a class="nav-link rounded-0 border-0 btn-markdown-preview" :class="{ active: preview }" href="#" @click.prevent="preview = true">Preview</a>
         </li>
       </ul>
       <div v-if="!preview" class="toolbar px-2 d-flex gap-1">
-        <button class="btn btn-sm btn-light border" title="Bold" @click.prevent="applyFormatting('bold')"><strong>B</strong></button>
-        <button class="btn btn-sm btn-light border" title="Italic" @click.prevent="applyFormatting('italic')"><em>I</em></button>
-        <button class="btn btn-sm btn-light border" title="Heading" @click.prevent="applyFormatting('heading')">H</button>
+        <button class="btn btn-sm btn-light border btn-md-bold" title="Bold" @click.prevent="applyFormatting('bold')"><strong>B</strong></button>
+        <button class="btn btn-sm btn-light border btn-md-italic" title="Italic" @click.prevent="applyFormatting('italic')"><em>I</em></button>
+        <button class="btn btn-sm btn-light border btn-md-heading" title="Heading" @click.prevent="applyFormatting('heading')">H</button>
         <div class="vr mx-1"></div>
-        <button class="btn btn-sm btn-light border" title="List" @click.prevent="applyFormatting('list')">List</button>
-        <button class="btn btn-sm btn-light border" title="Code" @click.prevent="applyFormatting('code')">Code</button>
-        <button class="btn btn-sm btn-light border" title="Link" @click.prevent="applyFormatting('link')">Link</button>
-        <button class="btn btn-sm btn-light border" title="Table" @click.prevent="applyFormatting('table')">Table</button>
+        <button class="btn btn-sm btn-light border btn-md-list" title="List" @click.prevent="applyFormatting('list')">List</button>
+        <button class="btn btn-sm btn-light border btn-md-code" title="Code" @click.prevent="applyFormatting('code')">Code</button>
+        <button class="btn btn-sm btn-light border btn-md-link" title="Link" @click.prevent="applyFormatting('link')">Link</button>
+        <button class="btn btn-sm btn-light border btn-md-table" title="Table" @click.prevent="applyFormatting('table')">Table</button>
       </div>
     </div>
     <div class="card-body p-0">
       <textarea
         ref="textareaRef"
         v-if="!preview"
-        class="form-control border-0 rounded-0 p-3"
+        class="form-control border-0 rounded-0 p-3 textarea-markdown"
         :class="{ 'is-invalid': invalid }"
         :value="modelValue"
         @input="$emit('update:modelValue', $event.target.value)"
         :placeholder="placeholder"
         style="min-height: 150px; resize: vertical;"
       ></textarea>
-      <div v-else class="p-3 markdown-preview bg-white" v-html="renderedMarkdown" style="min-height: 150px;"></div>
+      <div v-else class="p-3 markdown-preview bg-white div-markdown-preview" v-html="renderedMarkdown" style="min-height: 150px;"></div>
     </div>
   </div>
 </template>

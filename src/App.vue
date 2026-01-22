@@ -3,24 +3,26 @@
     <header class="bg-dark text-light p-3 shadow-sm">
       <div class="container-xxl d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-3">
-          <h1 class="h3 mb-0" style="cursor: pointer;" @click="setView('editor')">SLA Editor</h1>
+          <h1 class="h3 mb-0 logo-title" style="cursor: pointer;" @click="setView('editor')">SLA Editor</h1>
           <div class="vr d-none d-md-block bg-secondary"></div>
           <nav class="d-none d-md-flex gap-2">
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: currentView === 'terraform' }">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle btn-transform" type="button" data-bs-toggle="dropdown" :class="{ active: ['terraform', 'bicep', 'grafana'].includes(currentView) }">
                 Transform
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
+                <li><a class="dropdown-item btn-gen-terraform" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform (GCP)</a></li>
+                <li><a class="dropdown-item btn-gen-bicep" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep (Azure)</a></li>
+                <li><a class="dropdown-item btn-gen-grafana" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('grafana')">Generate Grafana (Prometheus)</a></li>
               </ul>
             </div>
              <div class="dropdown">
-              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" :class="{ active: ['tutorial', 'help'].includes(currentView) }">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle btn-help-menu" type="button" data-bs-toggle="dropdown" :class="{ active: ['tutorial', 'help'].includes(currentView) }">
                 Help
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
-                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help Page</a></li>
+                <li><a class="dropdown-item btn-view-tutorial" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
+                <li><a class="dropdown-item btn-view-help" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help Page</a></li>
               </ul>
             </div>
           </nav>
@@ -34,6 +36,8 @@
              <ul class="dropdown-menu">
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('editor')">Editor</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('terraform')">Generate Terraform</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('bicep')">Generate Bicep</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('grafana')">Generate Grafana</a></li>
                <li><hr class="dropdown-divider"></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help</a></li>
@@ -54,13 +58,13 @@
               <div class="card-header bg-white border-bottom-0 pb-0">
                 <ul class="nav nav-tabs card-header-tabs">
                   <li class="nav-item">
-                    <a href="#" class="nav-link" :class="{ active: activeTab === 'gui' }" @click.prevent="activeTab = 'gui'">GUI</a>
+                    <a href="#" class="nav-link btn-tab-gui" :class="{ active: activeTab === 'gui' }" @click.prevent="activeTab = 'gui'">GUI</a>
                   </li>
                   <li class="nav-item">
-                    <a href="#" class="nav-link" :class="{ active: activeTab === 'description' }" @click.prevent="activeTab = 'description'">Description</a>
+                    <a href="#" class="nav-link btn-tab-description" :class="{ active: activeTab === 'description' }" @click.prevent="activeTab = 'description'">Description</a>
                   </li>
                   <li class="nav-item">
-                    <a href="#" class="nav-link" :class="{ active: activeTab === 'source' }" @click.prevent="activeTab = 'source'">Source</a>
+                    <a href="#" class="nav-link btn-tab-source" :class="{ active: activeTab === 'source' }" @click.prevent="activeTab = 'source'">Source</a>
                   </li>
                 </ul>
               </div>
@@ -70,10 +74,6 @@
                     <ContextEditor :context="sla.context" :errors="validationErrorsMap" @update:context="Object.assign(sla.context, $event)" />
                   </ResponsiveWrapper>
 
-                  <ResponsiveWrapper title="GCP Monitoring" id="gcp-monitoring-editor" v-model="sla['x-gcp-monitoring']">
-                    <GcpMonitoringEditor :gcp-monitoring="sla['x-gcp-monitoring']" :errors="validationErrorsMap" @update:gcp-monitoring="sla['x-gcp-monitoring'] = $event" />
-                  </ResponsiveWrapper>
-                  
                   <ResponsiveWrapper title="Currencies" id="currency-editor" v-model="sla.customCurrencies">
                     <CurrencyEditor :custom-currencies="sla.customCurrencies" :errors="validationErrorsMap" @update:custom-currencies="sla.customCurrencies = $event" />
                   </ResponsiveWrapper>
@@ -134,7 +134,7 @@
               </div>
               <div class="card-body overflow-auto">
                 <p class="text-muted small">Load an example to get started with SLA creation.</p>
-                <select class="form-select mb-3" @change="loadExample($event.target.value)">
+                <select class="form-select mb-3 select-example-loader" @change="loadExample($event.target.value)">
                   <option selected disabled>Select an example</option>
                   <option v-for="(content, name) in examples" :key="name" :value="name">
                     {{ name.replace(/-/g, ' ') }}
@@ -165,6 +165,8 @@
       <HelpPage v-else-if="currentView === 'help'" @close="setView('editor')" />
       <TutorialPage v-else-if="currentView === 'tutorial'" @close="setView('editor')" />
       <TerraformGenerator v-else-if="currentView === 'terraform'" :sla="sla" @close="setView('editor')" />
+      <AzureBicepGenerator v-else-if="currentView === 'bicep'" :sla="sla" @close="setView('editor')" />
+      <GrafanaDashboardGenerator v-else-if="currentView === 'grafana'" :sla="sla" @close="setView('editor')" />
 
     </main>
   </div>
@@ -174,6 +176,7 @@
 import { ref, onMounted, onUnmounted, watch, reactive, computed, provide, nextTick } from 'vue';
 import { currencies } from './utils/currencies';
 import { getAllHolidayCalendars, getGoogleHolidayCalendarUrl } from './utils/holidays';
+import { validatePromQL } from './utils/formatters';
 import 'bootstrap/dist/css/bootstrap.css';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -189,6 +192,9 @@ import supportMonFri from './assets/examples/support-mon-fri.yaml?raw';
 import availability1WeekDowntime from './assets/examples/availability-1-week-downtime.yaml?raw';
 import metrics100ConcurrentConnections from './assets/examples/metrics-100-concurrent-connections.yaml?raw';
 import gcpMonitoringComplex from './assets/examples/gcp-monitoring-complex.yaml?raw';
+import azureMonitoringSample from './assets/examples/azure-monitoring-sample.yaml?raw';
+import fourGoldenSignals from './assets/examples/four-golden-signals.yaml?raw';
+import grafanaPrometheusSample from './assets/examples/grafana-prometheus-sample.yaml?raw';
 import ContextEditor from './components/ContextEditor.vue';
 import CurrencyEditor from './components/CurrencyEditor.vue';
 import MetricsEditor from './components/MetricsEditor.vue';
@@ -197,8 +203,9 @@ import ResponsiveWrapper from './components/ResponsiveWrapper.vue';
 import PolicyDescription from './components/PolicyDescription.vue';
 import HelpPage from './components/HelpPage.vue';
 import TutorialPage from './components/TutorialPage.vue';
-import GcpMonitoringEditor from './components/GcpMonitoringEditor.vue';
 import TerraformGenerator from './components/TerraformGenerator.vue';
+import AzureBicepGenerator from './components/AzureBicepGenerator.vue';
+import GrafanaDashboardGenerator from './components/GrafanaDashboardGenerator.vue';
 
 const Range = ace.require('ace/range').Range;
 
@@ -213,8 +220,9 @@ export default {
     PolicyDescription,
     HelpPage,
     TutorialPage,
-    GcpMonitoringEditor,
     TerraformGenerator,
+    AzureBicepGenerator,
+    GrafanaDashboardGenerator,
   },
   setup() {
     const activeTab = ref('gui');
@@ -262,8 +270,7 @@ export default {
       context: { id: 'example-sla', type: 'plans' }, // Default structure for context editor
       metrics: {},
       plans: {},
-      customCurrencies: [],
-      'x-gcp-monitoring': { projectId: '' }
+      customCurrencies: []
     });
 
     const examples = {
@@ -271,6 +278,9 @@ export default {
       'availability-1-week-downtime': availability1WeekDowntime,
       'metrics-100-concurrent-connections': metrics100ConcurrentConnections,
       'gcp-monitoring-complex': gcpMonitoringComplex,
+      'azure-monitoring-sample': azureMonitoringSample,
+      'four-golden-signals': fourGoldenSignals,
+      'grafana-prometheus-sample': grafanaPrometheusSample,
     };
 
     const availableCurrencies = computed(() => {
@@ -370,26 +380,24 @@ export default {
           } else {
              sla.customCurrencies.splice(0, sla.customCurrencies.length);
           }
-          if (doc['x-gcp-monitoring']) {
-             sla['x-gcp-monitoring'] = doc['x-gcp-monitoring'];
-          } else {
-             sla['x-gcp-monitoring'] = { projectId: '' };
-          }
           if (doc.sla) sla.sla = doc.sla;
         }
 
         const valid = validate(doc);
-        if (!valid) console.log('DEBUG VALIDATION:', JSON.stringify(validate.errors, null, 2));
         clearMarkers();
 
-        if (valid) {
-          validationErrors.value = [];
-        } else {
-          // Map errors to line numbers
-          const parsedYaml = YAML.parseDocument(content);
-          const errorsWithLines = validate.errors.map(err => {
+        const allErrors = [];
+        let parsedYaml;
+        try {
+          parsedYaml = YAML.parseDocument(content);
+        } catch (e) {
+          // Silent catch, parsedYaml will be null
+        }
+
+        const getErrorWithLine = (err) => {
+          try {
             const path = err.instancePath.split('/').filter(p => p !== '');
-            let node = parsedYaml.getIn(path, true);
+            let node = parsedYaml ? parsedYaml.getIn(path, true) : null;
             
             // If node not found, try parents
             let currentPath = [...path];
@@ -414,29 +422,156 @@ export default {
                 range = { startLine: line, startColumn: 0, endLine, endColumn };
               }
             }
-            return { ...err, line, range, message: getFriendlyErrorMessage(err) };
+            const message = getFriendlyErrorMessage(err);
+            return { ...err, line, range, message };
+          } catch (e) {
+            return { ...err, line: 0, message: getFriendlyErrorMessage(err) };
+          }
+        };
+
+        if (!valid && validate.errors) {
+          validate.errors.forEach(err => {
+            allErrors.push(getErrorWithLine(err));
           });
+        }
+        
+        // Custom PromQL Validation
+        if (doc) {
+          const validateObject = (node, path) => {
+            if (!node || typeof node !== 'object') return;
 
-          validationErrors.value = errorsWithLines;
-          
-          if (editor) {
-            const annotations = [];
-            errorsWithLines.forEach(err => {
-              annotations.push({
-                row: err.line,
-                column: 0,
-                text: err.message,
-                type: "error"
-              });
-
-              if (err.range) {
-                const markerRange = new Range(err.range.startLine, 0, err.range.endLine, err.range.endColumn || 100);
-                const markerId = editor.session.addMarker(markerRange, "error-squiggly", "text", true);
-                markers.value.push(markerId);
+            // 1. Direct PromQL fields
+            const promqlFields = ['expression', 'measurement'];
+            promqlFields.forEach(field => {
+              if (node[field] && typeof node[field] === 'string') {
+                const res = validatePromQL(node[field], doc.metrics);
+                if (!res.valid) {
+                  allErrors.push(getErrorWithLine({
+                    instancePath: `${path}/${field}`,
+                    message: `Invalid PromQL: ${res.error}`,
+                    keyword: 'promql'
+                  }));
+                }
               }
             });
-            editor.session.setAnnotations(annotations);
+
+            // 2. Quotas (can be PromQL strings)
+            if (node.quotas && typeof node.quotas === 'object') {
+              Object.entries(node.quotas).forEach(([m, val]) => {
+                if (typeof val === 'string' && (val.includes('(') || val.includes(' '))) {
+                   const res = validatePromQL(val, doc.metrics);
+                   if (!res.valid) {
+                     allErrors.push(getErrorWithLine({
+                       instancePath: `${path}/quotas/${m}`,
+                       message: `Invalid PromQL: ${res.error}`,
+                       keyword: 'promql'
+                     }));
+                   }
+                }
+              });
+            }
+
+            // Recursive traversal
+            Object.entries(node).forEach(([k, v]) => {
+              if (Array.isArray(v)) {
+                v.forEach((item, idx) => validateObject(item, `${path}/${k}/${idx}`));
+              } else if (typeof v === 'object') {
+                validateObject(v, `${path}/${k}`);
+              }
+            });
+          };
+
+          if (doc.plans) {
+            Object.entries(doc.plans).forEach(([planName, plan]) => {
+              validateObject(plan, `/plans/${planName}`);
+            });
           }
+          if (doc.supportPolicy) {
+             validateObject(doc.supportPolicy, '/supportPolicy');
+          }
+        }
+
+        // Custom Validation: All defined metrics should be referenced at least once
+        if (doc && doc.metrics && typeof doc.metrics === 'object') {
+          const definedMetrics = Object.keys(doc.metrics);
+          const referencedMetrics = new Set();
+
+          const collectReferencedMetrics = (node) => {
+            if (!node || typeof node !== 'object') return;
+            
+            // 1. Direct metric references
+            if (node.metric && typeof node.metric === 'string') {
+              referencedMetrics.add(node.metric);
+            }
+
+            // 2. PromQL expressions
+            const promqlFields = ['expression', 'measurement'];
+            promqlFields.forEach(field => {
+              if (node[field] && typeof node[field] === 'string') {
+                const res = validatePromQL(node[field]);
+                if (res.valid && res.metrics) {
+                  res.metrics.forEach(m => referencedMetrics.add(m));
+                }
+              }
+            });
+
+            // 3. Quotas (the keys are the metric names if they are not complex expressions)
+            // If quotas are PromQL strings, they are handled by step 2 if we traverse them.
+            if (node.quotas && typeof node.quotas === 'object') {
+              Object.entries(node.quotas).forEach(([m, val]) => {
+                if (typeof val === 'string') {
+                   const res = validatePromQL(val);
+                   if (res.valid && res.metrics) {
+                     res.metrics.forEach(rm => referencedMetrics.add(rm));
+                   } else {
+                     // If not valid PromQL, assume it might be a simple value and the key is the metric
+                     referencedMetrics.add(m);
+                   }
+                } else {
+                   referencedMetrics.add(m);
+                }
+              });
+            }
+
+            // Recursive traversal
+            Object.values(node).forEach(v => {
+              if (Array.isArray(v)) v.forEach(collectReferencedMetrics);
+              else if (typeof v === 'object') collectReferencedMetrics(v);
+            });
+          };
+
+          if (doc.plans) collectReferencedMetrics(doc.plans);
+
+          definedMetrics.forEach(metric => {
+            if (!referencedMetrics.has(metric)) {
+              allErrors.push(getErrorWithLine({
+                instancePath: `/metrics/${metric}`,
+                message: `Metric '${metric}' is defined but not referenced anywhere in the specification.`,
+                keyword: 'unused-metric'
+              }));
+            }
+          });
+        }
+
+        validationErrors.value = allErrors;
+
+        if (editor) {
+          const annotations = [];
+          allErrors.forEach(err => {
+            annotations.push({
+              row: err.line,
+              column: 0,
+              text: err.message,
+              type: "error"
+            });
+
+            if (err.range) {
+              const markerRange = new Range(err.range.startLine, 0, err.range.endLine, err.range.endColumn || 100);
+              const markerId = editor.session.addMarker(markerRange, "error-squiggly", "text", true);
+              markers.value.push(markerId);
+            }
+          });
+          editor.session.setAnnotations(annotations);
         }
       } catch (e) {
         let line = 0;
@@ -474,6 +609,7 @@ export default {
       editor.on('change', () => {
         if (isProgrammaticChange) return;
         yamlContent.value = editor.getValue();
+        validateYaml(yamlContent.value);
       });
 
       // Initial value set
@@ -484,8 +620,13 @@ export default {
       validateYaml(yamlContent.value);
     };
 
+    watch(yamlContent, (newVal) => {
+      validateYaml(newVal);
+    });
+
     onMounted(() => {
       window.addEventListener('resize', handleResize);
+      window.setYamlContent = setYamlContent; // Expose for testing
       initEditor();
     });
 
@@ -508,6 +649,8 @@ export default {
       if (newTab === 'source' && editor) {
         isProgrammaticChange = true;
         editor.setValue(yamlContent.value, -1);
+        isProgrammaticChange = false;
+        validateYaml(yamlContent.value);
         // Delay resize slightly to ensure DOM is updated if v-show/v-if was used
         setTimeout(() => {
           editor.resize();
@@ -549,8 +692,9 @@ export default {
       }
     };
 
-    const jumpToError = (line) => {
+    const jumpToError = async (line) => {
       activeTab.value = 'source';
+      await nextTick();
       if (editor) {
         editor.gotoLine((line || 0) + 1, 0, true);
         editor.focus();

@@ -6,7 +6,7 @@ test.describe('Metrics constraints', () => {
   });
 
   test('should show validation error for invalid metric type in source', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -15,14 +15,19 @@ context:
   id: test-id
   type: plans
 metrics:
-  invalid-metric:
+  invalid_metric:
     type: invalid-type
     unit: ms
-plans: {}`);
+plans:
+  p:
+    availability:
+      metric: invalid_metric
+      target: "99%"
+      expression: "invalid_metric > 0"`);
       editor._emit('change');
     });
 
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     
     // Check if the error is displayed in the GUI
     const errorFeedback = page.locator('.metrics-editor-component .invalid-feedback');
@@ -30,12 +35,12 @@ plans: {}`);
     await expect(errorFeedback).toContainText('Must be one of: boolean, integer, number, string');
 
     // Check if the error is displayed in the validation card
-    await expect(page.locator('.validation-card table tbody tr')).toContainText('metrics/invalid-metric/type');
+    await expect(page.locator('.validation-card table tbody tr').filter({ hasText: 'metrics/invalid_metric/type' })).toBeVisible();
   });
 
   test('comprehensive sync: invalid source -> gui error -> fix in gui -> valid source', async ({ page }) => {
     // 1. Set invalid metric type in Source
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       editor.setValue(`sla: 1.0.0
@@ -43,9 +48,15 @@ context:
   id: sync-test
   type: plans
 metrics:
-  test-metric:
+  test_metric:
     type: forbidden-type
-plans: {}`);
+plans:
+  p:
+    availability:
+      metric: test_metric
+      target: "99%"
+      expression: "test_metric > 0"
+`);
       editor._emit('change');
     });
 
@@ -60,19 +71,29 @@ plans: {}`);
     expect(hasAnnotation).toBe(true);
 
     // 4. Switch to GUI and verify error display
-    await page.click('a:has-text("GUI")');
-    const metricCard = page.locator('.metrics-editor-component .card:has-text("test-metric")');
-    // Targeting "Type" select specifically
+    await page.click('.btn-tab-gui');
+    const metricCard = page.locator('.metrics-editor-component .card:has-text("test_metric")');
     const typeSelect = metricCard.locator('.col-md-6:has(label:has-text("Type")) select');
     await expect(typeSelect).toHaveClass(/is-invalid/);
     await expect(metricCard.locator('.invalid-feedback').first()).toBeVisible();
 
     // 5. Fix the error in GUI
     await typeSelect.selectOption('string');
-    await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    await expect(async () => {
+        await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    }).toPass();
 
     // 6. Switch back to Source and verify it's now valid
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
+    
+    // Wait for editor to update
+    await page.waitForFunction(() => {
+        const el = document.querySelector('.ace_editor');
+        if (!el) return false;
+        const editor = ace.edit(el);
+        return editor.getValue().includes('type: string');
+    });
+
     const editorValue = await page.evaluate(() => {
       return ace.edit(document.querySelector('.ace_editor')).getValue();
     });
@@ -81,16 +102,16 @@ plans: {}`);
 
     const hasAnnotationAfterFix = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
-      return editor.session.getAnnotations().length > 0;
+      return editor.session.getAnnotations().length === 0;
     });
-    expect(hasAnnotationAfterFix).toBe(false);
+    expect(hasAnnotationAfterFix).toBe(true);
   });
 
   test('should allow selecting valid metric types in GUI', async ({ page }) => {
-    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'valid-metric');
+    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'valid_metric');
     await page.click('.metrics-editor-component button:has-text("Add Metric")');
 
-    const metricCard = page.locator('.metrics-editor-component .card:has-text("valid-metric")');
+    const metricCard = page.locator('.metrics-editor-component .card:has-text("valid_metric")');
     const typeSelect = metricCard.locator('.col-md-6:has(label:has-text("Type")) select');
     
     await typeSelect.selectOption('integer');
@@ -100,7 +121,22 @@ plans: {}`);
     await unitSelect.selectOption('requests');
     await expect(unitSelect).toHaveValue('requests');
 
+    // To be valid, it must be referenced
+    await page.fill('.plans-editor-component .input-new-plan-name', 'P');
+    await page.click('.plans-editor-component .btn-add-plan');
+    const pCard = page.locator('.plans-editor-component .plan-item').filter({ hasText: 'P' }).first();
+    const availEditor = pCard.locator('.availability-editor-component');
+    await availEditor.locator('select.metric-selector').selectOption('valid_metric');
+    
+    // Toggle raw mode
+    const rawSwitch = availEditor.locator('.check-raw-promql');
+    await rawSwitch.check({ force: true });
+    
+    await availEditor.locator('.textarea-promql-raw').fill('valid_metric > 0');
+
     // Verify it's valid
-    await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    await expect(async () => {
+        await expect(page.locator('.validation-card .badge.bg-success')).toBeVisible();
+    }).toPass();
   });
 });

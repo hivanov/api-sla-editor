@@ -3,6 +3,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Numeric Constraints', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Add a metric
+    await page.fill('.metrics-editor-component input[placeholder="New metric name"]', 'uptime');
+    await page.click('.metrics-editor-component button:has-text("Add Metric")');
+    const metricCard = page.locator('.metrics-editor-component .card:has-text("uptime")');
+    await metricCard.locator('.col-md-6:has(label:has-text("Type")) select').selectOption('number');
+
     // Add a plan to reveal all editors
     await page.fill('.plans-editor-component input[placeholder="New plan name"]', 'Constraint Plan');
     await page.click('.plans-editor-component button:has-text("Add Plan")');
@@ -14,7 +20,7 @@ test.describe('Numeric Constraints', () => {
     
     await costInput.fill('-100');
     // It should be constrained to 0 in the GUI state, which reflects in the Source tab
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -29,7 +35,7 @@ test.describe('Numeric Constraints', () => {
     const compInput = planCard.locator('.service-credits-editor-component input[placeholder="5"]');
     await compInput.fill('-50');
 
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -45,7 +51,7 @@ test.describe('Numeric Constraints', () => {
     const daysInput = durationEditor.locator('input[type="number"]').first();
     await daysInput.fill('-5');
 
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
@@ -56,8 +62,17 @@ test.describe('Numeric Constraints', () => {
   });
 
     test('should not allow negative downtime in AvailabilityEditor', async ({ page }) => {
-      const planCard = page.locator('.plan-item:has-text("Constraint Plan")');
-      const availEditor = planCard.locator('.availability-editor-component');
+    const planCard = page.locator('.plan-item:has-text("Constraint Plan")');
+    const availEditor = planCard.locator('.availability-editor-component');
+    
+    // Select metric first to enable PrometheusMeasurementEditor
+    await availEditor.locator('select.metric-selector').selectOption('uptime');
+
+    const rawSwitch = availEditor.locator('.check-raw-promql');
+    if (!(await rawSwitch.isChecked())) {
+        await rawSwitch.click();
+    }
+    await availEditor.locator('textarea').fill('uptime == 1');
       
       // Switch to Downtime Duration mode
       await availEditor.locator('.nav-link:has-text("Downtime Duration")').click();
@@ -66,22 +81,22 @@ test.describe('Numeric Constraints', () => {
     const hoursInput = availEditor.locator('.row.g-2 input[type="number"]').nth(1);
     await hoursInput.fill('10');
     
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     let editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
     });
-    expect(editorValue).not.toContain('availability: 100%');
+    expect(editorValue).not.toContain('target: 100%');
 
     // Now set negative hours
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await hoursInput.fill('-10');
     
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     editorValue = await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
       return editor.getValue();
     });
-    expect(editorValue).toContain('availability: 100%');
+    expect(editorValue).toContain('target: 100%');
   });
 });

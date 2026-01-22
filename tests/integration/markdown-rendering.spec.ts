@@ -18,7 +18,7 @@ test.describe('Markdown Rendering in Description Tab', () => {
     await descEditor.locator('textarea').fill('### Plan Header\n**Plan Bold**\n- Item 1');
 
     // 3. Verify in Description Tab
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     
     const descriptionTab = page.locator('.policy-description');
     await expect(descriptionTab.locator('h3:has-text("Plan Header")')).toBeVisible();
@@ -51,7 +51,7 @@ test.describe('Markdown Rendering in Description Tab', () => {
     await exclusionEditor.locator('textarea').fill('Exclusion with **bold**');
 
     // 3. Verify in Description Tab
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     
     const descriptionTab = page.locator('.policy-description');
     // Exclusions are rendered as list items
@@ -68,7 +68,7 @@ test.describe('Markdown Rendering in Description Tab', () => {
     await descEditor.locator('textarea').fill('Token used for **AI** services');
 
     // 2. Verify in Description Tab
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     
     const descriptionTab = page.locator('.policy-description');
     await expect(descriptionTab.locator('h2:has-text("Currencies")')).toBeVisible();

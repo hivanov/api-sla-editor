@@ -6,7 +6,7 @@ test.describe('Error Handling', () => {
   });
 
   test('should display squiggly underlines in Source editor on error', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -14,15 +14,15 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-
     // Check for squiggly marker
-    const marker = page.locator('.error-squiggly').first();
-    await expect(marker).toBeVisible();
+    await expect(async () => {
+        const marker = page.locator('.error-squiggly').first();
+        await expect(marker).toBeVisible();
+    }).toPass();
   });
 
   test('should display error list below editor', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -30,15 +30,13 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-
     const errorList = page.locator('.validation-card');
     await expect(errorList).toBeVisible();
     await expect(errorList).toContainText('Must be one of: plans, agreements');
   });
 
   test('should jump to error line and switch tab when clicking error in list', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -46,10 +44,8 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-
     // Switch to GUI
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
     await expect(page.locator('input#context-id')).toBeVisible();
 
     // Click the error in the table (which is visible in both tabs)
@@ -58,12 +54,15 @@ test.describe('Error Handling', () => {
     // Should have switched to Source tab
     await expect(page.locator('.ace_editor')).toBeVisible();
     
-    // Give it a moment to scroll and move cursor
-    await page.waitForTimeout(500);
+    // Verify cursor moved from the start
+    await expect(async () => {
+        const cursorPosition = await page.evaluate(() => ace.edit(document.querySelector('.ace_editor')).getCursorPosition());
+        expect(cursorPosition.row).toBeGreaterThan(0);
+    }).toPass();
   });
 
   test('should show error in GUI for ContextEditor', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -71,15 +70,14 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     const idInput = page.locator('input#context-id');
     await expect(idInput).toHaveClass(/is-invalid/);
   });
 
   test('should show error in GUI for MetricsEditor', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -87,15 +85,14 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     const typeSelect = page.locator('.metrics-editor-component select').first();
     await expect(typeSelect).toHaveClass(/is-invalid/);
   });
 
   test('should show error in GUI for PlansEditor (Pricing Cost)', async ({ page }) => {
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
 
     await page.evaluate(() => {
       const editor = ace.edit(document.querySelector('.ace_editor'));
@@ -105,8 +102,7 @@ test.describe('Error Handling', () => {
       editor._emit('change');
     });
     
-    await page.waitForTimeout(500);
-    await page.click('a:has-text("GUI")');
+    await page.click('.btn-tab-gui');
 
     const costInput = page.locator('.pricing-editor-component input[placeholder="Cost"]');
     await expect(costInput).toHaveClass(/is-invalid/);

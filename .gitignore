@@ -31,3 +31,38 @@ playwright/.cache/
 .DS_Store
 .gemini/
 gha-creds-*.json
+
+# Generated PromQL parser files
+src/utils/promql/PromQL.interp
+src/utils/promql/PromQL.tokens
+src/utils/promql/PromQLLexer.interp
+src/utils/promql/PromQLLexer.tokens
+src/utils/promql/PromQLLexer.ts
+src/utils/promql/PromQLListener.ts
+src/utils/promql/PromQLParser.ts
+src/utils/promql/PromQLVisitor.ts
+
+# Generated Terraform parser files
+src/utils/terraform/terraform.interp
+src/utils/terraform/terraform.tokens
+src/utils/terraform/terraformLexer.interp
+src/utils/terraform/terraformLexer.tokens
+src/utils/terraform/terraformLexer.ts
+src/utils/terraform/terraformListener.ts
+src/utils/terraform/terraformParser.ts
+src/utils/terraform/terraformVisitor.ts
+
+# Generated Bicep parser files
+src/utils/bicep/bicep.interp
+src/utils/bicep/bicep.tokens
+src/utils/bicep/bicepLexer.interp
+src/utils/bicep/bicepLexer.tokens
+src/utils/bicep/bicepLexer.ts
+src/utils/bicep/bicepListener.ts
+src/utils/bicep/bicepParser.ts
+src/utils/bicep/bicepVisitor.ts
+
+# Grafana API
+src/utils/grafana-schema.ts
+
+**/.antlr/

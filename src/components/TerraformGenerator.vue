@@ -9,6 +9,11 @@
        </div>
     </div>
 
+    <div class="p-3 bg-white border-bottom">
+       <h5>GCP Configuration</h5>
+       <GcpMonitoringEditor v-model="gcpConfig" />
+    </div>
+
     <div v-if="localErrors.length > 0" class="alert alert-warning m-3">
        <strong>Missing Information:</strong>
        <ul class="mb-0">
@@ -23,13 +28,20 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-terraform';
 import 'ace-builds/src-noconflict/theme-monokai';
+import GcpMonitoringEditor from './GcpMonitoringEditor.vue';
+import { extractStructuredGuarantee, getTopLevelFunction, resolveMetricAliases } from '../utils/formatters';
+import { generateGcpAlertPolicyNode, isComplexPromQL } from '../utils/transformers';
+import { emitTerraform } from '../utils/terraform/emitter';
 
 export default {
   name: 'TerraformGenerator',
+  components: {
+    GcpMonitoringEditor
+  },
   props: {
     sla: {
       type: Object,
@@ -41,9 +53,12 @@ export default {
     const generatedCode = ref('');
     const localErrors = ref([]);
     const editorContainer = ref(null);
+    const gcpConfig = ref({ projectId: '' });
     let editor = null;
 
-    const hasBlockingErrors = ref(false);
+    const hasBlockingErrors = computed(() => {
+       return !gcpConfig.value.projectId;
+    });
 
     onMounted(() => {
        editor = ace.edit(editorContainer.value);
@@ -58,56 +73,83 @@ export default {
        }
     });
 
-    const parseDurationToSeconds = (duration) => {
-        // Simple regex for P1D, PT1H, PT1M, PT1S
-        // This is a naive implementation
-        if (!duration) return 0;
-        const match = duration.match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-        if (!match) return 0;
-        const days = parseInt(match[1] || 0);
-        const hours = parseInt(match[2] || 0);
-        const minutes = parseInt(match[3] || 0);
-        const seconds = parseInt(match[4] || 0);
-        return (days * 86400) + (hours * 3600) + (minutes * 60) + seconds;
-    };
-
     const generate = () => {
        localErrors.value = [];
-       hasBlockingErrors.value = false;
        const sla = props.sla;
-       const gcp = sla['x-gcp-monitoring'];
+       const gcp = gcpConfig.value;
 
        if (!gcp || !gcp.projectId) {
           localErrors.value.push("GCP Project ID is not configured.");
-          hasBlockingErrors.value = true;
+          return;
        }
 
-       let tf = '';
+       /** @type {import('../utils/terraform/ast').TerraformFile} */
+       const tfFile = {
+          type: 'File',
+          blocks: []
+       };
 
        // Provider
        if (gcp && gcp.projectId) {
-          tf += `provider "google" {\n  project = "${gcp.projectId}"\n}\n\n`;
+          tfFile.blocks.push({
+             type: 'Provider',
+             name: 'google',
+             body: [
+                {
+                   type: 'Argument',
+                   identifier: 'project',
+                   expression: { type: 'Literal', value: gcp.projectId }
+                }
+             ]
+          });
        }
 
        // Metric Descriptors
        if (sla.metrics) {
           Object.entries(sla.metrics).forEach(([metricId, metricDef]) => {
              if (metricDef.monitoringId && metricDef.resourceType) {
-                // Only generate if it's a custom metric (optional heuristic, but let's generate for all configured)
-                // Actually GCP monitoringId might be a standard one. 
-                // If it starts with custom.googleapis.com, it definitely needs a descriptor if we want to manage it.
-                if (metricDef.monitoringId.includes('custom.googleapis.com')) {
+                if (metricDef.monitoringId.includes('custom.googleapis.com') || metricDef.monitoringId.includes('custom_googleapis_com')) {
                    const resourceName = `metric_${metricId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-                   tf += `resource "google_monitoring_metric_descriptor" "${resourceName}" {\n`;
-                   tf += `  description = "${metricDef.description || metricId}"\n`;
-                   tf += `  display_name = "${metricId}"\n`;
-                   tf += `  type = "${metricDef.monitoringId}"\n`;
-                   tf += `  metric_kind = "${metricDef.metricKind || 'GAUGE'}"\n`;
-                   tf += `  value_type = "${getValueType(metricDef.type)}"\n`;
+                   const body = [
+                      {
+                         type: 'Argument',
+                         identifier: 'description',
+                         expression: { type: 'Literal', value: metricDef.description || metricId }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'display_name',
+                         expression: { type: 'Literal', value: metricId }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'type',
+                         expression: { type: 'Literal', value: metricDef.monitoringId }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'metric_kind',
+                         expression: { type: 'Literal', value: metricDef.metricKind || 'GAUGE' }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'value_type',
+                         expression: { type: 'Literal', value: getValueType(metricDef.type) }
+                      }
+                   ];
                    if (metricDef.unit) {
-                      tf += `  unit = "${metricDef.unit}"\n`;
+                      body.push({
+                         type: 'Argument',
+                         identifier: 'unit',
+                         expression: { type: 'Literal', value: metricDef.unit }
+                      });
                    }
-                   tf += `}\n\n`;
+                   tfFile.blocks.push({
+                      type: 'Resource',
+                      resourceType: 'google_monitoring_metric_descriptor',
+                      name: resourceName,
+                      body
+                   });
                 }
              }
           });
@@ -115,11 +157,11 @@ export default {
 
        // Notification Channels from Support Policy Contact Points
        const channelIds = new Set();
-       const channelsTf = [];
+       const channelsResources = [];
 
        if (sla.plans) {
           Object.values(sla.plans).forEach(plan => {
-             const support = plan['x-support-policy'];
+             const support = plan['supportPolicy'];
              if (support && support.contactPoints) {
                 support.contactPoints.forEach(cp => {
                    if (cp.channels) {
@@ -139,22 +181,43 @@ export default {
                          }
                          
                          if (type) {
-                            // Deduplicate based on type+labels
                             const key = `${type}:${JSON.stringify(labels)}`;
                             if (!channelIds.has(key)) {
                                channelIds.add(key);
                                const resourceName = `channel_${channelIds.size}`;
                                
-                               let chunk = `resource "google_monitoring_notification_channel" "${resourceName}" {\n`;
-                               chunk += `  display_name = "${displayName}"\n`;
-                               chunk += `  type         = "${type}"\n`;
-                               chunk += `  labels = {\n`;
-                               Object.entries(labels).forEach(([k, v]) => {
-                                  chunk += `    "${k}" = "${v}"\n`;
+                               const body = [
+                                  {
+                                     type: 'Argument',
+                                     identifier: 'display_name',
+                                     expression: { type: 'Literal', value: displayName }
+                                  },
+                                  {
+                                     type: 'Argument',
+                                     identifier: 'type',
+                                     expression: { type: 'Literal', value: type }
+                                  },
+                                  {
+                                     type: 'Argument',
+                                     identifier: 'labels',
+                                     expression: {
+                                        type: 'Map',
+                                        entries: Object.entries(labels).map(([k, v]) => ({
+                                           type: 'Argument',
+                                           identifier: k,
+                                           expression: { type: 'Literal', value: v }
+                                        }))
+                                     }
+                                  }
+                               ];
+
+                               tfFile.blocks.push({
+                                  type: 'Resource',
+                                  resourceType: 'google_monitoring_notification_channel',
+                                  name: resourceName,
+                                  body
                                });
-                               chunk += `  }\n`;
-                               chunk += `}\n\n`;
-                               channelsTf.push({ resourceName, chunk });
+                               channelsResources.push({ resourceName });
                             }
                          }
                       });
@@ -164,18 +227,14 @@ export default {
           });
        }
 
-       channelsTf.forEach(c => tf += c.chunk);
-
        // Collect all guarantees to generate alert policies
        const allGuarantees = [];
 
        if (sla.plans) {
           Object.entries(sla.plans).forEach(([planName, plan]) => {
-             // 1. Direct guarantees
              if (plan.guarantees) {
                 plan.guarantees.forEach((g, i) => allGuarantees.push({ planName, guarantee: g, index: i, source: 'direct' }));
              }
-             // 2. Plan SLOs
              if (plan.serviceLevelObjectives) {
                 plan.serviceLevelObjectives.forEach((slo, sloIdx) => {
                    if (slo.guarantees) {
@@ -183,8 +242,7 @@ export default {
                    }
                 });
              }
-             // 3. Support Policy SLOs
-             const support = plan['x-support-policy'];
+             const support = plan['supportPolicy'];
              if (support && support.serviceLevelObjectives) {
                 support.serviceLevelObjectives.forEach((slo, sloIdx) => {
                    if (slo.guarantees) {
@@ -197,7 +255,22 @@ export default {
 
        // Generate Alert Policies
        allGuarantees.forEach(({ planName, guarantee, index, source }) => {
-          const metricName = guarantee.metric;
+          const measurement = guarantee.measurement;
+          let metricName, operator, value, period;
+          let expression = '';
+          let aligner = 'ALIGN_MEAN';
+          
+          const extracted = extractStructuredGuarantee(measurement);
+          
+          if (extracted) {
+             metricName = extracted.metric;
+             operator = extracted.operator;
+             value = extracted.value;
+             period = extracted.period;
+          } else {
+             return;
+          }
+
           const metricDef = sla.metrics[metricName];
           
           if (!metricDef) {
@@ -205,47 +278,64 @@ export default {
              return;
           }
 
-          if (!metricDef.monitoringId || !metricDef.resourceType) {
-             localErrors.value.push(`No GCP metric mapping (monitoringId, resourceType) for '${metricName}'. Skipping alert generation.`);
+          if (!metricDef.monitoringId) {
+             localErrors.value.push(`No GCP metric mapping (monitoringId) for '${metricName}'. Skipping alert generation.`);
              return;
           }
 
-          const policyName = `alert_${planName}_${source}_${index}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+          const complex = isComplexPromQL(measurement);
+          let resolvedPromQL = '';
           
-          tf += `resource "google_monitoring_alert_policy" "${policyName}" {\n`;
-          tf += `  display_name = "SLA Breach: ${planName} - ${source} - ${metricName}"\n`;
-          tf += `  combiner     = "OR"\n`;
-          tf += `  conditions {\n`;
-          tf += `    display_name = "${metricName} breach"\n`;
-          tf += `    condition_threshold {\n`;
-          tf += `      filter     = "resource.type = \\\"${metricDef.resourceType}\\\" AND metric.type = \\\"${metricDef.monitoringId}\\\""\n`;
-          tf += `      duration   = "${guarantee.period ? parseDurationToSeconds(guarantee.period) + 's' : (guarantee.duration ? parseDurationToSeconds(guarantee.duration) + 's' : '60s')}"\n`;
-          tf += `      comparison = "${getComparison(guarantee.operator)}"\n`;
+          if (complex) {
+              const aliases = {};
+              Object.entries(sla.metrics).forEach(([k, v]) => {
+                  if (v.monitoringId) aliases[k] = v.monitoringId;
+              });
+              resolvedPromQL = resolveMetricAliases(measurement, aliases);
+          }
           
-          let thresholdValue = parseFloat(guarantee.value); 
-          if (isNaN(thresholdValue)) thresholdValue = 0;
-
-          tf += `      threshold_value = ${thresholdValue}\n`;
-          
-          tf += `      aggregations {\n`;
-          tf += `        alignment_period   = "60s"\n`;
-          tf += `        per_series_aligner = "ALIGN_MEAN"\n`;
-          tf += `      }\n`;
-          tf += `    }\n`;
-          tf += `  }\n`;
-          
-          if (channelsTf.length > 0) {
-             tf += `  notification_channels = [\n`;
-             channelsTf.forEach(c => {
-                tf += `    google_monitoring_notification_channel.${c.resourceName}.name,\n`;
-             });
-             tf += `  ]\n`;
+          if (complex && isComplexPromQL(resolvedPromQL)) {
+             expression = resolvedPromQL;
+          } else {
+             expression = metricDef.monitoringId;
+             
+             const func = getTopLevelFunction(measurement);
+             if (func) {
+                 const map = {
+                     'avg_over_time': 'ALIGN_MEAN',
+                     'sum_over_time': 'ALIGN_SUM',
+                     'min_over_time': 'ALIGN_MIN',
+                     'max_over_time': 'ALIGN_MAX',
+                     'count_over_time': 'ALIGN_COUNT',
+                     'rate': 'ALIGN_RATE',
+                     'delta': 'ALIGN_DELTA'
+                 };
+                 if (map[func]) aligner = map[func];
+             }
           }
 
-          tf += `}\n\n`;
+          const channels = channelsResources.map(c => c.resourceName);
+
+          const alertNode = generateGcpAlertPolicyNode({
+             planName,
+             source,
+             index,
+             metricName,
+             expression: expression,
+             duration: period || '60s',
+             operator,
+             threshold: parseFloat(value) || 0,
+             channels: channels.length > 0 ? channels : undefined,
+             project: gcp.projectId,
+             resourceType: metricDef.resourceType,
+             metricType: metricDef.monitoringId,
+             aligner
+          });
+
+          tfFile.blocks.push(alertNode);
        });
 
-       generatedCode.value = tf;
+       generatedCode.value = emitTerraform(tfFile);
     };
 
     const getValueType = (type) => {
@@ -255,22 +345,6 @@ export default {
           case 'boolean': return 'BOOL';
           case 'string': return 'STRING';
           default: return 'DOUBLE';
-       }
-    };
-
-    const getComparison = (operator) => {
-       // SLA defines guarantee. Operator is what we WANT.
-       // Alert is when it is VIOLATED.
-       // So we need to invert or map carefully.
-       // If guarantee: response_time < 200ms. Violation: response_time > 200ms.
-       // Terraform comparison is for the VIOLATION. 
-       
-       switch (operator) {
-          case '<': return 'COMPARISON_GT';
-          case '<=': return 'COMPARISON_GT'; // Strictly should be GT, but threshold handling might be fuzzy
-          case '>': return 'COMPARISON_LT';
-          case '>=': return 'COMPARISON_LT';
-          default: return 'COMPARISON_GT';
        }
     };
 
@@ -290,7 +364,8 @@ export default {
        download,
        generatedCode,
        localErrors,
-       hasBlockingErrors
+       hasBlockingErrors,
+       gcpConfig
     };
   }
 };

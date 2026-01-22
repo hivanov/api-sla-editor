@@ -5,7 +5,7 @@ test.describe('SLO Guarantees Editor', () => {
     await page.goto('/');
   });
 
-  test('should allow selecting defined metrics in SLO guarantees', async ({ page }) => {
+  test('should allow adding SLO guarantees in measurement mode', async ({ page }) => {
     // 1. Define a metric
     const metricsEditor = page.locator('.metrics-editor-component');
     await metricsEditor.locator('input[placeholder="New metric name"]').fill('test-metric');
@@ -25,70 +25,67 @@ test.describe('SLO Guarantees Editor', () => {
     // 5. Add SLO Guarantee
     await supportPolicyEditor.locator('button:has-text("Add SLO Guarantee")').click();
 
-    // Switch to Structured mode
-    const structuredRadio = supportPolicyEditor.locator('label', { hasText: 'Structured' }).first();
-    await structuredRadio.click();
+    // 6. Verify Prometheus Measurement Editor is visible
+    const prometheusEditor = supportPolicyEditor.locator('.prometheus-measurement-editor').first();
+    await expect(prometheusEditor).toBeVisible();
 
-    // 6. Verify Metric Dropdown
-    const metricSelect = supportPolicyEditor.locator('select.form-select', { hasText: 'test-metric' }).first();
-    await expect(metricSelect).toBeVisible();
-    await metricSelect.selectOption('test-metric');
-    
-    // 7. Verify Operator select
-    const operatorSelect = supportPolicyEditor.locator('select.form-select', { hasText: 'None' }).first();
-    await expect(operatorSelect).toBeVisible();
+    // 7. Configure guarantee in measurement mode
+    await prometheusEditor.locator('select.metric-select').selectOption('test-metric');
+    await prometheusEditor.locator('.input-promql-value').fill('1');
 
-    // 8. Switch to Legacy Mode
-    const legacyRadio = supportPolicyEditor.locator('label', { hasText: 'Simple Duration (Legacy)' }).first();
-    await legacyRadio.click();
-
-    // Operator select should be hidden
-    await expect(operatorSelect).toBeHidden();
-
-    const durationInput = supportPolicyEditor.locator('input[placeholder="e.g. P1DT4H"]').first();
-    await expect(durationInput).toBeVisible();
-    await durationInput.fill('P1D');
+    // 8. Verify the generated expression
+    const preview = prometheusEditor.locator('code').first();
+    await expect(preview).toContainText('avg_over_time(test-metric[5m]) < 1');
   });
 
   test('should allow adding SLOs directly at the Plan level', async ({ page }) => {
     // 1. Define a metric
     const metricsEditor = page.locator('.metrics-editor-component');
-    await metricsEditor.locator('input[placeholder="New metric name"]').fill('plan-metric');
-    await metricsEditor.locator('button:has-text("Add Metric")').click();
+    await metricsEditor.locator('.input-new-metric-name').fill('plan-metric');
+    await metricsEditor.locator('.btn-add-metric').click();
 
     // 2. Add a Plan
     const plansEditor = page.locator('.plans-editor-component');
-    await plansEditor.locator('input[placeholder="New plan name"]').fill('Premium');
-    await plansEditor.locator('button:has-text("Add Plan")').click();
+    await plansEditor.locator('.input-new-plan-name').fill('Premium');
+    await plansEditor.locator('.btn-add-plan').click();
 
     const premiumPlan = plansEditor.locator('.card', { hasText: 'Premium' }).first();
     const planSloEditor = premiumPlan.locator('.service-level-objectives-editor-component').first();
     await expect(planSloEditor).toBeVisible();
 
     // 4. Add SLO
-    await planSloEditor.locator('button:has-text("Add SLO")').click();
-    await planSloEditor.locator('input[placeholder="e.g., High"]').fill('P1');
-    await planSloEditor.locator('input[placeholder="e.g., Incident Resolution"]').fill('Response Time Objective');
+    await planSloEditor.locator('.btn-add-slo').click();
+    await planSloEditor.locator('.input-slo-priority').fill('P1');
+    await planSloEditor.locator('.input-slo-name').fill('Response Time Objective');
 
     // 5. Add SLO Guarantee
-    await planSloEditor.locator('button:has-text("Add SLO Guarantee")').click();
+    await planSloEditor.locator('.btn-add-slo-guarantee').click();
     
-    // Switch to Structured mode
-    await planSloEditor.locator('label', { hasText: 'Structured' }).first().click();
+    const prometheusEditor = planSloEditor.locator('.prometheus-measurement-editor').first();
+    await expect(prometheusEditor).toBeVisible();
 
-    const metricSelect = planSloEditor.locator('select.form-select').first();
-    await metricSelect.selectOption('plan-metric');
-    
-    // 6. Verify Value
-    const valueInput = planSloEditor.locator('input[placeholder="Value"]').first();
-    await valueInput.fill('200ms');
+    await prometheusEditor.locator('select.metric-select').selectOption('plan-metric');
+    await prometheusEditor.locator('.input-promql-value').fill('200');
 
     // 7. Check source/YAML
-    await page.click('a:has-text("Source")');
-    const aceEditor = page.locator('.ace_content');
-    await expect(aceEditor).toContainText('serviceLevelObjectives:');
-    await expect(aceEditor).toContainText('priority: P1');
-    await expect(aceEditor).toContainText('name: Response Time Objective');
+    await page.click('.btn-tab-source');
+    
+    // Wait for Ace to update - use a function that checks for the content
+    let yaml = '';
+    await expect(async () => {
+        yaml = await page.evaluate(() => {
+            const el = document.querySelector('.ace_editor');
+            if (!el) return '';
+            // @ts-ignore
+            const editor = ace.edit(el);
+            return editor.getValue();
+        });
+        expect(yaml).toContain('serviceLevelObjectives:');
+    }).toPass();
+
+    expect(yaml).toContain('priority: P1');
+    expect(yaml).toContain('name: Response Time Objective');
+    expect(yaml).toContain('measurement: avg_over_time(plan-metric[5m]) < 200');
   });
 
   test('should hide redundant controls in measurement mode', async ({ page }) => {

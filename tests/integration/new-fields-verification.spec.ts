@@ -21,7 +21,7 @@ test.describe('New Fields Verification', () => {
     await metricCard.locator('textarea[placeholder*="Markdown"]').fill('**Bold Description**');
 
     // 4. Verify Source
-    await page.click('a:has-text("Source")');
+    await page.click('.btn-tab-source');
     const editorValue = await page.evaluate(() => {
       return ace.edit(document.querySelector('.ace_editor')).getValue();
     });
@@ -33,7 +33,7 @@ test.describe('New Fields Verification', () => {
     expect(editorValue).toContain('description: \'**Bold Description**\''); // YAML format
 
     // 5. Verify Description
-    await page.click('a:has-text("Description")');
+    await page.click('.btn-tab-description');
     
     const descriptionTab = page.locator('.policy-description');
     await expect(descriptionTab.locator('h2:has-text("Metrics Definitions")')).toBeVisible();

@@ -2,9 +2,14 @@ sla: 1.0.0
 context:
   id: gcp-infrastructure-services
   type: plans
-x-gcp-monitoring:
-  projectId: production-data-platform
 metrics:
+  uptime:
+    type: number
+    unit: percent
+    description: "Service Uptime percentage"
+    monitoringId: "custom.googleapis.com/api/uptime"
+    resourceType: "global"
+    metricKind: "GAUGE"
   cpu_utilization:
     type: number
     unit: percent
@@ -30,25 +35,22 @@ plans:
   Gold:
     title: "Mission Critical Support"
     description: "Tier 1 support for production environments with strict guarantees"
-    availability: "99.99%"
+    availability:
+      metric: uptime
+      target: "99.99%"
+      expression: "avg_over_time(uptime[1m]) > 0.9999"
     pricing:
       cost: 5000
       currency: USD
       period: P30D
     guarantees:
-      - metric: cpu_utilization
-        operator: "<"
-        value: "80"
-        period: PT5M
+      - measurement: "avg_over_time(cpu_utilization[5m]) < 80"
     serviceLevelObjectives:
       - name: "Latency Performance"
         priority: "High"
         guarantees:
-          - metric: request_latency
-            operator: "<"
-            value: "200"
-            period: PT1M
-    x-support-policy:
+          - measurement: "avg_over_time(request_latency[1m]) < 200"
+    supportPolicy:
       contactPoints:
         - contactType: "SRE On-Call"
           channels:
@@ -67,32 +69,26 @@ plans:
         - name: "Incident Response"
           priority: "P0"
           guarantees:
-            - metric: error_rate
-              operator: "<"
-              value: "0.1"
-              period: PT1M
+            - measurement: "avg_over_time(error_rate[1m]) < 0.1"
   Silver:
     title: "Standard Production"
     description: "Recommended for standard production workloads"
-    availability: "99.9%"
+    availability:
+      metric: uptime
+      target: "99.9%"
+      expression: "avg_over_time(uptime[1m]) > 0.999"
     pricing:
       cost: 1500
       currency: USD
       period: P30D
     guarantees:
-      - metric: cpu_utilization
-        operator: "<"
-        value: "90"
-        period: PT15M
+      - measurement: "avg_over_time(cpu_utilization[15m]) < 90"
     serviceLevelObjectives:
       - name: "Latency Performance"
         priority: "Medium"
         guarantees:
-          - metric: request_latency
-            operator: "<"
-            value: "500"
-            period: PT5M
-    x-support-policy:
+          - measurement: "avg_over_time(request_latency[5m]) < 500"
+    supportPolicy:
       contactPoints:
         - contactType: "DevOps Support"
           channels:

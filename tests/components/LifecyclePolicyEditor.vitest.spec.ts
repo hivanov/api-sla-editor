@@ -37,11 +37,11 @@ describe('LifecyclePolicyEditor', () => {
           dataRetention: { afterTermination: 'invalid' }
         },
         errors: {
-          '/plans/gold/x-lifecycle-policy/minimumTerm': ['Invalid term'],
-          '/plans/gold/x-lifecycle-policy/noticePeriod': ['Invalid notice period'],
-          '/plans/gold/x-lifecycle-policy/dataRetention/afterTermination': ['Invalid retention']
+          '/plans/gold/lifecyclePolicy/minimumTerm': ['Invalid term'],
+          '/plans/gold/lifecyclePolicy/noticePeriod': ['Invalid notice period'],
+          '/plans/gold/lifecyclePolicy/dataRetention/afterTermination': ['Invalid retention']
         },
-        path: '/plans/gold/x-lifecycle-policy'
+        path: '/plans/gold/lifecyclePolicy'
       },
     })
 

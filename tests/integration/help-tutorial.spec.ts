@@ -21,7 +21,7 @@ test.describe('Help and Tutorial Pages', () => {
 
     // Verify Tutorial content
     await expect(page.locator('h2:has-text("SLA Editor Tutorial")')).toBeVisible();
-    await expect(page.locator('h3:has-text("Why do we need SLAs?")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Motivation: Why this tool exists")')).toBeVisible();
     
     // Editor should be hidden
     await expect(page.locator('.card-header ul.nav-tabs')).not.toBeVisible();

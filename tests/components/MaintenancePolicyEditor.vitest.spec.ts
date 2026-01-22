@@ -69,11 +69,11 @@ describe('MaintenancePolicyEditor', () => {
           windows: [{ type: 'Routine', rrule: 'FREQ=DAILY', duration: 'invalid' }]
         },
         errors: {
-          '/plans/gold/x-maintenance-policy/minimumNotice/standard': ['Invalid standard notice'],
-          '/plans/gold/x-maintenance-policy/minimumNotice/emergency': ['Invalid emergency notice'],
-          '/plans/gold/x-maintenance-policy/windows/0/duration': ['Invalid window duration']
+          '/plans/gold/maintenancePolicy/minimumNotice/standard': ['Invalid standard notice'],
+          '/plans/gold/maintenancePolicy/minimumNotice/emergency': ['Invalid emergency notice'],
+          '/plans/gold/maintenancePolicy/windows/0/duration': ['Invalid window duration']
         },
-        path: '/plans/gold/x-maintenance-policy'
+        path: '/plans/gold/maintenancePolicy'
       },
     })
 

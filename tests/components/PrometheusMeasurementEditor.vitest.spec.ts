@@ -94,4 +94,62 @@ describe('PrometheusMeasurementEditor', () => {
     expect(lastEmitted).toContain('sum_over_time(requests[15m])');
     expect(lastEmitted).toContain('1000');
   });
+
+  it('locks and disables metric selector when fixedMetric is provided', async () => {
+    const wrapper = mount(PrometheusMeasurementEditor, {
+      props: {
+        modelValue: '',
+        metrics,
+        fixedMetric: 'latency'
+      }
+    });
+
+    const metricSelect = wrapper.find('.metric-select');
+    expect(metricSelect.element.value).toBe('latency');
+    expect(metricSelect.element.disabled).toBe(true);
+
+    // Should emit initial update with fixed metric
+    const emitted = wrapper.emitted('update:modelValue');
+    expect(emitted).toBeTruthy();
+    expect(emitted[0][0]).toContain('latency');
+  });
+
+  it('displays promql validation errors when in raw mode', async () => {
+    const wrapper = mount(PrometheusMeasurementEditor, {
+      props: {
+        modelValue: 'invalid promql (((',
+        metrics: {}
+      }
+    });
+
+    // It should automatically switch to raw mode if it cannot be parsed or mapped
+    expect(wrapper.vm.isRawMode).toBe(true);
+    expect(wrapper.find('.invalid-feedback').exists()).toBe(true);
+    expect(wrapper.find('.invalid-feedback').text()).toContain('mismatched input');
+  });
+
+  it('identifies incomplete expressions as invalid', async () => {
+    const wrapper = mount(PrometheusMeasurementEditor, {
+      props: {
+        modelValue: '',
+        metrics
+      }
+    });
+
+    // In UI mode (default), set metric but leave value empty
+    const selects = wrapper.findAll('select');
+    await selects[1].setValue('requests');
+    
+    await wrapper.find('input[placeholder*="e.g. 15"]').setValue('');
+
+    const emitted = wrapper.emitted('update:modelValue');
+    const lastEmitted = emitted[emitted.length - 1][0];
+    
+    // Set the prop back to simulate parent updating it
+    await wrapper.setProps({ modelValue: lastEmitted });
+    
+    expect(wrapper.vm.promqlError).not.toBeNull();
+    const validLabel = wrapper.find('.text-success');
+    expect(validLabel.exists()).toBe(false);
+  });
 });

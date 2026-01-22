@@ -1,0 +1,63 @@
+sla: 1.0.0
+context:
+  id: grafana-demo
+  name: Grafana Prometheus Demo
+  provider: My Company
+  consumer: Customer
+  type: plans
+metrics:
+  http_requests_total:
+    type: integer
+    unit: requests
+    description: "Total HTTP requests"
+    monitoringId: "http_requests_total"
+  http_request_duration_seconds_bucket:
+    type: number
+    unit: s
+    description: "HTTP request duration buckets"
+    monitoringId: "http_request_duration_seconds_bucket"
+  up:
+    type: number
+    description: "Binary service status (1 for up, 0 for down)"
+    monitoringId: "up"
+plans:
+  standard:
+    title: Standard Plan
+    availability:
+      metric: up
+      target: "99.9%"
+      expression: "avg_over_time(up{job='my-service'}[1m]) > 0.99"
+    guarantees:
+      - measurement: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) < 0.2"
+        period: PT1M
+      - measurement: "sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m])) < 0.01"
+        period: PT5M
+    supportPolicy:
+      contactPoints:
+        - contactType: "DevOps Team"
+          channels:
+            - type: email
+              url: "mailto://devops@example.com"
+            - type: email
+              url: "mailto://oncall@example.com"
+    serviceCredits:
+      currency: USD
+      claimWindow: P30D
+      tiers:
+        - condition:
+            metric: up
+            operator: "<"
+            value: "0.999"
+            floor: "0.99"
+          compensation: 10
+        - condition:
+            metric: up
+            operator: "<"
+            value: "0.99"
+            floor: "0.95"
+          compensation: 25
+        - condition:
+            metric: up
+            operator: "<"
+            value: "0.95"
+          compensation: 100
