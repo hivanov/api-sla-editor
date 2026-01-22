@@ -68,31 +68,31 @@ resource "google_monitoring_metric_descriptor" "metric_error_rate" {
 
 resource "google_monitoring_notification_channel" "channel_1" {
   display_name = "SRE On-Call"
-  type         = "email"
+  type = "email"
   labels = {
-    "email_address" = "sre-alerts@example.com"
+    email_address = "sre-alerts@example.com"
   }
 }
 
 resource "google_monitoring_notification_channel" "channel_2" {
   display_name = "SRE On-Call"
-  type         = "sms"
+  type = "sms"
   labels = {
-    "number" = "+15550123456"
+    number = "+15550123456"
   }
 }
 
 resource "google_monitoring_notification_channel" "channel_3" {
   display_name = "DevOps Support"
-  type         = "email"
+  type = "email"
   labels = {
-    "email_address" = "support@example.com"
+    email_address = "support@example.com"
   }
 }
 
 resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
   display_name = "SLA Breach: Gold - direct - cpu_utilization"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "cpu_utilization breach"
     condition_prometheus_query_language {
@@ -100,16 +100,12 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
       duration = "5m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_gold_slo_latency_performance_0_0" {
   display_name = "SLA Breach: Gold - slo_Latency Performance - request_latency"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "request_latency breach"
     condition_prometheus_query_language {
@@ -117,16 +113,12 @@ resource "google_monitoring_alert_policy" "alert_gold_slo_latency_performance_0_
       duration = "1m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_gold_support_slo_incident_response_support_slo_0_0" {
   display_name = "SLA Breach: Gold - support_slo_Incident Response - error_rate"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "error_rate breach"
     condition_prometheus_query_language {
@@ -134,16 +126,12 @@ resource "google_monitoring_alert_policy" "alert_gold_support_slo_incident_respo
       duration = "1m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_silver_direct_0" {
   display_name = "SLA Breach: Silver - direct - cpu_utilization"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "cpu_utilization breach"
     condition_prometheus_query_language {
@@ -151,16 +139,12 @@ resource "google_monitoring_alert_policy" "alert_silver_direct_0" {
       duration = "15m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 
 resource "google_monitoring_alert_policy" "alert_silver_slo_latency_performance_0_0" {
   display_name = "SLA Breach: Silver - slo_Latency Performance - request_latency"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "request_latency breach"
     condition_prometheus_query_language {
@@ -168,11 +152,7 @@ resource "google_monitoring_alert_policy" "alert_silver_slo_latency_performance_
       duration = "5m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-    google_monitoring_notification_channel.channel_2.name,
-    google_monitoring_notification_channel.channel_3.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name, google_monitoring_notification_channel.channel_2.name, google_monitoring_notification_channel.channel_3.name]
 }
 `;
 

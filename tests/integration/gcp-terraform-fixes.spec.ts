@@ -71,15 +71,15 @@ resource "google_monitoring_metric_descriptor" "metric_request_latency" {
 
 resource "google_monitoring_notification_channel" "channel_1" {
   display_name = "Cloud SRE"
-  type         = "email"
+  type = "email"
   labels = {
-    "email_address" = "sre@example.com"
+    email_address = "sre@example.com"
   }
 }
 
 resource "google_monitoring_alert_policy" "alert_platinum_slo_0_0_0" {
   display_name = "SLA Breach: Platinum - slo_0 - request_latency"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "request_latency breach"
     condition_prometheus_query_language {
@@ -87,9 +87,7 @@ resource "google_monitoring_alert_policy" "alert_platinum_slo_0_0_0" {
       duration = "5m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name]
 }
 `;
 

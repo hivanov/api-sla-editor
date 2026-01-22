@@ -1,3 +1,21 @@
+# Generated parser files
+src/utils/promql/PromQL.interp
+src/utils/promql/PromQL.tokens
+src/utils/promql/PromQLLexer.interp
+src/utils/promql/PromQLLexer.tokens
+src/utils/promql/PromQLLexer.ts
+src/utils/promql/PromQLListener.ts
+src/utils/promql/PromQLParser.ts
+src/utils/promql/PromQLVisitor.ts
+src/utils/terraform/terraform.interp
+src/utils/terraform/terraform.tokens
+src/utils/terraform/terraformLexer.interp
+src/utils/terraform/terraformLexer.tokens
+src/utils/terraform/terraformLexer.ts
+src/utils/terraform/terraformListener.ts
+src/utils/terraform/terraformParser.ts
+src/utils/terraform/terraformVisitor.ts
+
 node_modules/
 dist/
 .env

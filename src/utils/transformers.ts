@@ -1,4 +1,15 @@
 import { validatePromQL, astToString } from './formatters';
+import type { 
+    TerraformFile, 
+    TerraformResource, 
+    TerraformArgument, 
+    TerraformBlock, 
+    TerraformNode,
+    TerraformExpression,
+    TerraformLiteral,
+    TerraformIdentifier
+} from './terraform/ast';
+import { emitTerraform } from './terraform/emitter';
 
 export interface TerraformAlertOptions {
     planName: string;
@@ -27,28 +38,25 @@ export const isComplexPromQL = (str: string): boolean => {
     return true;
 };
 
-export const generateGcpAlertPolicy = (opts: TerraformAlertOptions): string => {
+export const generateGcpAlertPolicyNode = (opts: TerraformAlertOptions): TerraformResource => {
     const policyName = `alert_${opts.planName}_${opts.source}_${opts.index}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
     
-    let tf = `resource "google_monitoring_alert_policy" "${policyName}" {
-`;
-    tf += `  display_name = "SLA Breach: ${opts.planName} - ${opts.source} - ${opts.metricName}"
-`;
-    tf += `  combiner     = "OR"
-`;
-    
-    // Check if we should use PromQL (GMP) or Standard Stackdriver
+    const body: (TerraformArgument | TerraformBlock)[] = [
+        {
+            type: 'Argument',
+            identifier: 'display_name',
+            expression: { type: 'Literal', value: `SLA Breach: ${opts.planName} - ${opts.source} - ${opts.metricName}` }
+        },
+        {
+            type: 'Argument',
+            identifier: 'combiner',
+            expression: { type: 'Literal', value: 'OR' }
+        }
+    ];
+
     const usePromQL = isComplexPromQL(opts.expression);
 
     if (usePromQL) {
-        // GMP Alert
-        tf += `  conditions {
-`;
-        tf += `    display_name = "${opts.metricName} breach"
-`;
-        tf += `    condition_prometheus_query_language {
-`;
-        
         let query = opts.expression;
         const analysis = validatePromQL(query);
         const isBoolean = analysis.valid && analysis.ast.type === 'BinaryExpr' && (analysis.ast.returnBool || ['<', '>', '<=', '>=', '==', '!='].includes(analysis.ast.op));
@@ -58,65 +66,128 @@ export const generateGcpAlertPolicy = (opts: TerraformAlertOptions): string => {
              query = `${query} ${violationOp} ${opts.threshold}`;
         }
 
-        tf += `      query = "${escapeTerraformString(query)}"
-`;
-        if (opts.duration) {
-            tf += `      duration = "${opts.duration}"
-`;
-        }
-        tf += `    }
-`;
-        tf += `  }
-`;
+        const promqlBlock: TerraformBlock = {
+            type: 'Block',
+            blockType: 'condition_prometheus_query_language',
+            labels: [],
+            body: [
+                {
+                    type: 'Argument',
+                    identifier: 'query',
+                    expression: { type: 'Literal', value: query }
+                }
+            ]
+        };
 
+        if (opts.duration) {
+            promqlBlock.body.push({
+                type: 'Argument',
+                identifier: 'duration',
+                expression: { type: 'Literal', value: opts.duration }
+            });
+        }
+
+        body.push({
+            type: 'Block',
+            blockType: 'conditions',
+            labels: [],
+            body: [
+                {
+                    type: 'Argument',
+                    identifier: 'display_name',
+                    expression: { type: 'Literal', value: `${opts.metricName} breach` }
+                },
+                promqlBlock
+            ]
+        });
     } else {
-        // Standard Stackdriver
         const resourceType = opts.resourceType || 'global';
         const metricType = opts.metricType || opts.expression;
 
-        tf += `  conditions {
-`;
-        tf += `    display_name = "${opts.metricName} breach"
-`;
-        tf += `    condition_threshold {
-`;
-        tf += `      filter     = "resource.type = \"${resourceType}\" AND metric.type = \"${metricType}\""
-`;
-        tf += `      duration   = "${opts.duration || '60s'}"
-`;
-        tf += `      comparison = "${getGcpComparison(opts.operator || '<')}"
-`;
-        tf += `      threshold_value = ${opts.threshold !== undefined ? opts.threshold : 0}
-`;
-        tf += `      aggregations {
-`;
-        tf += `        alignment_period   = "60s"
-`;
-        tf += `        per_series_aligner = "${opts.aligner || 'ALIGN_MEAN'}"
-`;
-        tf += `      }
-`;
-        tf += `    }
-`;
-        tf += `  }
-`;
+        const thresholdBlock: TerraformBlock = {
+            type: 'Block',
+            blockType: 'condition_threshold',
+            labels: [],
+            body: [
+                {
+                    type: 'Argument',
+                    identifier: 'filter',
+                    expression: { type: 'Literal', value: `resource.type = "${resourceType}" AND metric.type = "${metricType}"` }
+                },
+                {
+                    type: 'Argument',
+                    identifier: 'duration',
+                    expression: { type: 'Literal', value: opts.duration || '60s' }
+                },
+                {
+                    type: 'Argument',
+                    identifier: 'comparison',
+                    expression: { type: 'Literal', value: getGcpComparison(opts.operator || '<') }
+                },
+                {
+                    type: 'Argument',
+                    identifier: 'threshold_value',
+                    expression: { type: 'Literal', value: opts.threshold !== undefined ? opts.threshold : 0 }
+                },
+                {
+                    type: 'Block',
+                    blockType: 'aggregations',
+                    labels: [],
+                    body: [
+                        {
+                            type: 'Argument',
+                            identifier: 'alignment_period',
+                            expression: { type: 'Literal', value: '60s' }
+                        },
+                        {
+                            type: 'Argument',
+                            identifier: 'per_series_aligner',
+                            expression: { type: 'Literal', value: opts.aligner || 'ALIGN_MEAN' }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        body.push({
+            type: 'Block',
+            blockType: 'conditions',
+            labels: [],
+            body: [
+                {
+                    type: 'Argument',
+                    identifier: 'display_name',
+                    expression: { type: 'Literal', value: `${opts.metricName} breach` }
+                },
+                thresholdBlock
+            ]
+        });
     }
 
     if (opts.channels && opts.channels.length > 0) {
-        tf += `  notification_channels = [
-`;
-        opts.channels.forEach(c => {
-            tf += `    google_monitoring_notification_channel.${c}.name,
-`;
+        body.push({
+            type: 'Argument',
+            identifier: 'notification_channels',
+            expression: {
+                type: 'List',
+                elements: opts.channels.map(c => ({
+                    type: 'Identifier',
+                    name: `google_monitoring_notification_channel.${c}.name`
+                } as TerraformIdentifier))
+            }
         });
-        tf += `  ]
-`;
     }
 
-    tf += `}
+    return {
+        type: 'Resource',
+        resourceType: 'google_monitoring_alert_policy',
+        name: policyName,
+        body
+    };
+};
 
-`;
-    return tf;
+export const generateGcpAlertPolicy = (opts: TerraformAlertOptions): string => {
+    return emitTerraform(generateGcpAlertPolicyNode(opts)) + '\n\n';
 };
 
 export const generateAzureBicepAlert = (opts: TerraformAlertOptions & { location: string, scope: string, actionGroups?: string[] }): string => {

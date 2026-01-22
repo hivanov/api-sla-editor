@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build:parser": "antlr4ts -visitor src/utils/promql/PromQL.g4 && sed -i '' 's/from \"antlr4ts\"/from \"antlr4ts\\/index.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from 'antlr4ts'/from 'antlr4ts\\/index.js'/g\" src/utils/promql/*.ts && sed -i '' 's/from \"antlr4ts\\/\\([^.\"]*\\)\"/from \"antlr4ts\\/\\1.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from 'antlr4ts\\/\\([^.']*\\)'/from 'antlr4ts\\/\\1.js'/g\" src/utils/promql/*.ts && sed -i '' 's/from \"\\.\\/\\([^.\"]*\\)\"/from \".\\/\\1.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from '\\.\\/\\([^.']*\\)'/from '.\\/\\1.js'/g\" src/utils/promql/*.ts",
+    "build:promql-parser": "antlr4ts -visitor src/utils/promql/PromQL.g4 && sed -i '' 's/from \"antlr4ts\"/from \"antlr4ts\\/index.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from 'antlr4ts'/from 'antlr4ts\\/index.js'/g\" src/utils/promql/*.ts && sed -i '' 's/from \"antlr4ts\\/\\([^.\"]*\\)\"/from \"antlr4ts\\/\\1.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from 'antlr4ts\\/\\([^.']*\\)'/from 'antlr4ts\\/\\1.js'/g\" src/utils/promql/*.ts && sed -i '' 's/from \"\\.\\/\\([^.\"]*\\)\"/from \".\\/\\1.js\"/g' src/utils/promql/*.ts && sed -i '' \"s/from '\\.\\/\\([^.']*\\)'/from '.\\/\\1.js'/g\" src/utils/promql/*.ts",
+    "build:terraform-parser": "antlr4ts -visitor src/utils/terraform/terraform.g4 && sed -i '' 's/from \"antlr4ts\"/from \"antlr4ts\\/index.js\"/g' src/utils/terraform/*.ts && sed -i '' \"s/from 'antlr4ts'/from 'antlr4ts\\/index.js'/g\" src/utils/terraform/*.ts && sed -i '' 's/from \"antlr4ts\\/\\([^.\"]*\\)\"/from \"antlr4ts\\/\\1.js\"/g' src/utils/terraform/*.ts && sed -i '' \"s/from 'antlr4ts\\/\\([^.']*\\)'/from 'antlr4ts\\/\\1.js'/g\" src/utils/terraform/*.ts && sed -i '' 's/from \"\\.\\/\\([^.\"]*\\)\"/from \".\\/\\1.js\"/g' src/utils/terraform/*.ts && sed -i '' \"s/from '\\.\\/\\([^.']*\\)'/from '.\\/\\1.js'/g\" src/utils/terraform/*.ts",
+    "build:parser": "npm run build:promql-parser && npm run build:terraform-parser",
     "build": "npm run build:parser && vite build",
     "preview": "vite preview",
     "test:unit": "vitest run",

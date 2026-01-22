@@ -34,7 +34,8 @@ import 'ace-builds/src-noconflict/mode-terraform';
 import 'ace-builds/src-noconflict/theme-monokai';
 import GcpMonitoringEditor from './GcpMonitoringEditor.vue';
 import { extractStructuredGuarantee, getTopLevelFunction, resolveMetricAliases } from '../utils/formatters';
-import { generateGcpAlertPolicy, isComplexPromQL } from '../utils/transformers';
+import { generateGcpAlertPolicyNode, isComplexPromQL } from '../utils/transformers';
+import { emitTerraform } from '../utils/terraform/emitter';
 
 export default {
   name: 'TerraformGenerator',
@@ -82,45 +83,73 @@ export default {
           return;
        }
 
-       let tf = '';
+       /** @type {import('../utils/terraform/ast').TerraformFile} */
+       const tfFile = {
+          type: 'File',
+          blocks: []
+       };
 
        // Provider
        if (gcp && gcp.projectId) {
-          tf += `provider "google" {
-  project = "${gcp.projectId}"
-}
-
-`;
+          tfFile.blocks.push({
+             type: 'Provider',
+             name: 'google',
+             body: [
+                {
+                   type: 'Argument',
+                   identifier: 'project',
+                   expression: { type: 'Literal', value: gcp.projectId }
+                }
+             ]
+          });
        }
 
        // Metric Descriptors
        if (sla.metrics) {
           Object.entries(sla.metrics).forEach(([metricId, metricDef]) => {
              if (metricDef.monitoringId && metricDef.resourceType) {
-                // Only generate if it's a custom metric (optional heuristic, but let's generate for all configured)
-                // Actually GCP monitoringId might be a standard one. 
-                // If it starts with custom.googleapis.com (or its PromQL-friendly version), it definitely needs a descriptor if we want to manage it.
                 if (metricDef.monitoringId.includes('custom.googleapis.com') || metricDef.monitoringId.includes('custom_googleapis_com')) {
                    const resourceName = `metric_${metricId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-                   tf += `resource "google_monitoring_metric_descriptor" "${resourceName}" {
-`;
-                   tf += `  description = "${metricDef.description || metricId}"
-`;
-                   tf += `  display_name = "${metricId}"
-`;
-                   tf += `  type = "${metricDef.monitoringId}"
-`;
-                   tf += `  metric_kind = "${metricDef.metricKind || 'GAUGE'}"
-`;
-                   tf += `  value_type = "${getValueType(metricDef.type)}"
-`;
+                   const body = [
+                      {
+                         type: 'Argument',
+                         identifier: 'description',
+                         expression: { type: 'Literal', value: metricDef.description || metricId }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'display_name',
+                         expression: { type: 'Literal', value: metricId }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'type',
+                         expression: { type: 'Literal', value: metricDef.monitoringId }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'metric_kind',
+                         expression: { type: 'Literal', value: metricDef.metricKind || 'GAUGE' }
+                      },
+                      {
+                         type: 'Argument',
+                         identifier: 'value_type',
+                         expression: { type: 'Literal', value: getValueType(metricDef.type) }
+                      }
+                   ];
                    if (metricDef.unit) {
-                      tf += `  unit = "${metricDef.unit}"
-`;
+                      body.push({
+                         type: 'Argument',
+                         identifier: 'unit',
+                         expression: { type: 'Literal', value: metricDef.unit }
+                      });
                    }
-                   tf += `}
-
-`;
+                   tfFile.blocks.push({
+                      type: 'Resource',
+                      resourceType: 'google_monitoring_metric_descriptor',
+                      name: resourceName,
+                      body
+                   });
                 }
              }
           });
@@ -128,7 +157,7 @@ export default {
 
        // Notification Channels from Support Policy Contact Points
        const channelIds = new Set();
-       const channelsTf = [];
+       const channelsResources = [];
 
        if (sla.plans) {
           Object.values(sla.plans).forEach(plan => {
@@ -152,30 +181,43 @@ export default {
                          }
                          
                          if (type) {
-                            // Deduplicate based on type+labels
                             const key = `${type}:${JSON.stringify(labels)}`;
                             if (!channelIds.has(key)) {
                                channelIds.add(key);
                                const resourceName = `channel_${channelIds.size}`;
                                
-                               let chunk = `resource "google_monitoring_notification_channel" "${resourceName}" {
-`;
-                               chunk += `  display_name = "${displayName}"
-`;
-                               chunk += `  type         = "${type}"
-`;
-                               chunk += `  labels = {
-`;
-                               Object.entries(labels).forEach(([k, v]) => {
-                                  chunk += `    "${k}" = "${v}"
-`;
-                               });
-                               chunk += `  }
-`;
-                               chunk += `}
+                               const body = [
+                                  {
+                                     type: 'Argument',
+                                     identifier: 'display_name',
+                                     expression: { type: 'Literal', value: displayName }
+                                  },
+                                  {
+                                     type: 'Argument',
+                                     identifier: 'type',
+                                     expression: { type: 'Literal', value: type }
+                                  },
+                                  {
+                                     type: 'Argument',
+                                     identifier: 'labels',
+                                     expression: {
+                                        type: 'Map',
+                                        entries: Object.entries(labels).map(([k, v]) => ({
+                                           type: 'Argument',
+                                           identifier: k,
+                                           expression: { type: 'Literal', value: v }
+                                        }))
+                                     }
+                                  }
+                               ];
 
-`;
-                               channelsTf.push({ resourceName, chunk });
+                               tfFile.blocks.push({
+                                  type: 'Resource',
+                                  resourceType: 'google_monitoring_notification_channel',
+                                  name: resourceName,
+                                  body
+                               });
+                               channelsResources.push({ resourceName });
                             }
                          }
                       });
@@ -185,18 +227,14 @@ export default {
           });
        }
 
-       channelsTf.forEach(c => tf += c.chunk);
-
        // Collect all guarantees to generate alert policies
        const allGuarantees = [];
 
        if (sla.plans) {
           Object.entries(sla.plans).forEach(([planName, plan]) => {
-             // 1. Direct guarantees
              if (plan.guarantees) {
                 plan.guarantees.forEach((g, i) => allGuarantees.push({ planName, guarantee: g, index: i, source: 'direct' }));
              }
-             // 2. Plan SLOs
              if (plan.serviceLevelObjectives) {
                 plan.serviceLevelObjectives.forEach((slo, sloIdx) => {
                    if (slo.guarantees) {
@@ -204,7 +242,6 @@ export default {
                    }
                 });
              }
-             // 3. Support Policy SLOs
              const support = plan['supportPolicy'];
              if (support && support.serviceLevelObjectives) {
                 support.serviceLevelObjectives.forEach((slo, sloIdx) => {
@@ -246,7 +283,6 @@ export default {
              return;
           }
 
-          // Determine if we should use PromQL or Standard
           const complex = isComplexPromQL(measurement);
           let resolvedPromQL = '';
           
@@ -261,10 +297,8 @@ export default {
           if (complex && isComplexPromQL(resolvedPromQL)) {
              expression = resolvedPromQL;
           } else {
-             // Fallback to Standard
              expression = metricDef.monitoringId;
              
-             // Try to map aligner from top level function
              const func = getTopLevelFunction(measurement);
              if (func) {
                  const map = {
@@ -280,9 +314,9 @@ export default {
              }
           }
 
-          const channels = channelsTf.map(c => c.resourceName);
+          const channels = channelsResources.map(c => c.resourceName);
 
-          const alertTf = generateGcpAlertPolicy({
+          const alertNode = generateGcpAlertPolicyNode({
              planName,
              source,
              index,
@@ -298,10 +332,10 @@ export default {
              aligner
           });
 
-          tf += alertTf;
+          tfFile.blocks.push(alertNode);
        });
 
-       generatedCode.value = tf;
+       generatedCode.value = emitTerraform(tfFile);
     };
 
     const getValueType = (type) => {

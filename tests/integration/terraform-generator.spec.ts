@@ -69,15 +69,15 @@ test.describe('Terraform Generator', () => {
 
 resource "google_monitoring_notification_channel" "channel_1" {
   display_name = "SLA Ops"
-  type         = "email"
+  type = "email"
   labels = {
-    "email_address" = "ops@example.com"
+    email_address = "ops@example.com"
   }
 }
 
 resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
   display_name = "SLA Breach: Gold - direct - cpu_load"
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "cpu_load breach"
     condition_prometheus_query_language {
@@ -85,9 +85,7 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
       duration = "5m"
     }
   }
-  notification_channels = [
-    google_monitoring_notification_channel.channel_1.name,
-  ]
+  notification_channels = [google_monitoring_notification_channel.channel_1.name]
 }
 `;
 

@@ -35,7 +35,7 @@ describe('Transformers', () => {
       };
       const result = generateGcpAlertPolicy(opts);
       expect(result).toContain('condition_threshold');
-      expect(result).toContain('filter     = "resource.type = \"gce_instance\" AND metric.type = \"compute.googleapis.com/instance/uptime\""');
+      expect(result).toContain('filter = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/uptime\\""');
       expect(result).toContain('comparison = "COMPARISON_LT"'); // Violated if < 0.99
     });
 

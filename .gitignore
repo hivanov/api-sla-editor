@@ -41,3 +41,15 @@ src/utils/promql/PromQLLexer.ts
 src/utils/promql/PromQLListener.ts
 src/utils/promql/PromQLParser.ts
 src/utils/promql/PromQLVisitor.ts
+
+# Generated Terraform parser files
+src/utils/terraform/terraform.interp
+src/utils/terraform/terraform.tokens
+src/utils/terraform/terraformLexer.interp
+src/utils/terraform/terraformLexer.tokens
+src/utils/terraform/terraformLexer.ts
+src/utils/terraform/terraformListener.ts
+src/utils/terraform/terraformParser.ts
+src/utils/terraform/terraformVisitor.ts
+
+**/.antlr/
