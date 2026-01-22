@@ -95,15 +95,9 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
   combiner     = "OR"
   conditions {
     display_name = "cpu_utilization breach"
-    condition_threshold {
-      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
-      duration   = "300s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 80
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(compute.googleapis.com/instance/cpu/utilization[5m]) < 80"
+      duration = "5m"
     }
   }
   notification_channels = [
@@ -118,15 +112,9 @@ resource "google_monitoring_alert_policy" "alert_gold_slo_latency_performance_0_
   combiner     = "OR"
   conditions {
     display_name = "request_latency breach"
-    condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/request_latency\\""
-      duration   = "60s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 200
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(custom.googleapis.com/api/request_latency[1m]) < 200"
+      duration = "1m"
     }
   }
   notification_channels = [
@@ -141,15 +129,9 @@ resource "google_monitoring_alert_policy" "alert_gold_support_slo_incident_respo
   combiner     = "OR"
   conditions {
     display_name = "error_rate breach"
-    condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/error_rate\\""
-      duration   = "60s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 0.1
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(custom.googleapis.com/api/error_rate[1m]) < 0.1"
+      duration = "1m"
     }
   }
   notification_channels = [
@@ -164,15 +146,9 @@ resource "google_monitoring_alert_policy" "alert_silver_direct_0" {
   combiner     = "OR"
   conditions {
     display_name = "cpu_utilization breach"
-    condition_threshold {
-      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
-      duration   = "900s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 90
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(compute.googleapis.com/instance/cpu/utilization[15m]) < 90"
+      duration = "15m"
     }
   }
   notification_channels = [
@@ -187,15 +163,9 @@ resource "google_monitoring_alert_policy" "alert_silver_slo_latency_performance_
   combiner     = "OR"
   conditions {
     display_name = "request_latency breach"
-    condition_threshold {
-      filter     = "resource.type = \\"global\\" AND metric.type = \\"custom.googleapis.com/api/request_latency\\""
-      duration   = "300s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 500
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(custom.googleapis.com/api/request_latency[5m]) < 500"
+      duration = "5m"
     }
   }
   notification_channels = [

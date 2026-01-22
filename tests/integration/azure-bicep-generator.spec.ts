@@ -11,7 +11,7 @@ test.describe('Azure Bicep Generator', () => {
     await page.click('a:has-text("Generate Bicep (Azure)")');
 
     // Expect Generate button to be disabled initially
-    await expect(page.locator('button:has-text("Generate")')).toBeDisabled();
+    await expect(page.locator('.azure-bicep-generator button:has-text("Generate")')).toBeDisabled();
   });
 
   test('should generate bicep when configuration is provided in the generator view', async ({ page }) => {
@@ -37,11 +37,11 @@ test.describe('Azure Bicep Generator', () => {
     await page.click('a:has-text("Generate Bicep (Azure)")');
 
     // 3. Fill Azure configuration in the generator view
-    await page.fill('input[placeholder*="/subscriptions/"]', '/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm');
-    await page.fill('input[placeholder*="eastus"]', 'westeurope');
+    await page.locator('.input-azure-resource-id').fill('/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm');
+    await page.locator('.input-azure-location').fill('westeurope');
 
     // 4. Click Generate
-    await page.click('button:has-text("Generate")');
+    await page.click('.azure-bicep-generator button:has-text("Generate")');
 
     // 5. Verify Output
     const getEditorValue = async () => {
@@ -55,7 +55,8 @@ test.describe('Azure Bicep Generator', () => {
     };
 
     const bicep = await getEditorValue();
-    expect(bicep).toContain("resource alert_basic_direct_0 'Microsoft.Insights/metricalerts@2018-03-01'");
+    // 'cpu_util < 90' is PromQL, so it generates Rule Group
+    expect(bicep).toContain("resource rule_basic_direct_0 'Microsoft.AlertsManagement/prometheusRuleGroups@2023-03-01'");
     expect(bicep).toContain("'/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm'");
   });
 
@@ -67,12 +68,12 @@ test.describe('Azure Bicep Generator', () => {
     await page.click('button:has-text("Transform")');
     await page.click('a:has-text("Generate Bicep (Azure)")');
 
-    // Fill configuration (now local state)
-    await page.fill('input[placeholder*="/subscriptions/"]', '/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm');
-    await page.fill('input[placeholder*="eastus"]', 'eastus');
+    // Fill configuration
+    await page.locator('.input-azure-resource-id').fill('/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm');
+    await page.locator('.input-azure-location').fill('eastus');
 
     // 3. Click Generate
-    await page.click('button:has-text("Generate")');
+    await page.click('.azure-bicep-generator button:has-text("Generate")');
 
     // 4. Verify Output
     const getEditorValue = async () => {
@@ -87,13 +88,11 @@ test.describe('Azure Bicep Generator', () => {
 
     const bicep = await getEditorValue();
 
-    // Verify some key elements of the Bicep file
     expect(bicep).toContain("resource ag_Support_Team 'Microsoft.Insights/actionGroups@2023-01-01'");
     expect(bicep).toContain("emailAddress: 'support@example.com'");
-    expect(bicep).toContain("resource alert_gold_direct_0 'Microsoft.Insights/metricalerts@2018-03-01'");
-    expect(bicep).toContain("metricName: 'percentage_cpu'");
-    expect(bicep).toContain("operator: 'GreaterThanOrEqual'");
-    expect(bicep).toContain("threshold: 80");
+    // Sample uses complex queries
+    expect(bicep).toContain("resource rule_gold_direct_0 'Microsoft.AlertsManagement/prometheusRuleGroups@2023-03-01'");
+    expect(bicep).toContain("expression: 'avg_over_time(percentage_cpu[5m]) < 80'");
     expect(bicep).toContain("actionGroupId: ag_Support_Team.id");
   });
 

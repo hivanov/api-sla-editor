@@ -2,14 +2,14 @@
   <div class="azure-monitoring-editor-content azure-monitoring-editor-component">
     <div class="mb-3">
        <label class="form-label">Azure Resource ID</label>
-       <input type="text" class="form-control" 
+       <input type="text" class="form-control input-azure-resource-id" 
           :value="resourceId" 
           @input="resourceId = $event.target.value"
           placeholder="e.g. /subscriptions/.../resourceGroups/...">
     </div>
     <div class="mb-3">
        <label class="form-label">Location</label>
-       <input type="text" class="form-control" 
+       <input type="text" class="form-control input-azure-location" 
           :value="location" 
           @input="location = $event.target.value"
           placeholder="e.g. eastus">

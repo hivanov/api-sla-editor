@@ -69,11 +69,11 @@ export const helpItems = [
     interpretation: "Guaranteed that 99% of requests are faster than 500ms over 1 hour. If not, compensation applies.",
   },
   {
-    title: "Infrastructure as Code (IaC)",
-    brief: "Generate monitoring configurations automatically.",
-    detail: "The SLA Editor is not just for documentation. It can generate real-world monitoring configurations based on your SLA definitions.\n\n1. **GCP Terraform:** Generates Metric Descriptors, Alert Policies, and Notification Channels for Google Cloud.\n2. **Azure Bicep:** Generates Action Groups and Metric Alerts for Azure Monitor.\n3. **Grafana Dashboard:** Generates a complete JSON dashboard with status panels and time-series for all your guarantees, plus alert rules in YAML format.\n\nAccess these via the 'Generators' tab at the top of the editor.",
-    example: "Generating a Terraform <code>.tf</code> file that automatically sets up alerts for your 99.9% uptime guarantee.",
-    interpretation: "Bridges the gap between the legal contract and the technical implementation, ensuring they never drift apart.",
+    title: "Transformers & Generators",
+    brief: "Generate platform-specific monitoring configs.",
+    detail: "The SLA Editor transforms your abstract guarantees into concrete configuration files for major monitoring platforms. This ensures your technical implementation matches your legal promises.\n\n### 1. GCP Terraform Generator\n*   **Functionality:** Generates `google_monitoring_alert_policy`, `google_monitoring_metric_descriptor`, and `google_monitoring_notification_channel` resources.\n*   **Coverage:** \n    *   **Simple Metrics:** Maps directly to `condition_threshold` (Stackdriver).\n    *   **Complex Queries:** Detects PromQL (e.g., `rate(...)`) and generates `condition_prometheus_query_language` for GCP Managed Prometheus.\n    *   **Notifications:** Converts email/SMS contact points into Notification Channels.\n*   **Requirements:** A valid **GCP Project ID**.\n\n### 2. Azure Bicep Generator\n*   **Functionality:** Generates `Microsoft.Insights/metricalerts`, `Microsoft.AlertsManagement/prometheusRuleGroups`, and `Microsoft.Insights/actionGroups`.\n*   **Coverage:**\n    *   **Simple Metrics:** Maps to standard Metric Alerts.\n    *   **Complex Queries:** Maps to Prometheus Rule Groups (for Azure Monitor Managed Prometheus).\n    *   **Notifications:** Converts email/SMS contact points into Action Groups.\n*   **Requirements:** An **Azure Resource ID** (scope) and **Location** (e.g., `eastus`).\n\n### 3. Grafana Dashboard Generator\n*   **Functionality:** Generates a complete Dashboard (`.json`) and Alert Rules (`.yaml`).\n*   **Coverage:**\n    *   **Visuals:** Creates Stat panels for current status and TimeSeries panels for trends.\n    *   **Alerts:** Generates Prometheus-compatible alert rules in YAML format.\n    *   **Availability:** Automatically calculates availability panels based on uptime targets.\n*   **Requirements:** The **Datasource UID** of your Prometheus instance in Grafana.",
+    example: "Click the **Generators** button in the toolbar to access these tools. Paste the output directly into your `main.tf`, `main.bicep`, or Grafana Import dialog.",
+    interpretation: "Automates the 'boring' part of setting up SLA monitoring and reduces human error.",
   },
   {
     title: "PromQL & Advanced Monitoring",

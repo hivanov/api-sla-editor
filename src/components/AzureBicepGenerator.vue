@@ -4,14 +4,14 @@
        <h4 class="mb-0">Azure Bicep Generator</h4>
        <div class="d-flex gap-2">
           <button class="btn btn-outline-secondary" @click="$emit('close')">Back to Editor</button>
-          <button class="btn btn-primary" @click="generate" :disabled="hasBlockingErrors">Generate</button>
+          <button class="btn btn-primary btn-generate" @click="generate" :disabled="hasBlockingErrors">Generate</button>
           <button class="btn btn-outline-secondary" @click="download" :disabled="!generatedCode">Download .bicep</button>
        </div>
     </div>
 
     <div class="p-3 bg-white border-bottom">
        <h5>Azure Configuration</h5>
-       <AzureMonitoringEditor v-model="azureConfig" />
+       <AzureMonitoringEditor :modelValue="{ resourceId, location }" @update:modelValue="val => { resourceId = val.resourceId; location = val.location; }" />
     </div>
 
     <div v-if="localErrors.length > 0" class="alert alert-warning m-3">
@@ -43,7 +43,8 @@ import { ref, onMounted, watch, computed } from 'vue';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/theme-monokai';
 import AzureMonitoringEditor from './AzureMonitoringEditor.vue';
-import { extractStructuredGuarantee } from '../utils/formatters';
+import { extractStructuredGuarantee, getTopLevelFunction, resolveMetricAliases } from '../utils/formatters';
+import { generateAzureBicepAlert, isComplexPromQL } from '../utils/transformers';
 
 // Define Bicep mode for Ace
 ace.define('ace/mode/bicep_highlight_rules', function(require, exports, module) {
@@ -53,91 +54,31 @@ ace.define('ace/mode/bicep_highlight_rules', function(require, exports, module) 
     const BicepHighlightRules = function() {
         this.$rules = {
             "start": [
-                {
-                    token: "comment",
-                    regex: "//.*$"
-                },
-                {
-                    token: "comment",
-                    regex: "/\\*",
-                    next: "comment"
-                },
-                {
-                    token: "string",           // single line string
-                    regex: "'",
-                    next: "string"
-                },
-                {
-                    token: "keyword",
-                    regex: "\\b(?:resource|targetScope|module|param|var|output|for|in|if|existing|metadata)\\b"
-                },
-                {
-                    token: "constant.language.boolean",
-                    regex: "\\b(?:true|false|null)\\b"
-                },
-                {
-                    token: "variable",
-                    regex: "[a-zA-Z_][a-zA-Z0-9_]*"
-                },
-                {
-                    token: "constant.numeric", // float/int
-                    regex: "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
-                },
-                {
-                    token: "paren.lparen",
-                    regex: "[[({]"
-                },
-                {
-                    token: "paren.rparen",
-                    regex: "[\\])}]"
-                },
-                {
-                    token: "keyword.operator",
-                    regex: "[=:?]"
-                },
-                {
-                    token: "text",
-                    regex: "\\s+"
-                }
+                { token: "comment", regex: "//.*$" },
+                { token: "comment", regex: "/\*", next: "comment" },
+                { token: "string", regex: "'", next: "string" },
+                { token: "keyword", regex: "\\b(?:resource|targetScope|module|param|var|output|for|in|if|existing|metadata)\b" },
+                { token: "constant.language.boolean", regex: "\\b(?:true|false|null)\b" },
+                { token: "variable", regex: "[a-zA-Z_][a-zA-Z0-9_]*" },
+                { token: "constant.numeric", regex: "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b" },
+                { token: "paren.lparen", regex: "[[({]" },
+                { token: "paren.rparen", regex: "[\\])}]" },
+                { token: "keyword.operator", regex: "[=:?]" },
+                { token: "text", regex: "\\s+" }
             ],
             "comment": [
-                {
-                    token: "comment",
-                    regex: "\\*/",
-                    next: "start"
-                },
-                {
-                    defaultToken: "comment"
-                }
+                { token: "comment", regex: "\\*/", next: "start" },
+                { defaultToken: "comment" }
             ],
             "string": [
-                {
-                    token: "constant.character.escape",
-                    regex: "''"
-                },
-                {
-                    token: "constant.character.escape",
-                    regex: "\\${",
-                    push: "interpolation"
-                },
-                {
-                    token: "string",
-                    regex: "'",
-                    next: "start"
-                },
-                {
-                    defaultToken: "string"
-                }
+                { token: "constant.character.escape", regex: "''" },
+                { token: "constant.character.escape", regex: "\\$\\{ ", push: "interpolation" },
+                { token: "string", regex: "'", next: "start" },
+                { defaultToken: "string" }
             ],
             "interpolation": [
-                {
-                    token: "constant.character.escape",
-                    regex: "}",
-                    next: "pop"
-                },
-                {
-                    include: "start"
-                }
+                { token: "constant.character.escape", regex: "}" , next: "pop" },
+                { include: "start" }
             ]
         };
         this.normalizeRules();
@@ -181,11 +122,12 @@ export default {
     const localErrors = ref([]);
     const validationResults = ref([]);
     const editorContainer = ref(null);
-    const azureConfig = ref({ resourceId: '', location: '' });
+    const resourceId = ref('');
+    const location = ref('');
     let editor = null;
 
     const hasBlockingErrors = computed(() => {
-       return !azureConfig.value.resourceId || !azureConfig.value.location;
+       return !resourceId.value || !location.value;
     });
 
     const hasValidationErrors = computed(() => {
@@ -196,7 +138,7 @@ export default {
        editor = ace.edit(editorContainer.value);
        editor.setTheme('ace/theme/monokai');
        editor.session.setMode('ace/mode/bicep'); 
-       editor.session.setUseWorker(false); // Disable worker to avoid syntax errors on Bicep
+       editor.session.setUseWorker(false);
        editor.setReadOnly(true);
     });
 
@@ -211,42 +153,30 @@ export default {
        const results = [];
        const lines = code.split('\n');
        
-       // Regex-based validation mimicking official Bicep rules
        lines.forEach((line, index) => {
           const trimmed = line.trim();
           const lineNum = index + 1;
-
-          // 1. Check for unbalanced braces
           const openBraces = (line.match(/\{/g) || []).length;
           const closeBraces = (line.match(/\}/g) || []).length;
-          if (openBraces !== closeBraces && !trimmed.endsWith('{') && !trimmed.startsWith('}')) {
-             // This is a naive check, but useful for inline blocks
-          }
 
-          // 2. Check for missing quotes in property assignments
-          // Pattern: name: value (where value is not quoted and not a number/bool/ref)
-          const propMatch = line.match(/^\s*([a-zA-Z0-9]+)\s*:\s*([^'\[\{0-9tfn\s][^,]*)$/);
+          const propMatch = line.match(/^\s*([a-zA-Z0-9]+)\s*:\s*([^'\\[{0-9tfn\\s][^,]*)$/);
           if (propMatch) {
              const val = propMatch[2].trim();
              if (!['true', 'false', 'null'].includes(val) && !val.includes('.') && !val.includes('(')) {
                 results.push({
                    line: lineNum,
-                   message: `Property '${propMatch[1]}' value should likely be quoted or is an invalid reference.`,
+                   message: `Property '${propMatch[1]}' value should likely be quoted or is an invalid reference.`, 
                    type: 'warning'
                 });
              }
           }
-
-          // 3. Check for invalid resource declarations
-          if (trimmed.startsWith('resource ') && !trimmed.includes('\'')) {
+          if (trimmed.startsWith('resource ') && !trimmed.includes("'")) {
              results.push({
                 line: lineNum,
-                message: "Resource declaration missing type string (e.g. resource res 'type@ver' = { ... })",
+                message: "Resource declaration missing type string.",
                 type: 'error'
              });
           }
-
-          // 4. Check for unclosed strings
           const quotes = (line.match(/'/g) || []).length;
           if (quotes % 2 !== 0) {
              results.push({
@@ -257,7 +187,6 @@ export default {
           }
        });
 
-       // Global balance check
        const totalOpen = (code.match(/\{/g) || []).length;
        const totalClose = (code.match(/\}/g) || []).length;
        if (totalOpen > totalClose) {
@@ -282,19 +211,15 @@ export default {
     const generate = () => {
        localErrors.value = [];
        const sla = props.sla;
-       const azure = azureConfig.value;
 
-       if (!azure || !azure.resourceId) {
-          localErrors.value.push("Azure Resource ID is not configured.");
+       if (!resourceId.value || !location.value) {
+          localErrors.value.push("Azure Configuration is incomplete.");
           return;
        }
 
        let bicep = '// Azure Bicep Monitoring Template generated from SLA\n\n';
 
-       const location = (azure && azure.location) || 'eastus';
-       const resourceId = azure && azure.resourceId;
-
-       // Action Groups from Support Policy Contact Points
+       // Action Groups
        const actionGroups = [];
        const actionGroupNames = new Set();
 
@@ -376,24 +301,19 @@ export default {
           });
        }
 
-       // Generate Metric Alerts
        allGuarantees.forEach(({ planName, guarantee, index, source }) => {
-          let metricName = guarantee.metric;
-          let operator = guarantee.operator;
-          let value = guarantee.value;
-          let period = guarantee.period || guarantee.duration;
-
-          if (!metricName && guarantee.measurement) {
-             const extracted = extractStructuredGuarantee(guarantee.measurement);
-             if (extracted) {
-                metricName = extracted.metric;
-                operator = extracted.operator;
-                value = extracted.value;
-                if (!period) period = extracted.period;
-             }
-          }
-
-          if (!metricName) {
+          const measurement = guarantee.measurement;
+          let metricName, operator, value, period;
+          let expression = '';
+          let timeAggregation = 'Average';
+          
+          const extracted = extractStructuredGuarantee(measurement);
+          if (extracted) {
+             metricName = extracted.metric;
+             operator = extracted.operator;
+             value = extracted.value;
+             period = extracted.period;
+          } else {
              return;
           }
 
@@ -404,60 +324,55 @@ export default {
              return;
           }
 
-          const alertResourceName = `alert_${planName}_${source}_${index}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
-          const finalPeriod = period || 'PT5M';
-
-          bicep += `resource ${alertResourceName} 'Microsoft.Insights/metricalerts@2018-03-01' = {\n`;
-          bicep += `  name: 'SLA Breach: ${planName} - ${source} - ${metricName}'\n`;
-          bicep += `  location: 'global'\n`;
-          bicep += `  properties: {\n`;
-          bicep += `    description: 'Alert for SLA breach of ${metricName} in plan ${planName}'\n`;
-          bicep += `    severity: 2\n`;
-          bicep += `    enabled: true\n`;
-          bicep += `    scopes: [\n`;
-          bicep += `      '${resourceId}'\n`;
-          bicep += `    ]\n`;
-          bicep += `    evaluationFrequency: '${finalPeriod}'\n`;
-          bicep += `    windowSize: '${finalPeriod}'\n`;
-          bicep += `    criteria: {\n`;
-          bicep += `      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'\n`;
-          bicep += `      allOf: [\n`;
-          bicep += `        {\n`;
-          bicep += `          name: 'Metric1'\n`;
-          bicep += `          metricName: '${metricDef.monitoringId}'\n`;
-          bicep += `          operator: '${getAzureOperator(operator)}'\n`;
-          bicep += `          threshold: ${parseFloat(value) || 0}\n`;
-          bicep += `          timeAggregation: 'Average'\n`;
-          bicep += `          criterionType: 'StaticThresholdCriterion'\n`;
-          bicep += `        }\n`;
-          bicep += `      ]\n`;
-          bicep += `    }\n`;
-          if (actionGroups.length > 0) {
-             bicep += `    actions: [\n`;
-             actionGroups.forEach(ag => {
-                bicep += `      {\n`;
-                bicep += `        actionGroupId: ${ag.resourceName}.id\n`;
-                bicep += `      }\n`;
-             });
-             bicep += `    ]\n`;
+          const complex = isComplexPromQL(measurement);
+          let resolvedPromQL = '';
+          
+          if (complex) {
+              const aliases = {};
+              Object.entries(sla.metrics).forEach(([k, v]) => {
+                  if (v.monitoringId) aliases[k] = v.monitoringId;
+              });
+              resolvedPromQL = resolveMetricAliases(measurement, aliases);
           }
-          bicep += `  }\n`;
-          bicep += `}\n\n`;
+          
+          if (complex && isComplexPromQL(resolvedPromQL)) {
+             expression = resolvedPromQL;
+          } else {
+             expression = metricDef.monitoringId;
+             const func = getTopLevelFunction(measurement);
+             if (func) {
+                 const map = {
+                     'avg_over_time': 'Average',
+                     'sum_over_time': 'Total',
+                     'min_over_time': 'Minimum',
+                     'max_over_time': 'Maximum',
+                     'count_over_time': 'Count'
+                 };
+                 if (map[func]) timeAggregation = map[func];
+             }
+          }
+
+          const agNames = actionGroups.map(ag => ag.resourceName);
+          
+          const alertBicep = generateAzureBicepAlert({
+             planName,
+             source,
+             index,
+             metricName,
+             expression: expression,
+             duration: period,
+             operator,
+             threshold: parseFloat(value),
+             location: location.value,
+             scope: resourceId.value,
+             actionGroups: agNames.length > 0 ? agNames : undefined,
+             timeAggregation
+          });
+
+          bicep += alertBicep;
        });
 
        generatedCode.value = bicep;
-    };
-
-    const getAzureOperator = (operator) => {
-       // Violation operator
-       switch (operator) {
-          case '<': return 'GreaterThanOrEqual';
-          case '<=': return 'GreaterThan';
-          case '>': return 'LessThanOrEqual';
-          case '>=': return 'LessThan';
-          case '=': return 'NotEqual';
-          default: return 'GreaterThan';
-       }
     };
 
     const download = () => {
@@ -479,7 +394,8 @@ export default {
        validationResults,
        hasValidationErrors,
        hasBlockingErrors,
-       azureConfig
+       resourceId,
+       location
     };
   }
 };
@@ -488,6 +404,7 @@ export default {
 <style scoped>
 .ace-editor-container {
   width: 100%;
-  height: 100%;
+  height: 500px;
+  min-height: 500px;
 }
 </style>

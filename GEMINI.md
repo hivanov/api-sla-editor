@@ -91,7 +91,6 @@ The application has been updated to be more responsive. Key changes include:
 ### Lessons Learned (Session: SLO Refactoring)
 
 
-
 *   **Component Extraction:** When refactoring complex logic into reusable components (e.g., `ServiceLevelObjectivesEditor`), ensure that all reactive state management and event emitters are fully ported. Unit tests for the new component should be created immediately, and parent components should be tested for correct integration.
 
 *   **Playwright Selector Robustness:** As the UI grows with more similar editors (e.g., `GuaranteesEditor` vs `ServiceLevelObjectivesEditor`), generic selectors like `page.locator('select')` will likely cause "strict mode violations". Always use specific parent classes or unique attributes (e.g., `.guarantees-editor-component select`) to disambiguate.
@@ -119,32 +118,4 @@ The application has been updated to be more responsive. Key changes include:
 
 *   **Protocol Consistency:** When handling URIs (like `mailto:` or `tel:`), ensure the application and transformation logic agree on the format (e.g., whether `//` is included). Auto-formatting in the UI should be mirrored by robust parsing in the generator (using regex to handle both `mailto:` and `mailto://` variants).
 *   **Recursive Data Collection:** When generating system-wide configurations (like Alert Policies), explicitly traverse all possible locations for relevant data (e.g., both Plan-level guarantees AND SLO-level guarantees in both Plans and Support Policies).
-*   **Terraform Syntax (Escaping):** Complex Terraform attributes like monitoring filters require nested quote escaping. In JavaScript/Vue templates, this often means using triple backslashes (`\\\\\\"`) to ensure the resulting `.tf` file contains properly escaped quotes (`\\"`).
-*   **Full-File Test Validation:** Piecewise string assertion (`toContainText`) in integration tests can be brittle and miss regressions in other parts of the generated file. Prefer capturing the entire editor content via `page.evaluate` and comparing against a normalized "expected" baseline.
-*   **Custom Resource Generation:** Heuristics can be used to decide when to generate supporting resources (like `google_monitoring_metric_descriptor`). For example, any metric with `custom.googleapis.com` in its ID should likely have its own descriptor generated.
-
-### Lessons Learned (Session: PromQL Metric Validation)
-
-*   **Strict Metric Definition:** PromQL expressions must only reference metrics that are explicitly defined in the `metrics` section of the SLA document. This ensures that the SLA is self-contained and all referenced data points have associated metadata (type, unit, description).
-*   **Implicit Metric Removal:** Previously "common" metrics (like `up`, `node_exporter_build_info`) are no longer implicitly allowed. If an SLA uses `up == 1`, the `up` metric must be added to the `metrics` section.
-*   **Recursive AST Validation:** Validation of referenced metrics must be performed by walking the entire PromQL AST (VectorSelectors) to ensure that even nested metrics in complex expressions (e.g., `sum(rate(my_metric[5m]))`) are checked against the specification.
-*   **Integration Test Coverage:** When tightening validation rules, all example files and main flow integration tests must be updated to include the required metric definitions (e.g., adding `up` to `metrics`) to maintain a "green" build.
-
-### Lessons Learned (Session: PromQL Parser & Grafana Dashboard Generator)
-
-*   **Strict Grammar Compliance:** When implementing a parser for a third-party DSL (like PromQL), strictly adhere to the official grammar specifications (e.g., Prometheus's `generated_parser.y`). Avoid "lenient" extensions (like custom operators or `=` for `==`) unless explicitly required, as they break compatibility with standard tools and complicate the AST logic.
-*   **Safe Parser Visitors:** ANTLR-generated visitors must be robust against partial or malformed input. Always use defensive checks (e.g., verifying `DURATION` token array lengths) before accessing specific elements to prevent runtime crashes (e.g., "The specified token does not exist") during real-time parsing in the UI.
-*   **UI/Grammar Synchronization:** When the underlying grammar changes (e.g., removing an operator), proactively update all UI components (dropdowns, placeholders, heuristic detection regexes) to ensure the frontend doesn't produce or expect invalid syntax.
-*   **Playwright Hook Timeouts:** Default Playwright hook timeouts (often 10s) are frequently insufficient for long-running operations like starting Docker containers via `testcontainers`. Use explicit timeouts in `beforeAll`/`afterAll` hook definitions (e.g., `300_000`) to avoid brittle "timeout exceeded" failures that are independent of the test's own `test.setTimeout`.
-*   **Mock Service Readiness:** For integration tests involving mock services (like a Node.js metrics server), `Wait.forListeningPorts()` is a more reliable readiness strategy than `Wait.forLogMessage()` as it avoids issues with missing newlines, race conditions in log capture, or ambiguous log patterns.
-*   **Editor "Raw Mode" Interaction:** When testing components that embed a GUI/Text toggle (like `PrometheusMeasurementEditor`), integration tests must explicitly interact with the toggle (e.g., "Raw PromQL" switch) before attempting to interact with the underlying `textarea`, as the GUI is typically the default state.
-*   **Standard-First Parser Design:** When implementing a parser for an established language, prioritize strict adherence to official grammar specifications over implementing "lenient" custom extensions. Deviations should only be made if strictly necessary for the application's unique requirements.
-*   **Upstream Specification Authority:** Always base custom grammar implementations on official sources (e.g., standard Yacc/Bison definitions like [Prometheus's generated_parser.y](https://raw.githubusercontent.com/prometheus/prometheus/refs/heads/main/promql/parser/generated_parser.y)) to ensure predictability and ecosystem compatibility.
-*   **Test Case Validity:** When parsing errors occur in test suites, verify that the input expressions in the tests are syntactically valid according to the official standard. Correcting the test expectations to match the standard is preferred over modifying the parser to accommodate invalid input.
-
-### CSS Selector Refinements
-
-*   **Actionable Items:** When authoring Vue components and/or forms, make sure to include CSS selectors in all actionable items (links, inputs, buttons, status indicators, etc.).
-*   **Selector Prioritization:** Prioritize using the CSS selector classes above over normal CSS at all times. If a CSS selector class is missing, add it to the control first and then use it in the test, instead of writing generic CSS selectors.
-
-
+*   **Terraform Syntax (Escaping):** Complex Terraform attributes like monitoring filters require nested quote escaping. In JavaScript/Vue templates, this often means using triple backslashes (`\\\

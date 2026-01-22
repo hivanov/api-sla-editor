@@ -33,7 +33,8 @@ import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-terraform';
 import 'ace-builds/src-noconflict/theme-monokai';
 import GcpMonitoringEditor from './GcpMonitoringEditor.vue';
-import { extractStructuredGuarantee } from '../utils/formatters';
+import { extractStructuredGuarantee, getTopLevelFunction, resolveMetricAliases } from '../utils/formatters';
+import { generateGcpAlertPolicy, isComplexPromQL } from '../utils/transformers';
 
 export default {
   name: 'TerraformGenerator',
@@ -71,41 +72,6 @@ export default {
        }
     });
 
-    const parseDurationToSeconds = (duration) => {
-        if (!duration || typeof duration !== 'string') return 0;
-        
-        // Handle ISO 8601
-        if (duration.startsWith('P')) {
-            const regex = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/;
-            const match = duration.match(regex);
-            if (!match) return 0;
-            const days = parseInt(match[1] || 0);
-            const hours = parseInt(match[2] || 0);
-            const minutes = parseInt(match[3] || 0);
-            const seconds = parseInt(match[4] || 0);
-            return (days * 86400) + (hours * 3600) + (minutes * 60) + seconds;
-        } 
-        
-        // Handle Prometheus format (simple s, m, h, d, w)
-        const promRegex = /(\d+)([smhdw])/g;
-        let totalSeconds = 0;
-        const matches = duration.matchAll(promRegex);
-        let found = false;
-        for (const match of matches) {
-            found = true;
-            const val = parseInt(match[1]);
-            const unit = match[2];
-            switch (unit) {
-                case 's': totalSeconds += val; break;
-                case 'm': totalSeconds += val * 60; break;
-                case 'h': totalSeconds += val * 3600; break;
-                case 'd': totalSeconds += val * 86400; break;
-                case 'w': totalSeconds += val * 604800; break;
-            }
-        }
-        return found ? totalSeconds : 0;
-    };
-
     const generate = () => {
        localErrors.value = [];
        const sla = props.sla;
@@ -120,7 +86,11 @@ export default {
 
        // Provider
        if (gcp && gcp.projectId) {
-          tf += `provider "google" {\n  project = "${gcp.projectId}"\n}\n\n`;
+          tf += `provider "google" {
+  project = "${gcp.projectId}"
+}
+
+`;
        }
 
        // Metric Descriptors
@@ -132,16 +102,25 @@ export default {
                 // If it starts with custom.googleapis.com (or its PromQL-friendly version), it definitely needs a descriptor if we want to manage it.
                 if (metricDef.monitoringId.includes('custom.googleapis.com') || metricDef.monitoringId.includes('custom_googleapis_com')) {
                    const resourceName = `metric_${metricId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-                   tf += `resource "google_monitoring_metric_descriptor" "${resourceName}" {\n`;
-                   tf += `  description = "${metricDef.description || metricId}"\n`;
-                   tf += `  display_name = "${metricId}"\n`;
-                   tf += `  type = "${metricDef.monitoringId}"\n`;
-                   tf += `  metric_kind = "${metricDef.metricKind || 'GAUGE'}"\n`;
-                   tf += `  value_type = "${getValueType(metricDef.type)}"\n`;
+                   tf += `resource "google_monitoring_metric_descriptor" "${resourceName}" {
+`;
+                   tf += `  description = "${metricDef.description || metricId}"
+`;
+                   tf += `  display_name = "${metricId}"
+`;
+                   tf += `  type = "${metricDef.monitoringId}"
+`;
+                   tf += `  metric_kind = "${metricDef.metricKind || 'GAUGE'}"
+`;
+                   tf += `  value_type = "${getValueType(metricDef.type)}"
+`;
                    if (metricDef.unit) {
-                      tf += `  unit = "${metricDef.unit}"\n`;
+                      tf += `  unit = "${metricDef.unit}"
+`;
                    }
-                   tf += `}\n\n`;
+                   tf += `}
+
+`;
                 }
              }
           });
@@ -179,15 +158,23 @@ export default {
                                channelIds.add(key);
                                const resourceName = `channel_${channelIds.size}`;
                                
-                               let chunk = `resource "google_monitoring_notification_channel" "${resourceName}" {\n`;
-                               chunk += `  display_name = "${displayName}"\n`;
-                               chunk += `  type         = "${type}"\n`;
-                               chunk += `  labels = {\n`;
+                               let chunk = `resource "google_monitoring_notification_channel" "${resourceName}" {
+`;
+                               chunk += `  display_name = "${displayName}"
+`;
+                               chunk += `  type         = "${type}"
+`;
+                               chunk += `  labels = {
+`;
                                Object.entries(labels).forEach(([k, v]) => {
-                                  chunk += `    "${k}" = "${v}"\n`;
+                                  chunk += `    "${k}" = "${v}"
+`;
                                });
-                               chunk += `  }\n`;
-                               chunk += `}\n\n`;
+                               chunk += `  }
+`;
+                               chunk += `}
+
+`;
                                channelsTf.push({ resourceName, chunk });
                             }
                          }
@@ -231,14 +218,21 @@ export default {
 
        // Generate Alert Policies
        allGuarantees.forEach(({ planName, guarantee, index, source }) => {
-          const extracted = extractStructuredGuarantee(guarantee.measurement);
+          const measurement = guarantee.measurement;
+          let metricName, operator, value, period;
+          let expression = '';
+          let aligner = 'ALIGN_MEAN';
           
-          if (!extracted) {
-             // If we can't extract structured info from the measurement, we can't generate a GCP alert easily
+          const extracted = extractStructuredGuarantee(measurement);
+          
+          if (extracted) {
+             metricName = extracted.metric;
+             operator = extracted.operator;
+             value = extracted.value;
+             period = extracted.period;
+          } else {
              return;
           }
-
-          const { metric: metricName, operator, value, period } = extracted;
 
           const metricDef = sla.metrics[metricName];
           
@@ -247,44 +241,64 @@ export default {
              return;
           }
 
-          if (!metricDef.monitoringId || !metricDef.resourceType) {
-             localErrors.value.push(`No GCP metric mapping (monitoringId, resourceType) for '${metricName}'. Skipping alert generation.`);
+          if (!metricDef.monitoringId) {
+             localErrors.value.push(`No GCP metric mapping (monitoringId) for '${metricName}'. Skipping alert generation.`);
              return;
           }
 
-          const policyName = `alert_${planName}_${source}_${index}`.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+          // Determine if we should use PromQL or Standard
+          const complex = isComplexPromQL(measurement);
+          let resolvedPromQL = '';
           
-          tf += `resource "google_monitoring_alert_policy" "${policyName}" {\n`;
-          tf += `  display_name = "SLA Breach: ${planName} - ${source} - ${metricName}"\n`;
-          tf += `  combiner     = "OR"\n`;
-          tf += `  conditions {\n`;
-          tf += `    display_name = "${metricName} breach"\n`;
-          tf += `    condition_threshold {\n`;
-          tf += `      filter     = "resource.type = \\"${metricDef.resourceType}\\" AND metric.type = \\"${metricDef.monitoringId}\\""\n`;
-          tf += `      duration   = "${period ? parseDurationToSeconds(period) + 's' : '60s'}"\n`;
-          tf += `      comparison = "${getComparison(operator)}"\n`;
+          if (complex) {
+              const aliases = {};
+              Object.entries(sla.metrics).forEach(([k, v]) => {
+                  if (v.monitoringId) aliases[k] = v.monitoringId;
+              });
+              resolvedPromQL = resolveMetricAliases(measurement, aliases);
+          }
           
-          let thresholdValue = parseFloat(value); 
-          if (isNaN(thresholdValue)) thresholdValue = 0;
-
-          tf += `      threshold_value = ${thresholdValue}\n`;
-          
-          tf += `      aggregations {\n`;
-          tf += `        alignment_period   = "60s"\n`;
-          tf += `        per_series_aligner = "ALIGN_MEAN"\n`;
-          tf += `      }\n`;
-          tf += `    }\n`;
-          tf += `  }\n`;
-          
-          if (channelsTf.length > 0) {
-             tf += `  notification_channels = [\n`;
-             channelsTf.forEach(c => {
-                tf += `    google_monitoring_notification_channel.${c.resourceName}.name,\n`;
-             });
-             tf += `  ]\n`;
+          if (complex && isComplexPromQL(resolvedPromQL)) {
+             expression = resolvedPromQL;
+          } else {
+             // Fallback to Standard
+             expression = metricDef.monitoringId;
+             
+             // Try to map aligner from top level function
+             const func = getTopLevelFunction(measurement);
+             if (func) {
+                 const map = {
+                     'avg_over_time': 'ALIGN_MEAN',
+                     'sum_over_time': 'ALIGN_SUM',
+                     'min_over_time': 'ALIGN_MIN',
+                     'max_over_time': 'ALIGN_MAX',
+                     'count_over_time': 'ALIGN_COUNT',
+                     'rate': 'ALIGN_RATE',
+                     'delta': 'ALIGN_DELTA'
+                 };
+                 if (map[func]) aligner = map[func];
+             }
           }
 
-          tf += `}\n\n`;
+          const channels = channelsTf.map(c => c.resourceName);
+
+          const alertTf = generateGcpAlertPolicy({
+             planName,
+             source,
+             index,
+             metricName,
+             expression: expression,
+             duration: period || '60s',
+             operator,
+             threshold: parseFloat(value) || 0,
+             channels: channels.length > 0 ? channels : undefined,
+             project: gcp.projectId,
+             resourceType: metricDef.resourceType,
+             metricType: metricDef.monitoringId,
+             aligner
+          });
+
+          tf += alertTf;
        });
 
        generatedCode.value = tf;
@@ -297,22 +311,6 @@ export default {
           case 'boolean': return 'BOOL';
           case 'string': return 'STRING';
           default: return 'DOUBLE';
-       }
-    };
-
-    const getComparison = (operator) => {
-       // SLA defines guarantee. Operator is what we WANT.
-       // Alert is when it is VIOLATED.
-       // So we need to invert or map carefully.
-       // If guarantee: response_time < 200ms. Violation: response_time > 200ms.
-       // Terraform comparison is for the VIOLATION. 
-       
-       switch (operator) {
-          case '<': return 'COMPARISON_GT';
-          case '<=': return 'COMPARISON_GT'; // Strictly should be GT, but threshold handling might be fuzzy
-          case '>': return 'COMPARISON_LT';
-          case '>=': return 'COMPARISON_LT';
-          default: return 'COMPARISON_GT';
        }
     };
 

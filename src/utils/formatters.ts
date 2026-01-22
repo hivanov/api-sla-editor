@@ -341,6 +341,79 @@ export const extractStructuredGuarantee = (promql: string) => {
   return null;
 };
 
+export const resolveMetricAliases = (promql: string, aliases: Record<string, string>) => {
+  if (!promql || !aliases) return promql;
+  try {
+    const res = validatePromQL(promql);
+    if (!res.valid || !res.ast) return promql;
+    
+    // We need to rebuild the string with replacements. 
+    // Since we don't have a mutable AST -> String generator that preserves everything perfectly, 
+    // we will use the astToString which is "good enough" (canonical format).
+    
+    const replaceRecursive = (node: any): any => {
+        if (!node || typeof node !== 'object') return node;
+        const newNode = { ...node };
+        
+        if (newNode.type === 'VectorSelector' && newNode.name && aliases[newNode.name]) {
+            newNode.name = aliases[newNode.name];
+        }
+        
+        for (const key in newNode) {
+            if (key === 'type') continue;
+            const val = newNode[key];
+            if (Array.isArray(val)) {
+                newNode[key] = val.map(replaceRecursive);
+            } else if (typeof val === 'object') {
+                newNode[key] = replaceRecursive(val);
+            }
+        }
+        return newNode;
+    };
+    
+    const newAst = replaceRecursive(res.ast);
+    return astToString(newAst);
+  } catch (e) {
+    return promql;
+  }
+};
+
+export const getTopLevelFunction = (promql: string) => {
+    if (!promql) return null;
+    try {
+        const res = validatePromQL(promql);
+        if (!res.valid || !res.ast) return null;
+        
+        let node = res.ast;
+        // If it's a binary expr (metric > val), look at left side
+        if (node.type === 'BinaryExpr') {
+            node = node.left;
+        }
+        
+        if (node.type === 'Call') return node.func;
+        if (node.type === 'AggregateExpr') return node.op;
+        
+        return null;
+    } catch(e) {
+        return null;
+    }
+};
+
+export const removeComparison = (promql: string) => {
+    if (!promql) return promql;
+    try {
+        const res = validatePromQL(promql);
+        if (!res.valid || !res.ast) return promql;
+        
+        if (res.ast.type === 'BinaryExpr' && ['==', '!=', '>', '<', '>=', '<='].includes(res.ast.op)) {
+            return astToString(res.ast.left);
+        }
+        return promql;
+    } catch (e) {
+        return promql;
+    }
+};
+
 export const hasContent = (obj: any) => {
   if (!obj) return false;
   if (Array.isArray(obj)) return obj.length > 0;

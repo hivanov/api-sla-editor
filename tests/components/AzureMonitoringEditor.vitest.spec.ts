@@ -28,9 +28,14 @@ describe('AzureMonitoringEditor', () => {
       location: ''
     });
 
+    // Reset the prop to reflect the first change
+    await wrapper.setProps({
+      modelValue: { resourceId: '/sub/new', location: '' }
+    });
+
     await wrapper.find('input[placeholder*="eastus"]').setValue('ukwest');
     expect(wrapper.emitted('update:modelValue')[1][0]).toEqual({
-      resourceId: '',
+      resourceId: '/sub/new',
       location: 'ukwest'
     });
   });

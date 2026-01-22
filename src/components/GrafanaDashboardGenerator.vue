@@ -48,7 +48,8 @@ import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-monokai';
 import jsYaml from 'js-yaml';
-import { toPromQL, ensurePromQLBoolean, extractStructuredGuarantee } from '../utils/formatters';
+import { toPromQL, ensurePromQLBoolean, extractStructuredGuarantee, resolveMetricAliases, removeComparison } from '../utils/formatters';
+import { isComplexPromQL } from '../utils/transformers';
 
 export default {
   name: 'GrafanaDashboardGenerator',
@@ -92,8 +93,6 @@ export default {
     });
 
     watch([datasourceName, dashboardTitle], () => {
-      // clear previous generation if config changes? Or just re-generate?
-      // Re-generating might be annoying if user is typing. Let's wait for button click or just keep old value.
     });
 
     watch(generatedCode, (newCode) => {
@@ -122,8 +121,6 @@ export default {
                        const targetVal = parseFloat(targetStr); // e.g. 99.9
                        const condition = plan.availability.expression || metric.monitoringId;
                        
-                       // For Availability logic: "evaluates to true X% of the time"
-                       // We must ensure the condition returns 0 or 1 (bool) and use subquery for range
                        const boolCondition = ensurePromQLBoolean(condition);
                        const availabilityExpr = `avg_over_time((${boolCondition})[1h:]) * 100`;
                        
@@ -180,6 +177,19 @@ export default {
          const metric = sla.metrics[metricName];
          if (!metric || !metric.monitoringId) return;
 
+         let expression = '';
+         const complex = isComplexPromQL(g.measurement);
+         if (complex) {
+             const aliases = {};
+             Object.entries(sla.metrics).forEach(([k, v]) => {
+                 if (v.monitoringId) aliases[k] = v.monitoringId;
+             });
+             const resolved = resolveMetricAliases(g.measurement, aliases);
+             expression = removeComparison(resolved);
+         } else {
+             expression = toPromQL(metric.monitoringId);
+         }
+
          panels.push({
            id: i + 1,
            gridPos: { h: 6, w: 4, x: xPos % 24, y: yPos },
@@ -187,7 +197,7 @@ export default {
            title: `${metric.description || metricName} Status`,
            datasource: { uid: datasourceName.value },
            targets: [{
-             expr: toPromQL(metric.monitoringId),
+             expr: expression,
              refId: 'A'
            }],
            fieldConfig: {
@@ -220,6 +230,19 @@ export default {
          const metric = sla.metrics[metricName];
          if (!metric || !metric.monitoringId) return;
 
+         let expression = '';
+         const complex = isComplexPromQL(g.measurement);
+         if (complex) {
+             const aliases = {};
+             Object.entries(sla.metrics).forEach(([k, v]) => {
+                 if (v.monitoringId) aliases[k] = v.monitoringId;
+             });
+             const resolved = resolveMetricAliases(g.measurement, aliases);
+             expression = removeComparison(resolved);
+         } else {
+             expression = toPromQL(metric.monitoringId);
+         }
+
          panels.push({
            id: i + 100,
            gridPos: { h: 8, w: 12, x: xPos % 24, y: yPos },
@@ -227,7 +250,7 @@ export default {
            title: `${metric.description || metricName} Over Time`,
            datasource: { uid: datasourceName.value },
            targets: [{
-             expr: toPromQL(metric.monitoringId),
+             expr: expression,
              refId: 'A'
            }],
            fieldConfig: {
@@ -382,8 +405,21 @@ export default {
 
                 // Prometheus Rule
                 const op = invertOperator(operator);
-                const mId = toPromQL(metric.monitoringId);
-                const expr = `${mId} ${op} ${value}`;
+                
+                let expr = '';
+                const complex = isComplexPromQL(g.measurement);
+                if (complex) {
+                     const aliases = {};
+                     Object.entries(sla.metrics).forEach(([k, v]) => {
+                         if (v.monitoringId) aliases[k] = v.monitoringId;
+                     });
+                     const resolved = resolveMetricAliases(g.measurement, aliases);
+                     const lhs = removeComparison(resolved);
+                     expr = `${lhs} ${op} ${value}`;
+                } else {
+                     const mId = toPromQL(metric.monitoringId);
+                     expr = `${mId} ${op} ${value}`;
+                }
                 
                 rules.push({
                   alert: `SlaBreach_${metricName}`,
@@ -449,27 +485,16 @@ export default {
     };
 
     const generateThresholds = (operator, value) => {
-      // Logic:
-      // Red: Failed (Violated)
-      // Yellow: Warning (Approaching, 75%)
-      // Green: OK
-      
       const val = parseFloat(value);
       if (isNaN(val)) return [];
 
       if (operator === '>=' || operator === '>') {
-        // Higher is better. 
-        // Fail: < val.
         return [
           { value: null, color: "red" },
           { value: val, color: "green" }
         ];
       } else if (operator === '<=' || operator === '<') {
-        // Lower is better.
-        // Limit: val.
-        // Warning: 0.75 * val.
         const warningVal = val * 0.75;
-        
         return [
           { value: null, color: "green" },
           { value: warningVal, color: "orange" },
@@ -480,7 +505,6 @@ export default {
     };
 
     const convertOperator = (op) => {
-        // PromQL operators: ==, !=, >, <, >=, <=
         if (op === '=') return '==';
         return op;
     };

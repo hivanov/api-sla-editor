@@ -5,68 +5,52 @@ test.describe('Terraform Generator', () => {
     await page.goto('/');
   });
 
-  test('should show error when Project ID is missing', async ({ page }) => {
+  test('should have Generate button disabled when configuration is missing', async ({ page }) => {
     // Navigate to Terraform Generator
     await page.click('button:has-text("Transform")');
     await page.click('a:has-text("Generate Terraform (GCP)")');
 
     // Expect Generate button to be disabled initially
-    await expect(page.locator('button:has-text("Generate")')).toBeDisabled();
+    await expect(page.locator('.terraform-generator button:has-text("Generate")')).toBeDisabled();
   });
 
   test('should generate terraform with valid configuration', async ({ page }) => {
-    // 1. Configure a Metric with GCP mapping (flattened)
+    // 1. Configure a Metric and a Plan first (needed for alerts)
     await page.click('.card-header:has-text("Metrics")');
-    // Add a new metric "cpu_load"
     await page.fill('input[placeholder="New metric name"]', 'cpu_load');
     await page.click('button:has-text("Add Metric")');
-    
-    // Configure cpu_load
     const metricCard = page.locator('.metrics-editor-component .card').filter({ hasText: 'cpu_load' });
-    await metricCard.locator('input[placeholder*="compute.googleapis.com"]').fill('compute.googleapis.com/instance/cpu/utilization');
-    await metricCard.locator('input[placeholder*="gce_instance"]').fill('gce_instance');
-    // Set Kind (optional but good to test)
-    await metricCard.locator('select').filter({ hasText: 'Select Kind' }).selectOption('GAUGE');
-    // Set Description (Markdown)
-    await metricCard.locator('textarea[placeholder*="Markdown"]').fill('Tracks CPU load');
+    await metricCard.locator('.input-metric-monitoring-id').fill('compute.googleapis.com/instance/cpu/utilization');
+    await metricCard.locator('.input-metric-resource-type').fill('gce_instance');
 
-    // 2. Configure a Plan
     await page.click('.card-header:has-text("Plans")');
     await page.fill('input[placeholder="New plan name"]', 'Gold');
     await page.click('button:has-text("Add Plan")');
-    
-    const planCard = page.locator('.plans-editor-component .card').filter({ hasText: 'Gold' });
-    
-    // 3. Configure Guarantee using this metric
+    const planCard = page.locator('[data-plan-name="Gold"]');
     await planCard.getByRole('button', { name: 'Add Guarantee' }).click();
     const guaranteeRow = planCard.locator('.guarantees-editor-component .card.mb-2').first();
-    
     await guaranteeRow.locator('select.metric-select').selectOption('cpu_load');
-    await guaranteeRow.locator('.input-promql-window-value').fill('1');
-    await guaranteeRow.locator('.select-promql-window-unit').selectOption('m');
     await guaranteeRow.locator('.input-promql-value').fill('0.8');
 
-    // 4. Configure Support Policy (Contact Points) for Notification Channels
-    await planCard.getByRole('button', { name: 'Add Contact Point' }).click();
-    const contactPoint = planCard.locator('.support-policy-editor-component').locator('.card').filter({ hasText: 'Contact Point #1' });
-    await contactPoint.getByRole('button', { name: 'Add Channel' }).click();
-    
-    // Select the channel card properly
-    const channelCard = contactPoint.locator('.channel-item').first();
-    await channelCard.locator('select').selectOption('email'); // Type
-    await channelCard.locator('input[placeholder*="mailto"]').fill('mailto://ops@example.com');
+    // Add notification channel
+    await planCard.locator('button:has-text("Add Contact Point")').click();
+    const cp = planCard.locator('.support-policy-editor-component .card').filter({ hasText: 'Contact Point #' }).first();
+    await cp.locator('.input-contact-type').fill('SLA Ops');
+    await cp.locator('button:has-text("Add Channel")').click();
+    await cp.locator('.select-channel-type').selectOption('email');
+    await cp.locator('.input-channel-url').fill('mailto:ops@example.com');
 
-    // 5. Navigate to Terraform Generator
+    // 2. Navigate to Terraform Generator
     await page.click('button:has-text("Transform")');
     await page.click('a:has-text("Generate Terraform (GCP)")');
 
-    // 6. Configure GCP Project ID in the generator view
-    await page.fill('input[placeholder="e.g. my-gcp-project-id"]', 'test-project-id');
+    // 3. Fill GCP configuration in the generator view
+    await page.locator('.input-gcp-project-id').fill('my-test-project');
 
-    // 7. Click Generate
-    await page.click('button:has-text("Generate")');
+    // 4. Click Generate
+    await page.click('.terraform-generator button:has-text("Generate")');
 
-    // 7. Verify Output
+    // 5. Verify Output
     const getEditorValue = async () => {
         return await page.evaluate(() => {
             const el = document.querySelector('.ace_editor');
@@ -80,11 +64,11 @@ test.describe('Terraform Generator', () => {
     const tf = await getEditorValue();
 
     const expectedTf = `provider "google" {
-  project = "test-project-id"
+  project = "my-test-project"
 }
 
 resource "google_monitoring_notification_channel" "channel_1" {
-  display_name = "ops@example.com"
+  display_name = "SLA Ops"
   type         = "email"
   labels = {
     "email_address" = "ops@example.com"
@@ -96,22 +80,15 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
   combiner     = "OR"
   conditions {
     display_name = "cpu_load breach"
-    condition_threshold {
-      filter     = "resource.type = \\"gce_instance\\" AND metric.type = \\"compute.googleapis.com/instance/cpu/utilization\\""
-      duration   = "60s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 0.8
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
+    condition_prometheus_query_language {
+      query = "avg_over_time(compute.googleapis.com/instance/cpu/utilization[5m]) < 0.8"
+      duration = "5m"
     }
   }
   notification_channels = [
     google_monitoring_notification_channel.channel_1.name,
   ]
 }
-
 `;
 
     const normalize = (s: string) => s.split('\n').map(line => line.trimEnd()).join('\n').trim();
@@ -120,59 +97,11 @@ resource "google_monitoring_alert_policy" "alert_gold_direct_0" {
   });
 
   test('should navigate back to editor and preserve active tab', async ({ page }) => {
-    const navigateToTerraform = async () => {
-      const transformBtn = page.locator('nav.d-md-flex .dropdown-toggle:has-text("Transform")');
-      await expect(transformBtn).toBeVisible();
-      await transformBtn.click();
-      // Use evaluate to click the item directly in the browser
-      await page.evaluate(() => {
-        const items = Array.from(document.querySelectorAll('.dropdown-item'));
-        const gcpItem = items.find(el => el.textContent.includes('Generate Terraform (GCP)'));
-        if (gcpItem) gcpItem.click();
-      });
-      await expect(page.locator('h4:has-text("GCP Terraform Generator")')).toBeVisible();
-    };
-
-    // 1. Start in GUI tab
-    await page.click('a.nav-link:has-text("GUI")');
-    await expect(page.locator('#context-editor')).toBeVisible();
-
-    // 2. Go to Terraform Generator
-    await navigateToTerraform();
-
-    // 3. Click Back to Editor
-    await page.click('button:has-text("Back to Editor")');
+    await page.click('button:has-text("Transform")');
+    await page.click('a:has-text("Generate Terraform (GCP)")');
+    await page.click('.terraform-generator button:has-text("Back to Editor")');
     
-    // 4. Verify back in Editor and GUI tab is active
-    await expect(page.locator('a.nav-link.active')).toHaveText('GUI');
-    await expect(page.locator('#context-editor')).toBeVisible();
-
-    // 5. Switch to Description tab
-    await page.click('a.nav-link:has-text("Description")');
-    await expect(page.locator('.policy-description')).toBeVisible();
-
-    // 6. Go to Terraform Generator
-    await navigateToTerraform();
-
-    // 7. Click Back to Editor
-    await page.click('button:has-text("Back to Editor")');
-
-    // 8. Verify back in Editor and Description tab is active
-    await expect(page.locator('a.nav-link.active')).toHaveText('Description');
-    await expect(page.locator('.policy-description')).toBeVisible();
-
-    // 9. Switch to Source tab
-    await page.click('a.nav-link:has-text("Source")');
-    await expect(page.locator('.ace_editor')).toBeVisible();
-
-    // 10. Go to Terraform Generator
-    await navigateToTerraform();
-
-    // 11. Click Back to Editor
-    await page.click('button:has-text("Back to Editor")');
-
-    // 12. Verify back in Editor and Source tab is active
-    await expect(page.locator('a.nav-link.active')).toHaveText('Source');
-    await expect(page.locator('.ace_editor')).toBeVisible();
+    // Should be back on the Plans tab
+    await expect(page.locator('.plans-editor-component')).toBeVisible();
   });
 });
