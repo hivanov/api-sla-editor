@@ -16,13 +16,21 @@
                 <li><a class="dropdown-item btn-gen-grafana" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('grafana')">Generate Grafana (Prometheus)</a></li>
               </ul>
             </div>
-             <div class="dropdown">
+            <div class="dropdown">
               <button class="btn btn-sm btn-outline-light dropdown-toggle btn-help-menu" type="button" data-bs-toggle="dropdown" :class="{ active: ['tutorial', 'help'].includes(currentView) }">
                 Help
               </button>
               <ul class="dropdown-menu">
                 <li><a class="dropdown-item btn-view-tutorial" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
                 <li><a class="dropdown-item btn-view-help" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help Page</a></li>
+              </ul>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle btn-settings-menu" type="button" data-bs-toggle="dropdown" :class="{ active: currentView === 'history' }">
+                Settings
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item btn-view-history" href="#" data-bs-dismiss="dropdown" @click.prevent="openHistory">History</a></li>
               </ul>
             </div>
           </nav>
@@ -41,6 +49,7 @@
                <li><hr class="dropdown-divider"></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('tutorial')">Tutorial</a></li>
                <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="setView('help')">Help</a></li>
+               <li><a class="dropdown-item" href="#" data-bs-dismiss="dropdown" @click.prevent="openHistory">History</a></li>
              </ul>
           </div>
 
@@ -134,7 +143,7 @@
               </div>
               <div class="card-body overflow-auto">
                 <p class="text-muted small">Load an example to get started with SLA creation.</p>
-                <select class="form-select mb-3 select-example-loader" @change="loadExample($event.target.value)">
+                <select class="form-select mb-3 select-example-loader" @change="confirmLoadExample($event.target.value)">
                   <option selected disabled>Select an example</option>
                   <option v-for="(content, name) in examples" :key="name" :value="name">
                     {{ name.replace(/-/g, ' ') }}
@@ -142,7 +151,7 @@
                 </select>
                 <div class="list-group list-group-flush mb-3 d-none">
                   <button v-for="(content, name) in examples" :key="name" 
-                    @click="loadExample(name)"
+                    @click="confirmLoadExample(name)"
                     class="list-group-item list-group-item-action">
                     {{ name.replace(/-/g, ' ') }}
                   </button>
@@ -169,6 +178,69 @@
       <GrafanaDashboardGenerator v-else-if="currentView === 'grafana'" :sla="sla" @close="setView('editor')" />
 
     </main>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmLoadModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Unsaved Changes</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>You have modified the current SLA. Loading a new example will overwrite your changes.</p>
+            <p>Are you sure you want to proceed?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="proceedWithExample">Proceed</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">SLA History</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="historyFiles.length === 0" class="text-center p-4">
+              <p class="text-muted">No history found.</p>
+            </div>
+            <div v-else class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>SLA ID</th>
+                    <th>Last Modified</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="file in historyFiles" :key="file.id">
+                    <td>{{ file.id }}</td>
+                    <td>{{ new Date(file.lastModified).toLocaleString() }}</td>
+                    <td>
+                      <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" @click="restoreFromHistory(file)">Restore</button>
+                        <button class="btn btn-outline-danger" @click="deleteFromHistory(file.id)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -177,6 +249,7 @@ import { ref, onMounted, onUnmounted, watch, reactive, computed, provide, nextTi
 import { currencies } from './utils/currencies';
 import { getAllHolidayCalendars, getGoogleHolidayCalendarUrl } from './utils/holidays';
 import { validatePromQL } from './utils/formatters';
+import { saveSla, getCurrentSlaId, getSla, getAllSlas, deleteSla } from './utils/storage';
 import 'bootstrap/dist/css/bootstrap.css';
 import ace from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -231,6 +304,49 @@ export default {
     let editor = null;
     const validationErrors = ref([]);
     const markers = ref([]);
+    let processingUpdate = false;
+
+    // Storage and Dirty Tracking
+    const lastLoadedContent = ref(''); // Stores the CANONICAL YAML string
+    
+    const getNormalizedObject = (yaml) => {
+      try {
+        const doc = jsYaml.load(yaml);
+        if (!doc || typeof doc !== 'object') return yaml ? yaml.trim() : '';
+        const sortObject = (obj) => {
+          if (obj === null || typeof obj !== 'object') return obj;
+          if (Array.isArray(obj)) return obj.map(sortObject);
+          return Object.keys(obj).sort().reduce((acc, key) => {
+            acc[key] = sortObject(obj[key]);
+            return acc;
+          }, {});
+        };
+        return sortObject(doc);
+      } catch (e) {
+        return yaml ? yaml.trim() : '';
+      }
+    };
+
+    const sla = reactive({
+      sla: "1.0.0", // Required by schema
+      context: { id: 'example-sla', type: 'plans' }, // Default structure for context editor
+      metrics: {},
+      plans: {},
+      customCurrencies: []
+    });
+
+    const isDirty = computed(() => {
+      if (!lastLoadedContent.value) return false;
+      // We compare current canonical YAML with last loaded canonical YAML
+      // This is efficient and handles all sorting/formatting because it's always generated from the model
+      const currentCanonical = jsYaml.dump(sla);
+      return currentCanonical !== lastLoadedContent.value;
+    });
+
+    const historyFiles = ref([]);
+    const pendingExample = ref(null);
+    let confirmModal = null;
+    let historyModal = null;
 
     const setView = (view) => {
       currentView.value = view;
@@ -240,6 +356,73 @@ export default {
         el.classList.remove('show');
         el.setAttribute('aria-expanded', 'false');
       });
+    };
+
+    const openHistory = () => {
+      historyFiles.value = getAllSlas();
+      if (historyModal) historyModal.show();
+    };
+
+    const confirmLoadExample = (exampleName) => {
+      if (isDirty.value) {
+        pendingExample.value = exampleName;
+        if (confirmModal) confirmModal.show();
+      } else {
+        loadExample(exampleName);
+      }
+    };
+
+    const proceedWithExample = () => {
+      if (pendingExample.value) {
+        loadExample(pendingExample.value);
+        pendingExample.value = null;
+      }
+    };
+
+    const loadExample = (exampleName) => {
+      const rawContent = examples[exampleName];
+      const doc = jsYaml.load(rawContent);
+      
+      processingUpdate = true;
+      try {
+        updateModelFromDoc(doc);
+        const canonical = jsYaml.dump(sla);
+        yamlContent.value = canonical;
+        lastLoadedContent.value = canonical;
+        if (editor) editor.setValue(canonical, -1);
+        if (confirmModal) confirmModal.hide();
+        
+        if (sla.context && sla.context.id) {
+          saveSla(sla.context.id, canonical, true);
+        }
+      } finally {
+        processingUpdate = false;
+      }
+      nextTick(() => { isProgrammaticChange = false; });
+    };
+
+    const restoreFromHistory = (file) => {
+      const doc = jsYaml.load(file.current);
+      
+      processingUpdate = true;
+      try {
+        updateModelFromDoc(doc);
+        const canonical = jsYaml.dump(sla);
+        yamlContent.value = canonical;
+        lastLoadedContent.value = canonical;
+        if (editor) editor.setValue(canonical, -1);
+        if (historyModal) historyModal.hide();
+        
+        saveSla(file.id, canonical, true);
+      } finally {
+        processingUpdate = false;
+      }
+      nextTick(() => { isProgrammaticChange = false; });
+    };
+
+    const deleteFromHistory = (id) => {
+      deleteSla(id);
+      historyFiles.value = getAllSlas();
     };
 
     const validationErrorsMap = computed(() => {
@@ -263,14 +446,6 @@ export default {
         }
       });
       return map;
-    });
-
-    const sla = reactive({
-      sla: "1.0.0", // Required by schema
-      context: { id: 'example-sla', type: 'plans' }, // Default structure for context editor
-      metrics: {},
-      plans: {},
-      customCurrencies: []
     });
 
     const examples = {
@@ -355,32 +530,45 @@ export default {
       }
     };
 
+    const updateModelFromDoc = (doc) => {
+      if (!doc || typeof doc !== 'object') return;
+      if (doc.context) Object.assign(sla.context, doc.context);
+      
+      if (doc.metrics) {
+        Object.keys(sla.metrics).forEach(key => delete sla.metrics[key]);
+        Object.assign(sla.metrics, doc.metrics);
+      } else {
+        Object.keys(sla.metrics).forEach(key => delete sla.metrics[key]);
+      }
+      
+      if (doc.plans) {
+         Object.keys(sla.plans).forEach(key => delete sla.plans[key]);
+         for (const [planName, planData] of Object.entries(doc.plans)) {
+           sla.plans[planName] = planData;
+         }
+      } else {
+         Object.keys(sla.plans).forEach(key => delete sla.plans[key]);
+      }
+      
+      if (doc.customCurrencies) {
+         sla.customCurrencies.splice(0, sla.customCurrencies.length, ...doc.customCurrencies);
+      } else {
+         sla.customCurrencies.splice(0, sla.customCurrencies.length);
+      }
+      
+      if (doc.sla) sla.sla = doc.sla;
+    };
+
     const validateYaml = (content) => {
       try {
         const doc = jsYaml.load(content);
-        if (doc && typeof doc === 'object') {
-          if (doc.context) Object.assign(sla.context, doc.context);
-          if (doc.metrics) {
-            Object.keys(sla.metrics).forEach(key => delete sla.metrics[key]);
-            Object.assign(sla.metrics, doc.metrics);
-          } else {
-            Object.keys(sla.metrics).forEach(key => delete sla.metrics[key]);
+        if (doc && typeof doc === 'object' && !processingUpdate) {
+          processingUpdate = true;
+          try {
+            updateModelFromDoc(doc);
+          } finally {
+            processingUpdate = false;
           }
-          if (doc.plans) {
-             Object.keys(sla.plans).forEach(key => delete sla.plans[key]);
-             // Deeply assign to ensure nested objects like pricing are reactive
-             for (const [planName, planData] of Object.entries(doc.plans)) {
-               sla.plans[planName] = planData;
-             }
-          } else {
-             Object.keys(sla.plans).forEach(key => delete sla.plans[key]);
-          }
-          if (doc.customCurrencies) {
-             sla.customCurrencies.splice(0, sla.customCurrencies.length, ...doc.customCurrencies);
-          } else {
-             sla.customCurrencies.splice(0, sla.customCurrencies.length);
-          }
-          if (doc.sla) sla.sla = doc.sla;
         }
 
         const valid = validate(doc);
@@ -620,19 +808,54 @@ export default {
       validateYaml(yamlContent.value);
     };
 
-    watch(yamlContent, (newVal) => {
-      validateYaml(newVal);
-    });
-
     onMounted(() => {
       window.addEventListener('resize', handleResize);
+      window.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('beforeunload', triggerImmediateSave);
       window.setYamlContent = setYamlContent; // Expose for testing
+      
+      const confirmEl = document.getElementById('confirmLoadModal');
+      if (confirmEl && window.bootstrap) confirmModal = new window.bootstrap.Modal(confirmEl);
+      const historyEl = document.getElementById('historyModal');
+      if (historyEl && window.bootstrap) historyModal = new window.bootstrap.Modal(historyEl);
+
+      const lastId = getCurrentSlaId();
+      processingUpdate = true;
+      try {
+        if (lastId) {
+          const lastSla = getSla(lastId);
+          if (lastSla) {
+            const doc = jsYaml.load(lastSla.current);
+            updateModelFromDoc(doc);
+            const canonical = jsYaml.dump(sla);
+            yamlContent.value = canonical;
+            lastLoadedContent.value = canonical;
+          }
+        } else {
+          const doc = jsYaml.load(example);
+          updateModelFromDoc(doc);
+          const canonical = jsYaml.dump(sla);
+          yamlContent.value = canonical;
+          lastLoadedContent.value = canonical;
+        }
+      } finally {
+        processingUpdate = false;
+      }
+
       initEditor();
     });
 
     onUnmounted(() => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', triggerImmediateSave);
     });
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        triggerImmediateSave();
+      }
+    };
 
     watch(currentView, async (newView) => {
       if (newView === 'editor') {
@@ -660,36 +883,64 @@ export default {
       }
     });
 
+    let saveTimeout = null;
+    const triggerImmediateSave = () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+        if (sla.context && sla.context.id) {
+          saveSla(sla.context.id, yamlContent.value);
+        }
+      }
+    };
+
     watch(yamlContent, (newContent) => {
       validateYaml(newContent);
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        if (sla.context && sla.context.id) {
+          saveSla(sla.context.id, newContent);
+          saveTimeout = null;
+        }
+      }, 2000); // 2 second debounce for auto-save
     });
 
     watch(sla, (newSla) => {
+      if (processingUpdate) return;
       const newYaml = jsYaml.dump(newSla);
-      if (yamlContent.value !== newYaml) {
-        isProgrammaticChange = true;
-        yamlContent.value = newYaml;
-        if (editor) {
-          editor.setValue(newYaml, -1);
+      const currentNorm = getNormalizedObject(yamlContent.value);
+      const newNorm = getNormalizedObject(newYaml);
+      
+      if (JSON.stringify(currentNorm) !== JSON.stringify(newNorm)) {
+        processingUpdate = true;
+        try {
+          isProgrammaticChange = true;
+          yamlContent.value = newYaml;
+          if (editor) {
+            editor.setValue(newYaml, -1);
+          }
+          nextTick(() => { isProgrammaticChange = false; });
+        } finally {
+          processingUpdate = false;
         }
-        isProgrammaticChange = false;
       }
     }, { deep: true });
 
-    const loadExample = (exampleName) => {
-      isProgrammaticChange = true;
-      yamlContent.value = examples[exampleName];
-      editor.setValue(yamlContent.value, -1);
-      isProgrammaticChange = false;
-    };
-
     const setYamlContent = (content) => {
-      yamlContent.value = content;
-      if (editor) {
-        isProgrammaticChange = true;
-        editor.setValue(content, -1);
-        isProgrammaticChange = false;
+      const doc = jsYaml.load(content);
+      processingUpdate = true;
+      try {
+        updateModelFromDoc(doc);
+        const canonical = jsYaml.dump(sla);
+        yamlContent.value = canonical;
+        lastLoadedContent.value = canonical;
+        if (editor) {
+          editor.setValue(canonical, -1);
+        }
+      } finally {
+        processingUpdate = false;
       }
+      nextTick(() => { isProgrammaticChange = false; });
     };
 
     const jumpToError = async (line) => {
@@ -714,11 +965,18 @@ export default {
       validationErrors,
       validationErrorsMap,
       sla,
+      isDirty,
       examples,
       loadExample,
+      confirmLoadExample,
+      proceedWithExample,
+      openHistory,
+      restoreFromHistory,
+      deleteFromHistory,
       setYamlContent,
       jumpToError,
       setView,
+      historyFiles,
     };
   },
 };

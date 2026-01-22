@@ -4,7 +4,21 @@ test.describe('Comprehensive Validation Errors', () => {
   const planName = 'ErrorPlan';
 
   test.beforeEach(async ({ page }) => {
+    // Disable animations for faster, more reliable tests
+    await page.addInitScript(() => {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        *, *::before, *::after {
+          transition: none !important;
+          animation: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    });
+
     await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
     await page.click('.btn-tab-gui');
     
     // Add a metric
