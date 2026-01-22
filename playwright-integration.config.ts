@@ -3,6 +3,7 @@ import { devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/integration',
+  testIgnore: '**/grafana-testcontainers.spec.ts',
   /* The base directory, relative to the config file, for snapshot files created with toMatchSnapshot and toHaveScreenshot. */
   snapshotDir: './tests/__snapshots__',
   /* Maximum time one test can run for. */

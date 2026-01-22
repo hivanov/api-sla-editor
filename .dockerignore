@@ -24,6 +24,9 @@ src/utils/bicep/bicepListener.ts
 src/utils/bicep/bicepParser.ts
 src/utils/bicep/bicepVisitor.ts
 
+# Grafana API
+src/utils/grafana-schema.ts
+
 node_modules/
 dist/
 .env
